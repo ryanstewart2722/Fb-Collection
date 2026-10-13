@@ -95,8 +95,10 @@ h2 {
   position: fixed;
   left: 50%;
   top: 50%;
-  height: min(700px, 80vh);
+  height: auto;
   width: auto;
+  max-height: min(700px, 80vh);
+  max-width: 92vw;
   transform: translate(-50%, -50%);
   pointer-events: none;
   opacity: 0;
@@ -104,6 +106,9 @@ h2 {
   z-index: 2;
 }
 .preview.show { opacity: 1; }
+/* touch: the shown image catches the tap that closes it */
+.touch .preview.show { pointer-events: auto; }
+.touch .item, .touch .row:not(.head) { cursor: pointer; -webkit-tap-highlight-color: transparent; }
 
 /* ---------- List view ---------- */
 .list-section + .list-section { margin-top: 200px; }

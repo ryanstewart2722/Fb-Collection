@@ -1,7 +1,7 @@
 const app = document.getElementById("app");
 const preview = document.querySelector(".preview");
 const IMG = (file) => "Images/web/" + file;
-// Hover effects only on devices with a mouse; on phones a tap would cover the screen.
+// Mouse devices get hover effects; touch devices get tap-to-show instead.
 const canHover = matchMedia("(hover: hover)").matches;
 
 // What each section shows in the list and in the black info bar.
@@ -42,37 +42,50 @@ function renderGrid() {
     </section>`;
   }).join("");
 
-  if (!canHover) return;
   app.querySelectorAll(".grid").forEach((grid) => {
     const s = SECTIONS[grid.dataset.key];
     const items = s.items.filter((d) => d.img);
     const bar = grid.querySelector(".bar");
 
-    grid.querySelectorAll(".item").forEach((el) => {
-      el.addEventListener("mouseenter", () => {
-        const d = items[el.dataset.i];
-        grid.querySelectorAll(".item.on").forEach((x) => x.classList.remove("on"));
-        el.classList.add("on");
-        grid.classList.add("hovering");
+    const activate = (el) => {
+      clearActive();
+      const d = items[el.dataset.i];
+      el.classList.add("on");
+      grid.classList.add("hovering");
 
-        // Bar sits in the middle of the gap under the hovered row.
-        const img = el.querySelector("img");
-        const gap = parseFloat(getComputedStyle(grid).rowGap);
-        const barTop = el.offsetTop + img.offsetHeight + gap / 2 - 16;
-        bar.style.top = barTop + "px";
-        bar.innerHTML = spans(s.cells(d));
-        bar.classList.add("show");
-        showPreview(d.img);
-      });
-    });
+      // Bar sits in the middle of the gap under the hovered row.
+      const img = el.querySelector("img");
+      const gap = parseFloat(getComputedStyle(grid).rowGap);
+      const barTop = el.offsetTop + img.offsetHeight + gap / 2 - 16;
+      bar.style.top = barTop + "px";
+      bar.innerHTML = spans(s.cells(d));
+      bar.classList.add("show");
+      showPreview(d.img);
+    };
 
-    grid.addEventListener("mouseleave", () => {
-      grid.classList.remove("hovering");
-      grid.querySelectorAll(".item.on").forEach((x) => x.classList.remove("on"));
-      bar.classList.remove("show");
-      hidePreview();
-    });
+    grid.querySelectorAll(".item").forEach((el) => bindItem(el, activate));
+    if (canHover) grid.addEventListener("mouseleave", clearActive);
   });
+}
+
+// Mouse: hover shows the image. Touch: tap shows it, tap again (anywhere) hides it.
+function bindItem(el, activate) {
+  if (canHover) return el.addEventListener("mouseenter", () => activate(el));
+  el.addEventListener("click", (e) => {
+    e.stopPropagation();
+    el.classList.contains("on") ? clearActive() : activate(el);
+  });
+}
+
+function clearActive() {
+  document.querySelectorAll(".on").forEach((x) => x.classList.remove("on"));
+  document.querySelectorAll(".hovering").forEach((x) => x.classList.remove("hovering"));
+  document.querySelectorAll(".bar.show").forEach((x) => x.classList.remove("show"));
+  hidePreview();
+}
+if (!canHover) {
+  document.body.classList.add("touch");
+  document.addEventListener("click", clearActive);
 }
 
 /* ---------- List view ---------- */
@@ -89,18 +102,15 @@ function renderList() {
       </div></div>
     </section>`).join("");
 
-  if (!canHover) return;
   app.querySelectorAll(".list").forEach((list) => {
     const s = SECTIONS[list.dataset.key];
     list.querySelectorAll(".row:not(.head)").forEach((row) => {
-      row.addEventListener("mouseenter", () => {
+      bindItem(row, () => {
+        clearActive();
         row.classList.add("on");
         showPreview(s.items[row.dataset.i].img);
       });
-      row.addEventListener("mouseleave", () => {
-        row.classList.remove("on");
-        hidePreview();
-      });
+      if (canHover) row.addEventListener("mouseleave", clearActive);
     });
   });
 }
@@ -108,7 +118,7 @@ function renderList() {
 /* ---------- View toggle (#image / #list) ---------- */
 function route() {
   const view = location.hash === "#list" ? "list" : "image";
-  hidePreview();
+  clearActive();
   document.body.classList.toggle("list-view", view === "list");
   document.querySelectorAll(".toggle a").forEach((a) => a.classList.toggle("active", a.dataset.view === view));
   view === "list" ? renderList() : renderGrid();
