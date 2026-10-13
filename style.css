@@ -69,6 +69,8 @@ h2 {
   transition: opacity var(--ease);
 }
 .grid.hovering .item:not(.on) img { opacity: var(--fade); }
+/* wheels and trucks: square product shots, sized so 6 fit across */
+.grid.square .item img { height: clamp(100px, 14vw, 200px); }
 
 /* black info bar */
 .bar {
@@ -142,6 +144,7 @@ h2 {
   h2 { font-size: 28px; }
   .grid { grid-template-columns: repeat(3, max-content); row-gap: 56px; margin-top: 36px; }
   .grid .item img { height: clamp(140px, 44vw, 240px); }
+  .grid.square .item img { height: clamp(90px, 27vw, 140px); }
   .bar { display: none !important; }
 
   /* list: no sideways scroll, text wraps onto two lines */

@@ -10,9 +10,9 @@ const SECTIONS = {
     head: ["Manufacturer", "Trucks", "Wheels"], cells: (d) => [d.name, d.trucks, d.wheels] },
   decks:  { title: "Decks", gridTitle: "My Decks", items: DECKS,
     head: ["Deck name/color", "Manufacturer", "Moldd", "Size"], cells: (d) => [d.name, d.maker, d.mold, d.size] },
-  wheels: { title: "Wheels", items: WHEELS,
+  wheels: { title: "Wheels", gridTitle: "My Wheels", square: true, items: WHEELS,
     head: ["Wheel/manufacturer", "Color", "Material", "Duro"], cells: (d) => [d.name, d.color, d.material, d.duro] },
-  trucks: { title: "Trucks", items: TRUCKS,
+  trucks: { title: "Trucks", gridTitle: "My Trucks", square: true, items: TRUCKS,
     head: ["Manufacturer", "Color", "Size"], cells: (d) => [d.name, d.color, d.size] },
 };
 
@@ -30,12 +30,13 @@ function hidePreview() { preview.classList.remove("show"); }
 
 /* ---------- Image view ---------- */
 function renderGrid() {
-  app.innerHTML = ["setups", "decks"].map((key) => {
+  app.innerHTML = ["setups", "decks", "wheels", "trucks"].map((key) => {
     const s = SECTIONS[key];
     const items = s.items.filter((d) => d.img);
+    if (!items.length) return "";
     return `<section class="grid-section">
       <h2>${s.gridTitle}</h2>
-      <div class="grid" data-key="${key}">
+      <div class="grid${s.square ? " square" : ""}" data-key="${key}">
         ${items.map((d, i) => `<div class="item" data-i="${i}"><img src="${IMG(d.img)}" alt="${d.name}" loading="lazy"></div>`).join("")}
         <div class="bar"></div>
       </div>
