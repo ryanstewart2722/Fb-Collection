@@ -1,56 +1,57 @@
+// All content (text, items, order, photos) lives in content.json, which the editor (admin.html) saves.
 const app = document.getElementById("app");
 const preview = document.querySelector(".preview");
-const IMG = (file) => "Images/web/" + file;
 // Mouse devices get hover effects; touch devices get tap-to-show instead.
 const canHover = matchMedia("(hover: hover)").matches;
 
-// What each section shows in the list and in the black info bar.
-const SECTIONS = {
-  setups: { title: "My Setups", gridTitle: "My Setups", items: SETUPS,
-    head: ["Manufacturer", "Trucks", "Wheels"], cells: (d) => [d.name, d.trucks, d.wheels] },
-  decks:  { title: "Decks", gridTitle: "My Decks", items: DECKS,
-    head: ["Deck name/color", "Manufacturer", "Moldd", "Size"], cells: (d) => [d.name, d.maker, d.mold, d.size] },
-  wheels: { title: "Wheels", gridTitle: "My Wheels", square: true, items: WHEELS,
-    head: ["Wheel/manufacturer", "Color", "Material", "Duro"], cells: (d) => [d.name, d.color, d.material, d.duro] },
-  trucks: { title: "Trucks", gridTitle: "My Trucks", square: true, items: TRUCKS,
-    head: ["Manufacturer", "Color", "Size"], cells: (d) => [d.name, d.color, d.size] },
-};
+let CONTENT = null;
 
-const spans = (cells) => cells.map((c) => `<span>${c}</span>`).join("");
+const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
+const cells = (s, item) => s.columns.map((c) => item.values[c.key] || "");
+const spans = (list) => list.map((c) => `<span>${esc(c)}</span>`).join("");
 
-// Preload the images so hover previews appear instantly.
-[...SETUPS, ...DECKS, ...WHEELS, ...TRUCKS].forEach((d) => { if (d.img) new Image().src = IMG(d.img); });
+// Column widths from the Figma frame; extra columns share the space after the first.
+function colsFor(n) {
+  if (n <= 4) return "473fr 355fr 237fr 335fr";
+  return "473fr " + Array(n - 1).fill(Math.round(927 / (n - 1)) + "fr").join(" ");
+}
 
-function showPreview(file) {
-  if (!file) return hidePreview();
-  preview.src = IMG(file);
+// Grid order: the saved gridOrder first, then anything new that isn't in it yet.
+function gridItems(s) {
+  const byId = new Map(s.items.map((i) => [i.id, i]));
+  const ordered = (s.gridOrder || []).map((id) => byId.get(id)).filter(Boolean);
+  const rest = s.items.filter((i) => !(s.gridOrder || []).includes(i.id));
+  return [...ordered, ...rest].filter((i) => i.img && !i.hideInGrid);
+}
+
+function showPreview(src) {
+  if (!src) return hidePreview();
+  preview.src = src;
   preview.classList.add("show");
 }
 function hidePreview() { preview.classList.remove("show"); }
 
 /* ---------- Image view ---------- */
 function renderGrid() {
-  app.innerHTML = ["setups", "decks", "wheels", "trucks"].map((key) => {
-    const s = SECTIONS[key];
-    const items = s.items.filter((d) => d.img);
-    if (!items.length) return "";
+  app.innerHTML = CONTENT.sections.map((s, si) => {
+    const items = gridItems(s);
+    if (!s.showInGrid || !items.length) return "";
     return `<section class="grid-section">
-      <h2>${s.gridTitle}</h2>
-      <div class="grid${s.square ? " square" : ""}" data-key="${key}">
-        ${items.map((d, i) => `<div class="item" data-i="${i}"><img src="${IMG(d.img)}" alt="${d.name}" loading="lazy"></div>`).join("")}
-        <div class="bar"></div>
+      <h2>${esc(s.gridTitle)}</h2>
+      <div class="grid${s.square ? " square" : ""}" data-s="${si}">
+        ${items.map((d) => `<div class="item" data-id="${esc(d.id)}"><img src="${esc(d.img)}" alt="${esc(cells(s, d)[0])}" loading="lazy"></div>`).join("")}
+        <div class="bar" style="--cols:${colsFor(s.columns.length)}"></div>
       </div>
     </section>`;
   }).join("");
 
   app.querySelectorAll(".grid").forEach((grid) => {
-    const s = SECTIONS[grid.dataset.key];
-    const items = s.items.filter((d) => d.img);
+    const s = CONTENT.sections[grid.dataset.s];
     const bar = grid.querySelector(".bar");
 
     const activate = (el) => {
       clearActive();
-      const d = items[el.dataset.i];
+      const d = s.items.find((i) => i.id === el.dataset.id);
       el.classList.add("on");
       grid.classList.add("hovering");
 
@@ -59,7 +60,7 @@ function renderGrid() {
       const gap = parseFloat(getComputedStyle(grid).rowGap);
       const barTop = el.offsetTop + img.offsetHeight + gap / 2 - 16;
       bar.style.top = barTop + "px";
-      bar.innerHTML = spans(s.cells(d));
+      bar.innerHTML = spans(cells(s, d));
       bar.classList.add("show");
       showPreview(d.img);
     };
@@ -91,20 +92,17 @@ if (!canHover) {
 
 /* ---------- List view ---------- */
 function renderList() {
-  app.innerHTML = Object.entries(SECTIONS).map(([key, s]) => `
+  app.innerHTML = CONTENT.sections.map((s, si) => `
     <section class="list-section">
-      <h2>${s.title}</h2>
-      <div class="list-wrap"><div class="list" data-key="${key}">
-        <div class="row head">${spans(s.head)}</div>
-        ${s.items.map((d, i) => {
-          const divide = i > 0 && d.group !== s.items[i - 1].group ? " divide" : "";
-          return `<div class="row${divide}" data-i="${i}">${spans(s.cells(d))}</div>`;
-        }).join("")}
+      <h2>${esc(s.title)}</h2>
+      <div class="list-wrap"><div class="list" data-s="${si}" style="--cols:${colsFor(s.columns.length)}">
+        <div class="row head">${spans(s.columns.map((c) => c.label))}</div>
+        ${s.items.map((d, i) => `<div class="row${d.divider && i > 0 ? " divide" : ""}" data-i="${i}">${spans(cells(s, d))}</div>`).join("")}
       </div></div>
     </section>`).join("");
 
   app.querySelectorAll(".list").forEach((list) => {
-    const s = SECTIONS[list.dataset.key];
+    const s = CONTENT.sections[list.dataset.s];
     list.querySelectorAll(".row:not(.head)").forEach((row) => {
       bindItem(row, () => {
         clearActive();
@@ -116,6 +114,17 @@ function renderList() {
   });
 }
 
+/* ---------- Header ---------- */
+function renderHeader() {
+  const { title, instagramHandle, instagramUrl } = CONTENT.site;
+  document.title = title;
+  document.querySelector(".title").textContent = title;
+  const insta = document.querySelector(".insta");
+  insta.textContent = instagramHandle;
+  insta.href = instagramUrl;
+  insta.hidden = !instagramHandle;
+}
+
 /* ---------- View toggle (#image / #list) ---------- */
 function route() {
   const view = location.hash === "#list" ? "list" : "image";
@@ -124,5 +133,14 @@ function route() {
   document.querySelectorAll(".toggle a").forEach((a) => a.classList.toggle("active", a.dataset.view === view));
   view === "list" ? renderList() : renderGrid();
 }
-window.addEventListener("hashchange", route);
-route();
+
+fetch("content.json", { cache: "no-cache" })
+  .then((r) => r.json())
+  .then((data) => {
+    CONTENT = data;
+    renderHeader();
+    // Preload the images so previews appear instantly.
+    CONTENT.sections.forEach((s) => s.items.forEach((d) => { if (d.img) new Image().src = d.img; }));
+    window.addEventListener("hashchange", route);
+    route();
+  });

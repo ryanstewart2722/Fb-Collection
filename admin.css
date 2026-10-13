@@ -1,0 +1,114 @@
+/* Editor styles. Uses the site's fonts from style.css. */
+body.admin { background: #fff; font-size: 12px; }
+.admin input, .admin button { font: inherit; color: inherit; }
+
+.ad-btn {
+  display: inline-flex; align-items: center; gap: 4px;
+  border: 1px solid var(--line); background: #fff; padding: 6px 12px;
+  cursor: pointer; font-size: 11px; white-space: nowrap;
+}
+.ad-btn:hover:not(:disabled) { border-color: #000; }
+.ad-btn:disabled { opacity: 0.35; cursor: default; }
+.ad-btn-dark { background: #000; color: #fff !important; border-color: #000; }
+.ad-btn-sm { padding: 3px 8px; font-size: 10.5px; }
+.ad-link { border: 0; background: none; text-decoration: underline; cursor: pointer; font-size: 11px; color: #666 !important; }
+.ad-error { color: #c00 !important; }
+
+/* ---------- Sign in ---------- */
+.ad-login { max-width: 460px; margin: 12vh auto; padding: 0 20px; }
+.ad-login h2 { margin: 0 0 12px; }
+.ad-login p { line-height: 1.5; }
+.ad-login form { display: flex; gap: 8px; margin: 18px 0 10px; }
+.ad-login input { flex: 1; border: 1px solid var(--line); padding: 8px 10px; min-width: 0; }
+.ad-login details { margin-top: 24px; line-height: 1.6; }
+.ad-login summary { cursor: pointer; text-decoration: underline; }
+.ad-login a { text-decoration: underline; }
+
+/* ---------- Top bar ---------- */
+.ad-top {
+  position: sticky; top: env(safe-area-inset-top, 0px); z-index: 10;
+  margin: var(--gutter) var(--gutter) 0; min-height: 43px;
+  border: 1px solid var(--line); background: #fff;
+  display: flex; align-items: center; gap: 16px; flex-wrap: wrap; padding: 6px 12px;
+}
+.ad-tabs { display: flex; gap: 14px; }
+.ad-tabs button { border: 0; background: none; padding: 4px 0; cursor: pointer; font-size: 12px; }
+.ad-tabs button.active { text-decoration: underline; text-underline-offset: 3px; }
+.ad-status { flex: 1; color: #666; font-size: 11px; min-width: 120px; }
+.ad-top-actions { display: flex; gap: 6px; }
+
+#ad-app { padding: 0 var(--gutter) 60px; }
+.ad-foot { padding: 0 var(--gutter) 40px; }
+.ad-hint { color: #666; margin: 24px 0 0; }
+
+/* ---------- Sections ---------- */
+.ad-sec { margin-top: 48px; }
+.ad-sec-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 18px; }
+.ad-h2 {
+  font-size: 34px !important; font-weight: 500; letter-spacing: -0.035em;
+  border: 0; border-bottom: 1px dashed transparent; padding: 0; min-width: 0; flex: 1 1 260px;
+}
+.ad-h2:hover, .ad-h2:focus { border-bottom-color: var(--line); outline: none; }
+.ad-sec-tools { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.ad-check { display: inline-flex; gap: 5px; align-items: center; font-size: 11px; margin-left: 8px; cursor: pointer; }
+.ad-add-sec { margin-top: 48px; }
+
+/* ---------- List table ---------- */
+.ad-table { overflow-x: auto; margin-bottom: 10px; }
+.ad-row {
+  display: grid; grid-template-columns: var(--tpl); align-items: center; gap: 0 8px;
+  min-width: 760px; min-height: 40px; background: #fff;
+}
+.ad-headrow { border-bottom: 1px solid #000; padding-bottom: 6px; }
+.ad-row.divide { border-top: 1px solid var(--line); }
+.ad-col { display: flex; align-items: center; gap: 2px; min-width: 0; }
+.ad-label {
+  font-family: "Areal Mono", ui-monospace, monospace; font-size: 9px !important; text-transform: uppercase;
+  border: 1px solid transparent; padding: 3px 4px; width: 100%; min-width: 0;
+}
+.ad-cell { border: 1px solid transparent; padding: 5px 4px; width: 100%; min-width: 0; font-size: 11.5px; }
+.ad-label:hover, .ad-cell:hover { border-color: #e2e2e2; }
+.ad-label:focus, .ad-cell:focus { border-color: #000; outline: none; }
+.ad-handle { cursor: grab; color: #999; text-align: center; font-size: 15px; user-select: none; }
+.ad-handle:active { cursor: grabbing; }
+.sortable-ghost { opacity: 0.35; }
+.sortable-chosen { background: #f6f6f6; }
+
+.ad-thumb {
+  width: 40px; height: 34px; border: 1px solid transparent; background: none; padding: 0; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+}
+.ad-thumb img { max-width: 100%; max-height: 100%; }
+.ad-thumb:hover { border-color: #000; }
+.ad-thumb-empty { border: 1px dashed var(--line); color: #999; font-size: 15px; }
+
+.ad-row-actions { display: flex; gap: 4px; justify-content: flex-end; }
+.ad-icon { width: 26px; height: 26px; border: 1px solid transparent; background: none; cursor: pointer; color: #999; font-size: 14px; }
+.ad-icon:hover { border-color: var(--line); color: #000; }
+.ad-icon.active { color: #000; border-color: #000; }
+.ad-x { border: 0; background: none; color: #bbb; cursor: pointer; padding: 0 3px; }
+.ad-x:hover { color: #c00; }
+
+/* ---------- Image view editor ---------- */
+.ad-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 18px; }
+.ad-grid.off { opacity: 0.4; }
+.ad-card { border: 1px solid #eee; padding: 10px; cursor: grab; background: #fff; display: flex; flex-direction: column; gap: 8px; }
+.ad-card:hover { border-color: var(--line); }
+.ad-card.off .ad-card-img { opacity: 0.3; }
+.ad-card-img { height: 190px; display: flex; align-items: center; justify-content: center; }
+.ad-card-img img { max-height: 100%; max-width: 100%; pointer-events: none; }
+.ad-card-img span { color: #999; font-size: 11px; }
+.ad-card-name { font-size: 11px; line-height: 1.3; min-height: 2.6em; }
+.ad-card-tools { display: flex; gap: 4px; flex-wrap: wrap; }
+
+/* ---------- Site settings ---------- */
+.ad-site { max-width: 560px; }
+.ad-field { display: grid; gap: 5px; margin: 20px 0; }
+.ad-field span { font-family: "Areal Mono", ui-monospace, monospace; font-size: 9px; text-transform: uppercase; }
+.ad-field input { border: 1px solid var(--line); padding: 8px 10px; font-size: 13px; }
+.ad-field small { color: #777; }
+
+@media (max-width: 760px) {
+  .ad-h2 { font-size: 26px !important; }
+  .ad-top-actions { width: 100%; }
+}

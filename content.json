@@ -1,0 +1,475 @@
+{
+  "site": {
+    "title": "Ryan’s Fingerboards",
+    "instagramHandle": "@risoforprez",
+    "instagramUrl": "https://www.instagram.com/risoforprez/"
+  },
+  "sections": [
+    {
+      "id": "setups",
+      "title": "My Setups",
+      "gridTitle": "My Setups",
+      "showInGrid": true,
+      "square": false,
+      "columns": [
+        {
+          "key": "name",
+          "label": "Manufacturer"
+        },
+        {
+          "key": "trucks",
+          "label": "Trucks"
+        },
+        {
+          "key": "wheels",
+          "label": "Wheels"
+        }
+      ],
+      "items": [
+        {
+          "id": "s1",
+          "img": "Images/web/DrMCustom.png",
+          "divider": false,
+          "hideInGrid": false,
+          "values": {
+            "name": "Dr. M's Research Institute 33mm * Blue/White/Black/Pink (f)",
+            "trucks": "Joycult x Indepedent 32mm Silver",
+            "wheels": "Joycult Classic 3.0 Street Tan"
+          }
+        },
+        {
+          "id": "s2",
+          "img": "Images/web/DrMBluePink.png",
+          "divider": false,
+          "hideInGrid": false,
+          "values": {
+            "name": "Dr. M's Research Institute 30mm* Mystery Blue/Pink (f)",
+            "trucks": "Joycult x Indepedent 29mm Silver",
+            "wheels": "Joycult Classic 3.0 Street Blue/Pink"
+          }
+        },
+        {
+          "id": "s3",
+          "img": "Images/web/DrMGreen.png",
+          "divider": false,
+          "hideInGrid": false,
+          "values": {
+            "name": "Dr. M's Research Institute 32mm Midnight Green (f)",
+            "trucks": "Joycult x Indepedent 32mm Silver",
+            "wheels": "Piro Performance White"
+          }
+        },
+        {
+          "id": "s4",
+          "img": "Images/web/DrMxNotCool.png",
+          "divider": false,
+          "hideInGrid": false,
+          "values": {
+            "name": "Dr. M's Research Institute x Not Cool 32.5mm  (f)",
+            "trucks": "Joycult x Indepedent 32mm Silver",
+            "wheels": "Flatface x Blistered v3 White/Yellow"
+          }
+        },
+        {
+          "id": "s5",
+          "img": "Images/web/DrMWhiteBlack.png",
+          "divider": false,
+          "hideInGrid": false,
+          "values": {
+            "name": "Dr. M's Research Institute 29.5mm White/Black (f)",
+            "trucks": "Joycult x Indepedent 29mm Silver",
+            "wheels": "Bloob Dogshit White"
+          }
+        },
+        {
+          "id": "s6",
+          "img": "Images/web/DrMBlank.png",
+          "divider": false,
+          "hideInGrid": false,
+          "values": {
+            "name": "Dr. M's Research Institute 29mm Blank Blue (f)",
+            "trucks": "Joycult x Indepedent 29mm Silver",
+            "wheels": "Daytona 7mm White"
+          }
+        },
+        {
+          "id": "s7",
+          "img": "Images/web/DrMOrange.png",
+          "divider": false,
+          "hideInGrid": false,
+          "values": {
+            "name": "Dr. M's Research Institute 29mm Orange (f)",
+            "trucks": "Joycult x Indepedent 29mm Silver",
+            "wheels": "Oak Rv2 Tan"
+          }
+        },
+        {
+          "id": "s8",
+          "img": "Images/web/DrMCatfish.png",
+          "divider": true,
+          "hideInGrid": false,
+          "values": {
+            "name": "CATFISHBBQ x Dr. M's Research Institute Raw/Black (d)",
+            "trucks": "Joycult x Indepedent 34mm Silver",
+            "wheels": "Joycult Classic 3.0 Street Pistachio"
+          }
+        },
+        {
+          "id": "s9",
+          "img": "Images/web/Teeth.png",
+          "divider": false,
+          "hideInGrid": false,
+          "values": {
+            "name": "CATFISHBBQ Teeth 32mm (f)",
+            "trucks": "Leefai 32mm Silver",
+            "wheels": "Joycult Classic 3.0 Matt Era Pink/Blue"
+          }
+        },
+        {
+          "id": "s10",
+          "img": "Images/web/HerMajesty.png",
+          "divider": false,
+          "hideInGrid": false,
+          "values": {
+            "name": "CATFISHBBQ Her Majesty 30mm Pink (f)",
+            "trucks": "Blackriver/Leefai 29mm Silver",
+            "wheels": "Blistered x John Cowart Black"
+          }
+        },
+        {
+          "id": "s11",
+          "img": "Images/web/ArtshowRealWear.png",
+          "divider": false,
+          "hideInGrid": false,
+          "values": {
+            "name": "CATFISHBBQ Artshow Real Wear 32mm Black/Wood (f)",
+            "trucks": "Y Trucks 32mm Raw",
+            "wheels": "Y Wheels Tan"
+          }
+        },
+        {
+          "id": "s12",
+          "img": "Images/web/WormGraffitiJ.png",
+          "divider": true,
+          "hideInGrid": false,
+          "values": {
+            "name": "Worm Graffiti 34mm (h)",
+            "trucks": "Joycult x Indepedent 32mm Silver",
+            "wheels": "Oak R2V2 Tan"
+          }
+        },
+        {
+          "id": "s13",
+          "img": "Images/web/WormApple.png",
+          "divider": false,
+          "hideInGrid": false,
+          "values": {
+            "name": "Worm Apple 32mm (h)",
+            "trucks": "Blackriver 4.0 32mm Raw",
+            "wheels": "Bloob Micro Red"
+          }
+        },
+        {
+          "id": "s14",
+          "img": "Images/web/WormBox.png",
+          "divider": false,
+          "hideInGrid": false,
+          "values": {
+            "name": "Worm Box Head 32mm (h)",
+            "trucks": "Leefai 32mm Silver",
+            "wheels": "Flatface Cores Blue"
+          }
+        },
+        {
+          "id": "s15",
+          "img": "Images/web/CowplySilver.png",
+          "divider": true,
+          "hideInGrid": false,
+          "values": {
+            "name": "Cowply Egg 34mm Black/Silver (c2)",
+            "trucks": "Blackriver 3.0 34mm Silver/Gold Mixed",
+            "wheels": "Joycult Lite Pink/Black"
+          }
+        },
+        {
+          "id": "s16",
+          "img": "Images/web/CowplyHead.png",
+          "divider": false,
+          "hideInGrid": false,
+          "values": {
+            "name": "Cowply Face Cruiser 34mm Blue (c2)",
+            "trucks": "Dynamic Inverted Kingpin 32mm Silver",
+            "wheels": "Abstract B Purple"
+          }
+        },
+        {
+          "id": "s17",
+          "img": "Images/web/LetterLebron.png",
+          "divider": true,
+          "hideInGrid": false,
+          "values": {
+            "name": "Letter Lebron 29mm White (m)",
+            "trucks": "Leefai 32mm Raw",
+            "wheels": "Blistered x Cowart Blue"
+          }
+        },
+        {
+          "id": "s18",
+          "img": "Images/web/AlmostTechDeck.png",
+          "divider": true,
+          "hideInGrid": false,
+          "values": {
+            "name": "Almost x Tech Deck Cruiser 26mm",
+            "trucks": "Tech Deck Trucks 26mm",
+            "wheels": "Dynamic Bowl Pink"
+          }
+        }
+      ],
+      "gridOrder": [
+        "s1",
+        "s2",
+        "s3",
+        "s4",
+        "s5",
+        "s6",
+        "s7",
+        "s8",
+        "s9",
+        "s10",
+        "s11",
+        "s12",
+        "s13",
+        "s14",
+        "s15",
+        "s16",
+        "s17",
+        "s18"
+      ]
+    },
+    {
+      "id": "decks",
+      "title": "Decks",
+      "gridTitle": "My Decks",
+      "showInGrid": true,
+      "square": false,
+      "columns": [
+        {
+          "key": "name",
+          "label": "Deck name/color"
+        },
+        {
+          "key": "maker",
+          "label": "Manufacturer"
+        },
+        {
+          "key": "mold",
+          "label": "Moldd"
+        },
+        {
+          "key": "size",
+          "label": "Size"
+        }
+      ],
+      "items": [
+        {
+          "id": "d19",
+          "img": "Images/web/Wish32mm.png",
+          "divider": false,
+          "hideInGrid": false,
+          "values": {
+            "name": "Wish, Natural/Blue",
+            "maker": "CATFISHBBQ",
+            "mold": "Freshwater",
+            "size": "32mm"
+          }
+        },
+        {
+          "id": "d20",
+          "img": "Images/web/Washi30mm.png",
+          "divider": false,
+          "hideInGrid": false,
+          "values": {
+            "name": "Washi, Purple/Red/White",
+            "maker": "CATFISHBBQ",
+            "mold": "Freshwater",
+            "size": "30mm"
+          }
+        },
+        {
+          "id": "d21",
+          "img": "Images/web/Washi32mm.png",
+          "divider": false,
+          "hideInGrid": false,
+          "values": {
+            "name": "Washi, Brown/Gold",
+            "maker": "CATFISHBBQ",
+            "mold": "Freshwater",
+            "size": "32mm"
+          }
+        },
+        {
+          "id": "d22",
+          "img": "Images/web/TrueTypeDinamo.png",
+          "divider": true,
+          "hideInGrid": false,
+          "values": {
+            "name": "ABC Dinamo Truetype, White",
+            "maker": "Cowply",
+            "mold": "c2",
+            "size": "32mm"
+          }
+        },
+        {
+          "id": "d23",
+          "img": "Images/web/BulletDinamo.png",
+          "divider": false,
+          "hideInGrid": false,
+          "values": {
+            "name": "ABC Dinamo Bullets, Blue",
+            "maker": "Cowply",
+            "mold": "c2",
+            "size": "32mm"
+          }
+        },
+        {
+          "id": "d24",
+          "img": "Images/web/cowplyred34mm.png",
+          "divider": false,
+          "hideInGrid": false,
+          "values": {
+            "name": "Cowply Wordmark, Red",
+            "maker": "Cowply",
+            "mold": "c2",
+            "size": "34mm"
+          }
+        },
+        {
+          "id": "d25",
+          "img": "Images/web/Dynamic32mm.png",
+          "divider": true,
+          "hideInGrid": false,
+          "values": {
+            "name": "Graffiti, Red/Natural",
+            "maker": "Dynamic",
+            "mold": "Medium",
+            "size": "32mm"
+          }
+        },
+        {
+          "id": "d26",
+          "img": "Images/web/Foard34mm.png",
+          "divider": true,
+          "hideInGrid": false,
+          "values": {
+            "name": "Broadcast Systems, Red/Natural",
+            "maker": "Foard",
+            "mold": "Medium",
+            "size": "34mm"
+          }
+        }
+      ],
+      "gridOrder": [
+        "d19",
+        "d20",
+        "d21",
+        "d22",
+        "d23",
+        "d24",
+        "d25",
+        "d26"
+      ]
+    },
+    {
+      "id": "wheels",
+      "title": "Wheels",
+      "gridTitle": "My Wheels",
+      "showInGrid": true,
+      "square": true,
+      "columns": [
+        {
+          "key": "name",
+          "label": "Wheel/manufacturer"
+        },
+        {
+          "key": "color",
+          "label": "Color"
+        },
+        {
+          "key": "material",
+          "label": "Material"
+        },
+        {
+          "key": "duro",
+          "label": "Duro"
+        }
+      ],
+      "items": [
+        {
+          "id": "w27",
+          "img": "Images/web/OakMini.png",
+          "divider": false,
+          "hideInGrid": false,
+          "values": {
+            "name": "Oak Mini",
+            "color": "Tan",
+            "material": "Urethane",
+            "duro": "64d"
+          }
+        },
+        {
+          "id": "w28",
+          "img": "Images/web/AbstractBStock.png",
+          "divider": true,
+          "hideInGrid": false,
+          "values": {
+            "name": "Abstract B Stock",
+            "color": "Purple",
+            "material": "Urethane",
+            "duro": "Unknown"
+          }
+        }
+      ],
+      "gridOrder": [
+        "w27",
+        "w28"
+      ]
+    },
+    {
+      "id": "trucks",
+      "title": "Trucks",
+      "gridTitle": "My Trucks",
+      "showInGrid": true,
+      "square": true,
+      "columns": [
+        {
+          "key": "name",
+          "label": "Manufacturer"
+        },
+        {
+          "key": "color",
+          "label": "Color"
+        },
+        {
+          "key": "size",
+          "label": "Size"
+        }
+      ],
+      "items": [
+        {
+          "id": "t29",
+          "img": "Images/web/Blackriver32mm.png",
+          "divider": false,
+          "hideInGrid": false,
+          "values": {
+            "name": "Blackriver 32mm",
+            "color": "Raw",
+            "size": "32mm"
+          }
+        }
+      ],
+      "gridOrder": [
+        "t29"
+      ]
+    }
+  ]
+}
