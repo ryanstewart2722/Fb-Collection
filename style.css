@@ -138,11 +138,7 @@ h2 {
 
 /* ---------- Small screens ---------- */
 @media (max-width: 760px) {
-  /* header: title on its own line, Image/List and Instagram underneath */
-  .topbar { height: auto; padding: 11px 14px 10px; row-gap: 7px; grid-template-columns: 1fr 1fr; grid-template-areas: "title title" "toggle insta"; }
-  .title { font-size: 15px; grid-area: title; justify-self: center; }
-  .toggle { grid-area: toggle; }
-  .insta { grid-area: insta; }
+  .title { font-size: 15px; }
   h2 { font-size: 28px; }
   .grid { grid-template-columns: repeat(3, max-content); row-gap: 56px; margin-top: 36px; }
   .grid .item img { height: clamp(140px, 44vw, 240px); }
