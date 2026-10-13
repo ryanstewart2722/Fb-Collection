@@ -1,0 +1,141 @@
+@font-face { font-family: "Areal"; src: url("Fonts/ABCAreal-Regular.ttf") format("truetype"); font-weight: 400; font-display: swap; }
+@font-face { font-family: "Areal"; src: url("Fonts/ABCAreal-Medium.ttf") format("truetype"); font-weight: 500; font-display: swap; }
+@font-face { font-family: "Areal"; src: url("Fonts/ABCAreal-Bold.ttf") format("truetype"); font-weight: 700; font-display: swap; }
+@font-face { font-family: "Areal Mono"; src: url("Fonts/ABCArealMono-Regular.ttf") format("truetype"); font-weight: 400; font-display: swap; }
+
+:root {
+  --gutter: 20px;
+  --line: #8c8c8c;
+  --fade: 0.45;
+  --ease: 180ms ease;
+  /* list / info-bar column widths, taken from the Figma frame */
+  --cols: 473fr 355fr 237fr 335fr;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  background: #fff;
+  color: #000;
+  font-family: "Areal", "Helvetica Neue", Arial, sans-serif;
+  font-size: 11.5px;
+  -webkit-font-smoothing: antialiased;
+}
+
+a { color: inherit; text-decoration: none; }
+
+/* ---------- Header ---------- */
+.topbar {
+  margin: var(--gutter) var(--gutter) 0;
+  height: 43px;
+  border: 1px solid var(--line);
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  padding: 0 21px 0 16px;
+}
+.title { font-size: 17px; letter-spacing: -0.02em; }
+.toggle { font-size: 11px; }
+.insta { justify-self: end; font-size: 11px; }
+.toggle a.active { text-decoration: underline; text-underline-offset: 2px; }
+
+main { padding: 0 var(--gutter) 160px; }
+
+h2 {
+  font-size: 34px;
+  font-weight: 500;
+  letter-spacing: -0.035em;
+  margin: 28px 0 0;
+  line-height: 1.1;
+}
+
+/* ---------- Image / grid view ---------- */
+.grid-section + .grid-section { margin-top: 150px; }
+
+.grid {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(6, max-content);
+  justify-content: space-between;
+  row-gap: 128px;
+  margin-top: 60px;
+  padding: 0 8px;
+}
+.grid .item img {
+  display: block;
+  height: clamp(150px, 20vw, 290px);
+  width: auto;
+  transition: opacity var(--ease);
+}
+.grid.hovering .item:not(.on) img { opacity: var(--fade); }
+
+/* black info bar */
+.bar {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 32px;
+  background: #000;
+  color: #fff;
+  display: grid;
+  grid-template-columns: var(--cols);
+  align-items: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--ease);
+  z-index: 3; /* sits on top of the big image */
+}
+.bar.show { opacity: 1; }
+.bar span:first-child { padding-left: 14px; }
+.bar span, .row span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-right: 16px; }
+
+/* big hover image, always centred in the window */
+.preview {
+  position: fixed;
+  left: 50%;
+  top: 50%;
+  height: min(700px, 80vh);
+  width: auto;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity var(--ease);
+  z-index: 2;
+}
+.preview.show { opacity: 1; }
+
+/* ---------- List view ---------- */
+.list-section + .list-section { margin-top: 200px; }
+.list-wrap { overflow-x: auto; }
+.list { min-width: 720px; margin-top: 30px; }
+
+.row {
+  display: grid;
+  grid-template-columns: var(--cols);
+  align-items: center;
+  height: 32.3px;
+}
+.row.head {
+  height: auto;
+  padding-bottom: 14px;
+  border-bottom: 1px solid #000;
+  font-family: "Areal Mono", ui-monospace, monospace;
+  font-size: 7.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+.row.divide { border-top: 1px solid var(--line); }
+.row:not(.head) { transition: background var(--ease), color var(--ease); }
+.row:not(.head) span:first-child { transition: padding var(--ease); }
+.row.on { background: #000; color: #fff; position: relative; z-index: 3; /* on top of the big image */ }
+.row.on span:first-child { padding-left: 14px; }
+
+/* ---------- Small screens ---------- */
+@media (max-width: 760px) {
+  .title { font-size: 15px; }
+  h2 { font-size: 28px; }
+  .grid { grid-template-columns: repeat(3, max-content); row-gap: 56px; margin-top: 36px; }
+  .grid .item img { height: clamp(140px, 44vw, 240px); }
+  .bar { display: none !important; }
+}

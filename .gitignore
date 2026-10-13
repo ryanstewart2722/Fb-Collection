@@ -1,0 +1,4 @@
+.DS_Store
+.claude/
+# Full-size originals stay local; the site uses Images/web
+Images/*.png
