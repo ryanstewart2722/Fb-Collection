@@ -3,24 +3,33 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Ryan’s Fingerboards</title>
+  <title>The Museum of Mini Skateboards</title>
+  <meta name="description" content="An archive of fingerboard decks, trucks and wheels.">
   <link rel="icon" type="image/png" href="favicon.png">
   <link rel="apple-touch-icon" href="favicon.png">
   <link rel="stylesheet" href="style.css">
 </head>
-<body>
+<body class="museum">
   <header class="topbar">
-    <nav class="toggle">
-      <a href="#image" data-view="image">Image</a> / <a href="#list" data-view="list">List</a>
-    </nav>
-    <a class="title" href="#">Ryan’s Fingerboards</a>
-    <a class="insta" href="https://www.instagram.com/risoforprez/" target="_blank" rel="noopener">@risoforprez</a>
+    <span class="build">Build</span>
+    <a class="title" href="./">The Museum of Mini Skateboards</a>
+    <a class="insta" href="collection.html">My Collection</a>
   </header>
+
+  <div class="controls">
+    <span class="toggle sort">
+      <a href="#" data-sort="newest">Newest</a> / <a href="#" data-sort="brand">Brand</a>
+    </span>
+    <span class="toggle view">
+      <a href="#" data-view="image">Image</a> / <a href="#" data-view="list">List</a>
+    </span>
+  </div>
 
   <main id="app"></main>
 
   <img class="preview" alt="" aria-hidden="true">
 
-  <script src="script.js"></script>
+  <script src="moms-config.js"></script>
+  <script src="museum.js"></script>
 </body>
 </html>
