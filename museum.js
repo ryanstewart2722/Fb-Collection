@@ -20,20 +20,10 @@ const SECTIONS = [
     select: "id,brand_id,name,slug,color,material,duro,release_date,release_precision,image_path,brands(name,slug)",
     cols: [["Wheel/manufacturer", (r) => r.name], ["Color", (r) => r.color], ["Material", (r) => r.material], ["Duro", (r) => r.duro]] },
 ];
-SECTIONS.forEach((s) => Object.assign(s, { rows: [], total: 0, brandPhotos: null }));
+SECTIONS.forEach((s) => Object.assign(s, { rows: [], total: 0 }));
 
-// Until a board has its own photo, show one of the same brand's photos so nothing looks missing.
-// (Display only: the database still records the board as having no photo.)
-async function loadBrandPhotos(s) {
-  const { rows } = await momsFetch(`${s.type}?select=brand_id,image_path&image_path=not.is.null&order=id&limit=1000`);
-  s.brandPhotos = {};
-  rows.forEach((r) => (s.brandPhotos[r.brand_id] ||= []).push(r.image_path));
-}
-function photoFor(s, r) {
-  if (r.image_path) return r.image_path;
-  const pool = s.brandPhotos?.[r.brand_id];
-  return pool?.length ? pool[r.id % pool.length] : "";
-}
+// A board's own photo, or nothing (boards without one are left out of the image view).
+const photoFor = (s, r) => r.image_path || "";
 
 // View and sort live in the address (?view=image&sort=brand) so they can be shared.
 const params = new URLSearchParams(location.search);
@@ -50,7 +40,6 @@ const boardUrl = (s, r) => `board.html?type=${s.type}&slug=${encodeURIComponent(
 
 async function loadSection(s, reset) {
   if (reset) s.rows = [];
-  if (!s.brandPhotos) await loadBrandPhotos(s);
   const { rows, total } = await momsFetch(
     `${s.type}?select=${s.select}&order=${ORDER[sort]}&limit=${PAGE}&offset=${s.rows.length}`, { count: true });
   s.rows.push(...rows);

@@ -36,10 +36,10 @@ async function load() {
     root.innerHTML = `<div class="board-info"><h1>Not found</h1><p><a href="./">Back to the museum</a></p></div>`;
     return;
   }
-  // The brand's other photos: shown below, and borrowed as a stand-in if this board has none yet.
+  // The brand's other photos, shown below.
   const { rows: more } = r.brand_id ? await momsFetch(
     `${type}?select=id,name,slug,image_path&brand_id=eq.${r.brand_id}&id=neq.${r.id}&image_path=not.is.null&order=release_date.desc.nullslast&limit=8`) : { rows: [] };
-  const photo = r.image_path || (more.length ? more[r.id % more.length].image_path : "");
+  const photo = r.image_path || "";
 
   const brand = r.brands?.name || "";
   const title = brand ? `${r.name} - ${brand}` : r.name;
