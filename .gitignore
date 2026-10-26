@@ -2,3 +2,5 @@
 .claude/
 # Full-size originals stay local; the site uses Images/web
 Images/*.png
+# Source photos as delivered; the site uses the renamed copies in Images/museum/decks
+Images/museum/knife/
