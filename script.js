@@ -6,6 +6,9 @@ const canHover = matchMedia("(hover: hover)").matches;
 
 let CONTENT = null;
 
+// "Add new" rows only show for you: the collection editor keeps its sign-in in this browser.
+const canEdit = (() => { try { return !!localStorage.getItem("fb-editor-token"); } catch { return false; } })();
+
 const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
 const cells = (s, item) => s.columns.map((c) => item.values[c.key] || "");
 const spans = (list) => list.map((c) => `<span>${esc(c)}</span>`).join("");
@@ -98,6 +101,7 @@ function renderList() {
       <div class="list-wrap"><div class="list" data-s="${si}" style="--cols:${colsFor(s.columns.length)}">
         <div class="row head">${spans(s.columns.map((c) => c.label))}</div>
         ${s.items.map((d, i) => `<div class="row${d.divider && i > 0 ? " divide" : ""}" data-i="${i}">${spans(cells(s, d))}</div>`).join("")}
+        ${canEdit ? `<a class="add-new" href="admin.html#add=${encodeURIComponent(s.id)}">+ Add new</a>` : ""}
       </div></div>
     </section>`).join("");
 
@@ -115,19 +119,14 @@ function renderList() {
 }
 
 /* ---------- Header ---------- */
+// The header itself is fixed (museum title, My Collection); the site title names the browser tab.
 function renderHeader() {
-  const { title, instagramHandle, instagramUrl } = CONTENT.site;
-  document.title = title;
-  document.querySelector(".title").textContent = title;
-  const insta = document.querySelector(".insta");
-  insta.textContent = instagramHandle;
-  insta.href = instagramUrl;
-  insta.hidden = !instagramHandle;
+  document.title = CONTENT.site.title;
 }
 
 /* ---------- View toggle (#image / #list) ---------- */
 function route() {
-  const view = location.hash === "#list" ? "list" : "image";
+  const view = location.hash === "#image" ? "image" : "list"; // list is the default
   clearActive();
   document.body.classList.toggle("list-view", view === "list");
   document.querySelectorAll(".toggle a").forEach((a) => a.classList.toggle("active", a.dataset.view === view));

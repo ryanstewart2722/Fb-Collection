@@ -137,6 +137,8 @@ h2 {
 .row:not(.head) span:first-child { transition: padding var(--ease); }
 .row.on { background: #000; color: #fff; position: relative; z-index: 3; /* on top of the big image */ }
 .row.on span:first-child { padding-left: 14px; }
+.add-new { display: flex; align-items: center; height: 32.3px; border-top: 1px solid var(--line); color: #8c8c8c; }
+.add-new:hover { color: #000; }
 
 /* ---------- Museum ---------- */
 .controls { display: flex; justify-content: flex-end; gap: 28px; margin: 14px var(--gutter) 0; padding-right: 21px; font-size: 11px; }

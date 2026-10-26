@@ -376,6 +376,19 @@ async function start(t) {
   await loadContent();
   $("#login").hidden = true;
   $("#editor").hidden = false;
+  addFromLink();
+}
+
+// collection.html's "+ Add new" links here as admin.html#add=<section id>.
+function addFromLink() {
+  const id = decodeURIComponent((location.hash.match(/^#add=(.+)$/) || [])[1] || "");
+  const si = content.sections.findIndex((s) => s.id === id);
+  history.replaceState(null, "", location.pathname);
+  if (si < 0) return;
+  tab = "list";
+  render();
+  app.querySelector(`.ad-sec[data-s="${si}"] [data-act="item-add"]`)?.click();
+  app.querySelector(`.ad-sec[data-s="${si}"] .ad-rows .ad-row:last-child`)?.scrollIntoView({ block: "center" });
 }
 
 $("#login-form").addEventListener("submit", async (e) => {
