@@ -36,12 +36,17 @@ async function load() {
     root.innerHTML = `<div class="board-info"><h1>Not found</h1><p><a href="./">Back to the museum</a></p></div>`;
     return;
   }
+  // The brand's other photos: shown below, and borrowed as a stand-in if this board has none yet.
+  const { rows: more } = r.brand_id ? await momsFetch(
+    `${type}?select=id,name,slug,image_path&brand_id=eq.${r.brand_id}&id=neq.${r.id}&image_path=not.is.null&order=release_date.desc.nullslast&limit=8`) : { rows: [] };
+  const photo = r.image_path || (more.length ? more[r.id % more.length].image_path : "");
+
   const brand = r.brands?.name || "";
   const title = brand ? `${r.name} - ${brand}` : r.name;
   document.title = `${title} · The Museum of Mini Skateboards`;
 
   root.innerHTML = `
-    <div class="board-img">${r.image_path ? `<img src="${esc(r.image_path)}" alt="${esc(title)}">` : ""}</div>
+    <div class="board-img">${photo ? `<img src="${esc(photo)}" alt="${esc(title)}">` : ""}</div>
     <a class="board-close" href="${esc(backHref)}">Close</a>
     <div class="board-info">
       <h1>${esc(title)}</h1>
@@ -53,13 +58,8 @@ async function load() {
       </div>
     </div>`;
 
-  // More from this brand, as small photos.
-  if (r.brand_id) {
-    const { rows: more } = await momsFetch(
-      `${type}?select=name,slug,image_path&brand_id=eq.${r.brand_id}&id=neq.${r.id}&image_path=not.is.null&order=release_date.desc.nullslast&limit=8`);
-    root.querySelector(".board-more").innerHTML = more.map((m) =>
-      `<a href="board.html?type=${type}&slug=${encodeURIComponent(m.slug)}" title="${esc(m.name)}"><img src="${esc(m.image_path)}" alt="${esc(m.name)}" loading="lazy"></a>`).join("");
-  }
+  root.querySelector(".board-more").innerHTML = more.map((m) =>
+    `<a href="board.html?type=${type}&slug=${encodeURIComponent(m.slug)}" title="${esc(m.name)}"><img src="${esc(m.image_path)}" alt="${esc(m.name)}" loading="lazy"></a>`).join("");
 }
 
 load().catch((err) => {

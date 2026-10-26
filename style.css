@@ -62,15 +62,24 @@ h2 {
   margin-top: 60px;
   padding: 0 8px;
 }
+/* Every board gets the same box (the shape of the deck photos, 529×1200); photos fit inside it. */
+.grid .item {
+  height: clamp(150px, 20vw, 290px);
+  aspect-ratio: 529 / 1200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
 .grid .item img {
   display: block;
-  height: clamp(150px, 20vw, 290px);
-  width: auto;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
   transition: opacity var(--ease);
 }
 .grid.hovering .item:not(.on) img { opacity: var(--fade); }
 /* wheels and trucks: square product shots, sized so 6 fit across */
-.grid.square .item img { height: clamp(100px, 14vw, 200px); }
+.grid.square .item { height: clamp(100px, 14vw, 200px); aspect-ratio: 1; }
 
 /* black info bar */
 .bar {
@@ -172,8 +181,8 @@ h2 {
   .title { font-size: 15px; }
   h2 { font-size: 28px; }
   .grid { grid-template-columns: repeat(3, max-content); row-gap: 56px; margin-top: 36px; }
-  .grid .item img { height: clamp(140px, 44vw, 240px); }
-  .grid.square .item img { height: clamp(90px, 27vw, 140px); }
+  .grid .item { height: clamp(140px, 44vw, 240px); }
+  .grid.square .item { height: clamp(90px, 27vw, 140px); }
   .bar { display: none !important; }
   .controls { padding-right: 14px; }
   .board { grid-template-columns: 1fr; }

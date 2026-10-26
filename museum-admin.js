@@ -130,7 +130,7 @@ function renderForm() {
       ${tab === "brands" ? "" : `<div class="me-photo">
         <div class="me-photo-box">${img ? `<img src="${esc(img)}" alt="">` : `<span>No photo yet</span>`}</div>
         <button class="ad-btn" data-act="photo">${img ? "Replace photo" : "Add photo"}</button>
-        <small>Use a photo of just the board on a plain or transparent background. It's resized automatically.</small>
+        <small>Shoot the board on a plain background (white, grey, any single colour). The background is removed and the board is sized to match every other photo.</small>
       </div>`}
       <div class="me-fields">${t.fields.map((f) => fieldHtml(f, r)).join("")}</div>
     </div>
@@ -260,17 +260,72 @@ function friendly(err) {
 }
 
 /* ---------- Photos ---------- */
-// Resize to at most 1200px tall / 1400px wide, saved as WebP (or PNG where WebP isn't supported).
+// Every photo ends up the same size: decks match the collection deck photos (529×1200),
+// trucks and wheels are square. A plain background is removed and the board is trimmed to fill the frame.
+const PHOTO_SIZE = { decks: [529, 1200], trucks: [800, 800], wheels: [800, 800] };
+
 async function preparePhoto(file) {
   const bitmap = await createImageBitmap(file);
-  const scale = Math.min(1, 1200 / bitmap.height, 1400 / bitmap.width);
-  const canvas = document.createElement("canvas");
-  canvas.width = Math.round(bitmap.width * scale);
-  canvas.height = Math.round(bitmap.height * scale);
-  canvas.getContext("2d").drawImage(bitmap, 0, 0, canvas.width, canvas.height);
-  let blob = await new Promise((r) => canvas.toBlob(r, "image/webp", 0.85));
-  if (!blob || blob.type !== "image/webp") blob = await new Promise((r) => canvas.toBlob(r, "image/png"));
+  // Work at a moderate size so cleanup is quick even for big phone photos.
+  const s0 = Math.min(1, 1600 / Math.max(bitmap.width, bitmap.height));
+  const w = Math.round(bitmap.width * s0), h = Math.round(bitmap.height * s0);
+  const work = document.createElement("canvas");
+  work.width = w; work.height = h;
+  const wctx = work.getContext("2d");
+  wctx.drawImage(bitmap, 0, 0, w, h);
+  const img = wctx.getImageData(0, 0, w, h);
+  const box = removeBackground(img.data, w, h);
+  wctx.putImageData(img, 0, 0);
+
+  // Fit the trimmed board into the standard frame, centred, on a transparent background.
+  const [W, H] = PHOTO_SIZE[tab] || PHOTO_SIZE.decks;
+  const scale = Math.min(W / box.w, H / box.h);
+  const dw = Math.round(box.w * scale), dh = Math.round(box.h * scale);
+  const out = document.createElement("canvas");
+  out.width = W; out.height = H;
+  const octx = out.getContext("2d");
+  octx.imageSmoothingQuality = "high";
+  octx.drawImage(work, box.x, box.y, box.w, box.h, Math.round((W - dw) / 2), Math.round((H - dh) / 2), dw, dh);
+
+  let blob = await new Promise((r) => out.toBlob(r, "image/webp", 0.88));
+  if (!blob || blob.type !== "image/webp") blob = await new Promise((r) => out.toBlob(r, "image/png"));
   return { blob, ext: blob.type === "image/webp" ? "webp" : "png", preview: URL.createObjectURL(blob) };
+}
+
+// Makes a plain background transparent (flood-filled in from the edges, so light colours inside
+// the graphic are kept) and returns the box around what's left.
+function removeBackground(px, w, h) {
+  const at = (x, y) => (y * w + x) * 4;
+  const corners = [at(0, 0), at(w - 1, 0), at(0, h - 1), at(w - 1, h - 1)];
+  const bg = [0, 1, 2].map((c) => corners.reduce((sum, i) => sum + px[i + c], 0) / 4);
+  const isBg = (i) => px[i + 3] < 16 ||
+    Math.max(Math.abs(px[i] - bg[0]), Math.abs(px[i + 1] - bg[1]), Math.abs(px[i + 2] - bg[2])) <= 26;
+
+  const seen = new Uint8Array(w * h);
+  const stack = [];
+  for (let x = 0; x < w; x++) stack.push(x, 0, x, h - 1);
+  for (let y = 0; y < h; y++) stack.push(0, y, w - 1, y);
+  while (stack.length) {
+    const y = stack.pop(), x = stack.pop();
+    if (x < 0 || y < 0 || x >= w || y >= h) continue;
+    const k = y * w + x;
+    if (seen[k] || !isBg(k * 4)) continue;
+    seen[k] = 1;
+    px[k * 4 + 3] = 0;
+    stack.push(x + 1, y, x - 1, y, x, y + 1, x, y - 1);
+  }
+  // Soften the cut edge.
+  for (let y = 1; y < h - 1; y++) for (let x = 1; x < w - 1; x++) {
+    const k = y * w + x;
+    if (!seen[k] && (seen[k - 1] || seen[k + 1] || seen[k - w] || seen[k + w])) px[k * 4 + 3] = Math.min(px[k * 4 + 3], 140);
+  }
+
+  let x0 = w, y0 = h, x1 = -1, y1 = -1;
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+    if (px[at(x, y) + 3] > 16) { if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; }
+  }
+  if (x1 < 0) return { x: 0, y: 0, w, h }; // nothing left: keep the whole photo
+  return { x: x0, y: y0, w: x1 - x0 + 1, h: y1 - y0 + 1 };
 }
 
 fileInput.addEventListener("change", async () => {
