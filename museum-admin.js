@@ -287,7 +287,10 @@ async function preparePhoto(file) {
 
   // Fit the trimmed board into the standard frame, centred, on a transparent background.
   const [W, H] = PHOTO_SIZE[tab] || PHOTO_SIZE.decks;
-  const scale = Math.min(W / box.w, H / box.h);
+  // Trucks and wheels keep breathing room (the longest side fills 68% of the square) so they sit at the size
+  // in the design instead of being zoomed to the edges; decks fill their tall frame.
+  const fill = tab === "decks" ? 1 : 0.68;
+  const scale = Math.min(W / box.w, H / box.h) * fill;
   const dw = Math.round(box.w * scale), dh = Math.round(box.h * scale);
   const out = document.createElement("canvas");
   out.width = W; out.height = H;
