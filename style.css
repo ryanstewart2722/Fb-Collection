@@ -231,7 +231,7 @@ body.has-refine.rf-open { --rf-shift: calc(var(--rf-w) + 28px); --rf-open-w: cal
 
 .refine-tab {
   position: fixed; right: 7px; top: 50%; transform: translateY(-50%); z-index: 22;
-  writing-mode: vertical-rl; font: inherit; font-size: 11px; color: #555;
+  writing-mode: vertical-rl; font: inherit; font-size: 11.5px; color: #555;
   background: none; border: 0; padding: 14px 3px; cursor: pointer; -webkit-tap-highlight-color: transparent;
   transition: right 0.42s var(--rf-ease), color 0.2s ease;
 }
@@ -248,7 +248,7 @@ body.has-refine.rf-open { --rf-shift: calc(var(--rf-w) + 28px); --rf-open-w: cal
 .rf-open .refine-panel { transform: none; visibility: visible; transition: transform 0.42s var(--rf-ease); }
 
 .rf-head { display: flex; justify-content: flex-end; padding: 18px 22px 0; }
-.rf-actions button { font: inherit; font-size: 11px; background: none; border: 0; padding: 0 0 0 16px; color: #000; text-decoration: underline; text-underline-offset: 2px; cursor: pointer; transition: opacity 0.2s ease; }
+.rf-actions button { font: inherit; font-size: 11.5px; background: none; border: 0; padding: 0 0 0 16px; color: #000; text-decoration: underline; text-underline-offset: 2px; cursor: pointer; transition: opacity 0.2s ease; }
 .rf-actions button:disabled { opacity: 0.3; cursor: default; }
 .rf-body { flex: 1; overflow-y: auto; padding: 4px 22px 28px; overscroll-behavior: contain; scroll-behavior: smooth; }
 .rf-body { scrollbar-width: none; }
@@ -256,10 +256,10 @@ body.has-refine.rf-open { --rf-shift: calc(var(--rf-w) + 28px); --rf-open-w: cal
 .rf-group { padding: 22px 0 8px; }
 .rf-group h3 {
   margin: 0 0 12px; font-family: "Areal Mono", ui-monospace, monospace; font-weight: 400;
-  font-size: 8.5px; letter-spacing: 0.02em; text-transform: uppercase;
+  font-size: 7.5px; letter-spacing: 0.02em; text-transform: uppercase;
 }
 .rf-search, .rf-range input {
-  width: 100%; border: 1px solid var(--line); background: #fff; padding: 7px 9px; font: inherit; font-size: 12px;
+  width: 100%; border: 1px solid var(--line); background: #fff; padding: 7px 9px; font: inherit; font-size: 11.5px;
   margin-bottom: 10px; border-radius: 0; transition: border-color 0.2s ease;
 }
 .rf-range { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
@@ -269,7 +269,7 @@ body.has-refine.rf-open { --rf-shift: calc(var(--rf-w) + 28px); --rf-open-w: cal
 .rf-chips { display: flex; flex-wrap: wrap; gap: 6px; padding-bottom: 2px; }
 .rf-chip {
   display: inline-flex; gap: 6px; align-items: baseline; border: 1px solid var(--line); background: #fff; color: #000;
-  font: inherit; font-size: 11px; padding: 4px 9px; cursor: pointer; -webkit-tap-highlight-color: transparent;
+  font: inherit; font-size: 11.5px; padding: 4px 9px; cursor: pointer; -webkit-tap-highlight-color: transparent;
   transition: background-color 0.18s ease, color 0.18s ease, border-color 0.18s ease;
 }
 .rf-chip[hidden] { display: none; }
@@ -279,7 +279,7 @@ body.has-refine.rf-open { --rf-shift: calc(var(--rf-w) + 28px); --rf-open-w: cal
 .rf-chip.on em { color: #bbb; }
 
 .rf-foot { padding: 14px 22px calc(14px + env(safe-area-inset-bottom, 0px)); }
-.rf-show { width: 100%; border: 0; background: #000; color: #fff; padding: 13px; font: inherit; font-size: 12px; cursor: pointer; transition: opacity 0.2s ease; }
+.rf-show { width: 100%; border: 0; background: #000; color: #fff; padding: 13px; font: inherit; font-size: 11.5px; cursor: pointer; transition: opacity 0.2s ease; }
 .rf-show:hover { opacity: 0.85; }
 
 .linklike { font: inherit; font-size: inherit; background: none; border: 0; padding: 0; text-decoration: underline; text-underline-offset: 2px; cursor: pointer; color: #000; }
@@ -294,7 +294,7 @@ body.has-refine.rf-open { --rf-shift: calc(var(--rf-w) + 28px); --rf-open-w: cal
 
 @media (max-width: 760px) {
   :root { --rf-w: min(88vw, 400px); }
-  .refine-tab { top: 64%; }
+  .refine-tab { top: 64%; font-size: 10.5px; }
   /* small screens: the page slides left as the panel slides in */
   body.has-refine.rf-open { --rf-shift: 0px; --rf-open-w: 0px; overflow: hidden; }
   .topbar, .controls, #app { transition: transform 0.42s var(--rf-ease), opacity 0.25s ease; }
