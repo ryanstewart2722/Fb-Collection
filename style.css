@@ -130,6 +130,7 @@ h2 {
 .scrub .bar.show { pointer-events: auto; cursor: pointer; }
 .scrub .bar span { white-space: normal; overflow: visible; padding: 0; }
 .scrub .bar span:first-child { padding-left: 0; font-weight: 500; }
+.scrub .bar { padding-right: 36px; }
 .touch .item, .touch .row:not(.head) { cursor: pointer; -webkit-tap-highlight-color: transparent; }
 
 /* ---------- List view ---------- */
@@ -218,7 +219,9 @@ h2 {
 /* ---------- Refine: a panel that pushes the page to the left ---------- */
 :root { --rf-w: clamp(320px, 25vw, 480px); --rf-ease: cubic-bezier(0.22, 0.61, 0.36, 1); }
 body { --rf-shift: 0px; transition: padding-right 0.42s var(--rf-ease); }
-body.rf-open { --rf-shift: calc(var(--rf-w) + 28px); padding-right: var(--rf-shift); }
+/* the page keeps a margin on the right for the Refine tab, so lists and the header stop before it */
+body.has-refine { --rf-shift: 18px; padding-right: var(--rf-shift); }
+body.has-refine.rf-open { --rf-shift: calc(var(--rf-w) + 28px); }
 
 .refine-tab {
   position: fixed; right: 2px; top: 50%; transform: translateY(-50%); z-index: 22;
@@ -286,7 +289,7 @@ body.rf-open { --rf-shift: calc(var(--rf-w) + 28px); padding-right: var(--rf-shi
   :root { --rf-w: min(88vw, 400px); }
   .refine-tab { top: 64%; }
   /* small screens: the page slides left as the panel slides in */
-  body.rf-open { padding-right: 0; --rf-shift: 0px; overflow: hidden; }
+  body.has-refine.rf-open { --rf-shift: 0px; overflow: hidden; }
   .topbar, .controls, #app { transition: transform 0.42s var(--rf-ease), opacity 0.25s ease; }
   .rf-open .topbar, .rf-open .controls, .rf-open #app { transform: translateX(calc(-1 * var(--rf-w))); }
   .rf-search, .rf-range input { font-size: 16px; }
