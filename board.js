@@ -17,6 +17,7 @@ function specs(r) {
     r.molds?.length && `Molds: ${r.molds.join(", ")}`,
     r.graphic,
     (r.made_in || b.made_in) && `Made In ${r.made_in || b.made_in}`,
+    r.shape && `Shape: ${r.shape}`,
     r.material && `Material: ${r.material}`,
     r.duro && `Duro: ${r.duro}`,
   ];

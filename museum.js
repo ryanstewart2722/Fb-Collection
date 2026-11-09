@@ -33,6 +33,37 @@ const params = new URLSearchParams(location.search);
 let view = params.get("view") === "image" ? "image" : "list";
 let sort = params.get("sort") === "brand" ? "brand" : "newest";
 
+// Refine filters live in the address too, e.g. ?brand=11&mold=Freshwater&size=30-33&color=Black&from=2025-01
+const F = { brand: [], mold: [], shape: [], color: [], size: ["", ""], from: "", to: "" };
+(function readFilters() {
+  F.brand = params.getAll("brand").filter((x) => /^\d+$/.test(x));
+  F.mold = params.getAll("mold"); F.shape = params.getAll("shape"); F.color = params.getAll("color");
+  const sz = (params.get("size") || "").split("-");
+  F.size = [/^\d+(\.\d+)?$/.test(sz[0] || "") ? sz[0] : "", /^\d+(\.\d+)?$/.test(sz[1] || "") ? sz[1] : ""];
+  F.from = /^\d{4}-\d{2}$/.test(params.get("from") || "") ? params.get("from") : "";
+  F.to = /^\d{4}-\d{2}$/.test(params.get("to") || "") ? params.get("to") : "";
+})();
+const filterCount = () => F.brand.length + F.mold.length + F.shape.length + F.color.length + (F.size[0] || F.size[1] ? 1 : 0) + (F.from || F.to ? 1 : 0);
+const nextMonth = (ym) => { const [y, m] = ym.split("-").map(Number); return m === 12 ? `${y + 1}-01-01` : `${y}-${String(m + 1).padStart(2, "0")}-01`; };
+
+// The database query for the active filters, or null when a filter can't apply to this kind of board
+// (wheels have no mold or size; trucks and wheels have no mold or shape).
+function filterParams(s) {
+  const wantsSize = F.size[0] || F.size[1];
+  if ((F.mold.length || F.shape.length) && s.type !== "decks") return null;
+  if (wantsSize && s.type === "wheels") return null;
+  const q = [];
+  if (F.brand.length) q.push(`brand_id=in.(${F.brand.join(",")})`);
+  if (F.mold.length) q.push("molds=ov." + encodeURIComponent("{" + F.mold.map((m) => '"' + m.replace(/(["\\])/g, "\\$1") + '"').join(",") + "}"));
+  if (F.shape.length) q.push("shape=in." + encodeURIComponent("(" + F.shape.map((m) => '"' + m.replace(/(["\\])/g, "\\$1") + '"').join(",") + ")"));
+  if (F.color.length) q.push("or=" + encodeURIComponent("(" + F.color.map((c) => `color.ilike.*${c.replace(/[,()*]/g, "")}*`).join(",") + ")"));
+  if (F.size[0]) q.push(`size_mm=gte.${F.size[0]}`);
+  if (F.size[1]) q.push(`size_mm=lte.${F.size[1]}`);
+  if (F.from) q.push(`release_date=gte.${F.from}-01`);
+  if (F.to) q.push(`release_date=lt.${nextMonth(F.to)}`);
+  return q.join("&");
+}
+
 const ORDER = {
   newest: "release_date.desc.nullslast,id.desc",
   brand: "brands(name).asc,release_date.desc.nullslast,id.desc",
@@ -43,15 +74,21 @@ const boardUrl = (s, r) => `board.html?type=${s.type}&slug=${encodeURIComponent(
 
 async function loadSection(s, reset) {
   if (reset) s.rows = [];
+  const fp = filterParams(s);
+  if (fp === null) { s.rows = []; s.total = 0; return; }
   const { rows, total } = await momsFetch(
-    `${s.type}?select=${s.select}&order=${ORDER[sort]}&limit=${PAGE}&offset=${s.rows.length}`, { count: true });
+    `${s.type}?select=${s.select}&order=${ORDER[sort]}&limit=${PAGE}&offset=${s.rows.length}${fp ? "&" + fp : ""}`, { count: true });
   s.rows.push(...rows);
   s.total = total;
 }
 
+let loadSeq = 0;
 async function loadAll() {
+  const mine = ++loadSeq;                 // ignore a slow older request if filters changed again
   await Promise.all(SECTIONS.map((s) => loadSection(s, true)));
+  if (mine !== loadSeq) return;
   render();
+  document.dispatchEvent(new Event("museum:loaded"));
 }
 
 function showPreview(src) {
@@ -176,7 +213,7 @@ let scrubPending = false;
 let scrubEl = null;
 function scrubUpdate() {
   scrubPending = false;
-  if (view !== "image" || !isMobile() || !scrubGrids.length) return;
+  if (view !== "image" || !isMobile() || !scrubGrids.length || document.body.classList.contains("rf-open")) return;
   const focus = innerHeight * 0.45;
   for (const g of scrubGrids) {
     const rect = g.grid.getBoundingClientRect();
@@ -210,6 +247,11 @@ function saveState() {
   const p = new URLSearchParams();
   if (view === "image") p.set("view", "image");
   if (sort === "brand") p.set("sort", "brand");
+  F.brand.forEach((v) => p.append("brand", v)); F.mold.forEach((v) => p.append("mold", v));
+  F.shape.forEach((v) => p.append("shape", v)); F.color.forEach((v) => p.append("color", v));
+  if (F.size[0] || F.size[1]) p.set("size", F.size.join("-"));
+  if (F.from) p.set("from", F.from);
+  if (F.to) p.set("to", F.to);
   history.replaceState(null, "", p.toString() ? `?${p}` : location.pathname);
 }
 

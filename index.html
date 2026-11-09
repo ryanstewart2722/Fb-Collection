@@ -19,6 +19,7 @@
   </header>
 
   <div class="controls">
+    <span id="filter-summary" class="filter-summary" hidden></span>
     <span class="toggle sort">
       <a href="#" data-sort="newest">Newest</a> / <a href="#" data-sort="brand">Brand</a>
     </span>
@@ -28,7 +29,12 @@
 
   <img class="preview" alt="" aria-hidden="true">
 
+  <button class="refine-tab" type="button" aria-haspopup="dialog" aria-controls="refine-panel">Refine<span class="rf-count" hidden></span></button>
+  <div class="refine-dim"></div>
+  <aside id="refine-panel" class="refine-panel" role="dialog" aria-label="Refine" aria-hidden="true"></aside>
+
   <script src="moms-config.js"></script>
   <script src="museum.js"></script>
+  <script src="refine.js"></script>
 </body>
 </html>
