@@ -419,6 +419,58 @@
       "gridOrder": [
         "w27"
       ]
+    },
+    {
+      "id": "sec0jvyxx",
+      "title": "Obstacles",
+      "gridTitle": "New section",
+      "showInGrid": true,
+      "square": false,
+      "columns": [
+        {
+          "key": "name",
+          "label": "NAME"
+        },
+        {
+          "key": "c8awj5u",
+          "label": "MANUFACTURER"
+        },
+        {
+          "key": "cd03y1f",
+          "label": "MATERIAL"
+        }
+      ],
+      "items": [
+        {
+          "id": "i23qnwg",
+          "img": "",
+          "divider": false,
+          "hideInGrid": false,
+          "values": {
+            "name": "Ledge/Display Frame",
+            "c8awj5u": "Tech Deck",
+            "cd03y1f": "Wood/Metal"
+          }
+        }
+      ],
+      "gridOrder": [
+        "i23qnwg"
+      ]
+    },
+    {
+      "id": "secg5nlwx",
+      "title": "New section",
+      "gridTitle": "New section",
+      "showInGrid": true,
+      "square": false,
+      "columns": [
+        {
+          "key": "name",
+          "label": "Name"
+        }
+      ],
+      "items": [],
+      "gridOrder": []
     }
   ]
 }
