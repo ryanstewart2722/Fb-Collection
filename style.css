@@ -90,6 +90,8 @@ h2 {
 .grid .item.wide img { width: auto; max-width: none; height: 100%; }
 /* wheels and trucks: square product shots, sized so 6 fit across */
 .grid.square { --item-h: clamp(100px, 14vw, 200px); --cell: var(--item-h); }
+/* the photos fill their square, so leave breathing room around each one (68% of the box) */
+.grid.square .item img { box-sizing: border-box; padding: 16%; }
 
 /* black info bar */
 .bar {
