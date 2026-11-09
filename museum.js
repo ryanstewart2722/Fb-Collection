@@ -14,7 +14,7 @@ const brandName = (r) => r.brands?.name || "";
 // Columns follow the Figma frames.
 const SECTIONS = [
   { type: "decks", title: "Decks", square: false,
-    select: "id,brand_id,name,mold_code,slug,color,size,release_date,release_precision,image_path,hover_image_path,brands(name,slug)",
+    select: "id,brand_id,name,mold_code,slug,color,size,release_date,release_precision,image_path,brands(name,slug)",
     cols: [["Deck name", (r) => momsDeckName(r)], ["Color", (r) => r.color], ["Year", (r) => momsYear(r.release_date)], ["Manufacturer", brandName]] },
   { type: "trucks", title: "Trucks", square: true,
     select: "id,brand_id,name,slug,color,size,release_date,release_precision,image_path,brands(name,slug)",
@@ -100,6 +100,11 @@ async function loadAll() {
   document.dispatchEvent(new Event("museum:loaded"));
 }
 
+// A photo that isn't board-shaped (e.g. a group shot) keeps its own proportions at the same height, in a wider box.
+function markWide(img) {
+  if (img.naturalHeight && img.naturalWidth / img.naturalHeight > 0.6) img.closest(".item")?.classList.add("wide");
+}
+
 function showPreview(src) {
   if (!src) return hidePreview();
   preview.src = src;
@@ -158,7 +163,7 @@ function renderList() {
       bindItem(row, boardUrl(s, r), () => {
         clearActive();
         row.classList.add("on");
-        showPreview(r.hover_image_path || photoFor(s, r));
+        showPreview(photoFor(s, r));
       });
       if (canHover) row.addEventListener("mouseleave", clearActive);
     });
@@ -173,7 +178,7 @@ function renderGrid() {
     return `<section class="grid-section">
       <h2>${esc(s.title)}</h2>
       <div class="grid${s.square ? " square" : ""}" data-s="${si}">
-        ${rows.map((r) => `<div class="item link" data-i="${s.rows.indexOf(r)}"><img src="${esc(photoFor(s, r))}" alt="${esc(r.name)}" loading="lazy"></div>`).join("")}
+        ${rows.map((r) => `<div class="item link" data-i="${s.rows.indexOf(r)}"><img src="${esc(photoFor(s, r))}" alt="${esc(r.name)}" loading="lazy" onload="markWide(this)"></div>`).join("")}
         <div class="bar"></div>
       </div>
       ${moreButton(s, si)}
@@ -201,7 +206,7 @@ function renderGrid() {
       bar.innerHTML = spans(s.cols.map((c) => c[1](r)));
       bar.classList.add("show");
       activeUrl = boardUrl(s, r);
-      showPreview(r.hover_image_path || photoFor(s, r));
+      showPreview(photoFor(s, r));
     };
 
     if (mobile) {

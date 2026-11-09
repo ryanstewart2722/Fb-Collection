@@ -35,9 +35,6 @@ let tab = "decks";
 let list = { rows: [], total: 0, search: "" };
 let editing = null;   // row being edited ({} for a new one), or null when showing the list
 let photo = null;     // new photo waiting to upload: { blob, ext, preview }
-let hoverPhoto = null;     // new hover photo waiting to upload
-let hoverRemoved = false;  // the hover photo is being removed
-let photoKind = "main";    // which photo the file picker is choosing
 let formDirty = false;
 
 function setStatus(text, isError = false) {
@@ -128,7 +125,6 @@ function renderForm() {
   const r = editing;
   const isNew = !r.id;
   const img = photo?.preview || r.image_path;
-  const hover = hoverRemoved ? "" : (hoverPhoto?.preview || r.hover_image_path);
   app.innerHTML = `
     <button class="ad-link me-back" data-act="back">← All ${tab}</button>
     <h2 class="me-title">${isNew ? `New ${t.one}` : esc(r.name)}</h2>
@@ -136,12 +132,6 @@ function renderForm() {
       ${tab === "brands" ? "" : `<div class="me-photo">
         <div class="me-photo-box">${img ? `<img src="${esc(img)}" alt="">` : `<span>No photo yet</span>`}</div>
         <button class="ad-btn" data-act="photo">${img ? "Replace photo" : "Add photo"}</button>
-        ${tab === "decks" ? `<div class="me-hover">
-          <div class="me-hover-box">${hover ? `<img src="${esc(hover)}" alt="">` : `<span>No hover photo</span>`}</div>
-          <button class="ad-btn" data-act="hover">${hover ? "Replace hover photo" : "Add hover photo"}</button>
-          ${hover ? `<button class="ad-link" data-act="hover-remove">Remove hover photo</button>` : ""}
-          <small>Optional. Shown big when someone hovers this board (e.g. a group shot of its variations).</small>
-        </div>` : ""}
         <small>Transparent PNGs are kept exactly as they are, just sized to match. Photos on a plain backdrop (white, grey, any single colour) have the backdrop removed.</small>
       </div>`}
       <div class="me-fields">${t.fields.map((f) => fieldHtml(f, r)).join("")}</div>
@@ -223,22 +213,8 @@ async function save() {
       saved.image_path = url;
     }
 
-    if (hoverPhoto || hoverRemoved) {
-      let url = null;
-      if (hoverPhoto) {
-        setStatus("Uploading hover photo…");
-        const hpath = `${tab}/${saved.slug}-hover-${Date.now().toString(36)}.${hoverPhoto.ext}`;
-        const { error: hErr } = await sb.storage.from(BUCKET).upload(hpath, hoverPhoto.blob, { contentType: hoverPhoto.blob.type, cacheControl: "31536000" });
-        if (hErr) throw hErr;
-        url = sb.storage.from(BUCKET).getPublicUrl(hpath).data.publicUrl;
-      }
-      const { error } = await sb.from(tab).update({ hover_image_path: url }).eq("id", saved.id);
-      if (error) throw error;
-      await removeOurPhoto(editing.hover_image_path);
-      saved.hover_image_path = url;
-    }
     if (tab === "brands") await loadBrands();
-    photo = null; hoverPhoto = null; hoverRemoved = false;
+    photo = null;
     editing = saved;
     renderForm();
     setStatus(`Saved ✓ It's live on the museum now.`);
@@ -273,7 +249,6 @@ async function del() {
   const { data, error } = await sb.from(tab).delete().eq("id", editing.id).select("id");
   if (error || !data.length) return setStatus("Couldn't delete: " + friendly(error || { code: "42501", message: "not allowed" }), true);
   await removeOurPhoto(editing.image_path).catch(() => {});
-  await removeOurPhoto(editing.hover_image_path).catch(() => {});
   if (tab === "brands") await loadBrands();
   setStatus(`Deleted the ${t.one}.`);
   editing = null;
@@ -293,7 +268,7 @@ function friendly(err) {
 // Transparent PNGs are kept as they are; a solid backdrop (white sheet, grey card) is removed.
 const PHOTO_SIZE = { decks: [529, 1200], trucks: [800, 800], wheels: [800, 800] };
 
-async function preparePhoto(file, size) {
+async function preparePhoto(file) {
   const bitmap = await createImageBitmap(file);
   // Work at a moderate size so cleanup is quick even for big phone photos.
   const s0 = Math.min(1, 1600 / Math.max(bitmap.width, bitmap.height));
@@ -310,7 +285,7 @@ async function preparePhoto(file, size) {
   else { box = removeBackground(img.data, w, h); wctx.putImageData(img, 0, 0); }
 
   // Fit the trimmed board into the standard frame, centred, on a transparent background.
-  const [W, H] = size || PHOTO_SIZE[tab] || PHOTO_SIZE.decks;
+  const [W, H] = PHOTO_SIZE[tab] || PHOTO_SIZE.decks;
   const scale = Math.min(W / box.w, H / box.h);
   const dw = Math.round(box.w * scale), dh = Math.round(box.h * scale);
   const out = document.createElement("canvas");
@@ -383,14 +358,6 @@ fileInput.addEventListener("change", async () => {
   if (!file) return;
   setStatus("Preparing photo…");
   try {
-    if (photoKind === "hover") {
-      hoverPhoto = await preparePhoto(file, [1200, 1200]);
-      hoverRemoved = false;
-      app.querySelector(".me-hover-box").innerHTML = `<img src="${hoverPhoto.preview}" alt="">`;
-      app.querySelector('[data-act="hover"]').textContent = "Replace hover photo";
-      formDirty = true;
-      return setStatus(`Hover photo ready (${Math.round(hoverPhoto.blob.size / 1024)} KB). Save to upload it.`);
-    }
     photo = await preparePhoto(file);
     const box = app.querySelector(".me-photo-box");
     box.innerHTML = `<img src="${photo.preview}" alt="">`;
@@ -404,7 +371,7 @@ fileInput.addEventListener("change", async () => {
 
 /* ---------- Events ---------- */
 function leaveForm() {
-  return !editing || !(formDirty || photo || hoverPhoto || hoverRemoved) || confirm("Leave without saving your changes?");
+  return !editing || !(formDirty || photo) || confirm("Leave without saving your changes?");
 }
 
 app.addEventListener("input", (e) => {
@@ -422,16 +389,14 @@ app.addEventListener("click", async (e) => {
   const item = e.target.closest(".me-item");
   if (item) {
     editing = { ...list.rows[item.dataset.i] };
-    photo = null; hoverPhoto = null; hoverRemoved = false;
+    photo = null;
     return renderForm();
   }
   const act = e.target.closest("[data-act]")?.dataset.act;
-  if (act === "new") { editing = {}; photo = null; hoverPhoto = null; hoverRemoved = false; renderForm(); }
-  if (act === "back" && leaveForm()) { editing = null; photo = null; hoverPhoto = null; hoverRemoved = false; setStatus(""); await loadList().catch(fail("Couldn't load")); renderList(); }
+  if (act === "new") { editing = {}; photo = null; renderForm(); }
+  if (act === "back" && leaveForm()) { editing = null; photo = null; setStatus(""); await loadList().catch(fail("Couldn't load")); renderList(); }
   if (act === "more") { await loadList(false).catch(fail("Couldn't load")); renderList(); }
-  if (act === "photo") { photoKind = "main"; fileInput.value = ""; fileInput.click(); }
-  if (act === "hover") { photoKind = "hover"; fileInput.value = ""; fileInput.click(); }
-  if (act === "hover-remove") { hoverPhoto = null; hoverRemoved = true; formDirty = true; renderForm(); formDirty = true; }
+  if (act === "photo") { fileInput.value = ""; fileInput.click(); }
   if (act === "save") save();
   if (act === "delete") del();
 });
@@ -439,14 +404,14 @@ app.addEventListener("click", async (e) => {
 document.querySelectorAll(".ad-tabs button").forEach((b) => b.addEventListener("click", async () => {
   if (!leaveForm()) return;
   tab = b.dataset.tab;
-  editing = null; photo = null; hoverPhoto = null; hoverRemoved = false; list.search = "";
+  editing = null; photo = null; list.search = "";
   document.querySelectorAll(".ad-tabs button").forEach((x) => x.classList.toggle("active", x === b));
   setStatus("");
   await loadList().catch(fail("Couldn't load"));
   renderList();
 }));
 
-window.addEventListener("beforeunload", (e) => { if (editing && (formDirty || photo || hoverPhoto || hoverRemoved)) e.preventDefault(); });
+window.addEventListener("beforeunload", (e) => { if (editing && (formDirty || photo)) e.preventDefault(); });
 
 /* ---------- Sign in ---------- */
 function show(id) {

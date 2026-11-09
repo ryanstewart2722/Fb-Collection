@@ -51,10 +51,3 @@
   .ad-top { gap: 8px; }
   .ad-tabs { gap: 12px; }
 }
-
-.me-hover { display: grid; gap: 8px; margin-top: 18px; padding-top: 18px; border-top: 1px solid #eee; }
-.me-hover-box { height: 150px; border: 1px dashed var(--line); display: flex; align-items: center; justify-content: center; }
-.me-hover-box img { max-height: 92%; max-width: 92%; }
-.me-hover-box span, .me-hover small { color: #888; font-size: 11px; line-height: 1.4; }
-.me-hover .ad-btn { justify-content: center; }
-.me-hover .ad-link { justify-self: start; padding: 0; }

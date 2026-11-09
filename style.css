@@ -78,6 +78,8 @@ h2 {
   transition: opacity var(--ease);
 }
 .grid.hovering .item:not(.on) img { opacity: var(--fade); }
+.grid .item.wide { aspect-ratio: auto; }
+.grid .item.wide img { width: auto; max-width: none; height: 100%; }
 /* wheels and trucks: square product shots, sized so 6 fit across */
 .grid.square .item { height: clamp(100px, 14vw, 200px); aspect-ratio: 1; }
 
