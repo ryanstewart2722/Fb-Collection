@@ -34,7 +34,18 @@
           "values": {
             "name": "Dr. M's Research Institute 33mm * Blue/White/Black/Pink (f)",
             "trucks": "Joycult x Indepedent 32mm Silver",
-            "wheels": "Joycult Classic 3.0 Street Tan"
+            "wheels": "Joycult Matt Era Pink/Blue"
+          }
+        },
+        {
+          "id": "s7",
+          "img": "Images/web/DrMOrange.png",
+          "divider": false,
+          "hideInGrid": false,
+          "values": {
+            "name": "Dr. M's Research Institute 32mm* Blue/Tan (f)",
+            "trucks": "Joycult x Indepedent 32mm Silver",
+            "wheels": "Joycult Classic 3.0 Street Tan "
           }
         },
         {
@@ -89,18 +100,7 @@
           "values": {
             "name": "Dr. M's Research Institute 29mm Blank Blue (f)",
             "trucks": "Joycult x Indepedent 29mm Silver",
-            "wheels": "Daytona 7mm White"
-          }
-        },
-        {
-          "id": "s7",
-          "img": "Images/web/DrMOrange.png",
-          "divider": false,
-          "hideInGrid": false,
-          "values": {
-            "name": "Dr. M's Research Institute 29mm Orange (f)",
-            "trucks": "Joycult x Indepedent 29mm Silver",
-            "wheels": "Oak Rv2 Tan"
+            "wheels": "Daytona 8mm White"
           }
         },
         {
@@ -111,7 +111,7 @@
           "values": {
             "name": "CATFISHBBQ x Dr. M's Research Institute Raw/Black (d)",
             "trucks": "Joycult x Indepedent 34mm Silver",
-            "wheels": "Joycult Classic 3.0 Street Pistachio"
+            "wheels": "Blistered x John Cowart Black"
           }
         },
         {
@@ -122,7 +122,7 @@
           "values": {
             "name": "CATFISHBBQ Teeth 32mm (f)",
             "trucks": "Leefai 32mm Silver",
-            "wheels": "Joycult Classic 3.0 Matt Era Pink/Blue"
+            "wheels": "Joycult Classic 3.0 Street Pistachio"
           }
         },
         {
@@ -133,7 +133,7 @@
           "values": {
             "name": "CATFISHBBQ Her Majesty 30mm Pink (f)",
             "trucks": "Blackriver/Leefai 29mm Silver",
-            "wheels": "Blistered x John Cowart Black"
+            "wheels": "Oak R2v2 Tan"
           }
         },
         {
@@ -145,6 +145,17 @@
             "name": "CATFISHBBQ Artshow Real Wear 32mm Black/Wood (f)",
             "trucks": "Y Trucks 32mm Raw",
             "wheels": "Y Wheels Tan"
+          }
+        },
+        {
+          "id": "irkusp4",
+          "img": "",
+          "divider": true,
+          "hideInGrid": false,
+          "values": {
+            "name": "Jazzclub 30mm (h)",
+            "trucks": "Joycult x Indepedent 29mm Silver",
+            "wheels": "Oak Rv2 Tan"
           }
         },
         {
@@ -243,7 +254,8 @@
         "s15",
         "s16",
         "s17",
-        "s18"
+        "s18",
+        "irkusp4"
       ]
     },
     {
