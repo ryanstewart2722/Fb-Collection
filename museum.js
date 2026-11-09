@@ -2,6 +2,9 @@
 const app = document.getElementById("app");
 const preview = document.querySelector(".preview");
 const canHover = matchMedia("(hover: hover)").matches;
+// "Mobile" = a touch screen or a narrow window: the image view then follows your scrolling instead of hovering.
+const narrow = matchMedia("(max-width: 760px)");
+const isMobile = () => !canHover || narrow.matches;
 const PAGE = 100; // rows loaded per section at a time
 
 const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
@@ -58,7 +61,11 @@ function showPreview(src) {
 }
 function hidePreview() { preview.classList.remove("show"); }
 
+let activeUrl = null;   // the board the big preview is showing (mobile image view)
+let scrubGrids = [];    // image-view grids that follow the scroll position
+
 function clearActive() {
+  activeUrl = null;
   document.querySelectorAll(".on").forEach((x) => x.classList.remove("on"));
   document.querySelectorAll(".hovering").forEach((x) => x.classList.remove("hovering"));
   document.querySelectorAll(".bar.show").forEach((x) => x.classList.remove("show"));
@@ -80,7 +87,7 @@ function bindItem(el, url, activate) {
 }
 if (!canHover) {
   document.body.classList.add("touch");
-  document.addEventListener("click", clearActive);
+  document.addEventListener("click", () => { if (view === "list") clearActive(); });
 }
 
 const moreButton = (s, si) => s.rows.length < s.total
@@ -127,28 +134,72 @@ function renderGrid() {
     </section>`;
   }).join("");
 
+  scrubGrids = [];
+  const mobile = isMobile();
+  document.body.classList.toggle("scrub", mobile);
   app.querySelectorAll(".grid").forEach((grid) => {
     const s = SECTIONS[grid.dataset.s];
     const bar = grid.querySelector(".bar");
-    grid.querySelectorAll(".item").forEach((el) => {
+    const els = [...grid.querySelectorAll(".item")];
+
+    const activate = (el) => {
+      clearActive();
       const r = s.rows[el.dataset.i];
-      bindItem(el, boardUrl(s, r), () => {
-        clearActive();
-        el.classList.add("on");
-        grid.classList.add("hovering");
+      el.classList.add("on");
+      grid.classList.add("hovering");
+      if (!mobile) {   // desktop: the bar sits in the gap under the hovered row
         const img = el.querySelector("img");
         const gap = parseFloat(getComputedStyle(grid).rowGap);
         bar.style.top = el.offsetTop + img.offsetHeight + gap / 2 - 16 + "px";
-        bar.innerHTML = spans(s.cols.map((c) => c[1](r)));
-        bar.classList.add("show");
-        showPreview(photoFor(s, r));
-      });
-    });
-    if (canHover) grid.addEventListener("mouseleave", clearActive);
+      }
+      bar.innerHTML = spans(s.cols.map((c) => c[1](r)));
+      bar.classList.add("show");
+      activeUrl = boardUrl(s, r);
+      showPreview(photoFor(s, r));
+    };
+
+    if (mobile) {
+      els.forEach((el) => el.addEventListener("click", () => (location.href = boardUrl(s, s.rows[el.dataset.i]))));
+      bar.addEventListener("click", () => activeUrl && (location.href = activeUrl));
+      scrubGrids.push({ grid, els, activate });
+    } else {
+      els.forEach((el) => bindItem(el, boardUrl(s, s.rows[el.dataset.i]), () => activate(el)));
+      if (canHover) grid.addEventListener("mouseleave", clearActive);
+    }
   });
+  scrubUpdate();
 }
 
+// Mobile image view: the board at a fixed line on the screen (a bit above the middle) is the active one.
+// Scrolling moves through the boards in order, so the big photo and the info bar change as you scroll.
+let scrubPending = false;
+let scrubEl = null;
+function scrubUpdate() {
+  scrubPending = false;
+  if (view !== "image" || !isMobile() || !scrubGrids.length) return;
+  const focus = innerHeight * 0.45;
+  for (const g of scrubGrids) {
+    const rect = g.grid.getBoundingClientRect();
+    if (focus < rect.top || focus > rect.bottom || !g.els.length) continue;
+    const first = g.els[0].offsetTop;
+    const cols = g.els.filter((e) => e.offsetTop === first).length || 1;
+    const pitch = g.els[cols] ? g.els[cols].offsetTop - first : g.els[0].offsetHeight + parseFloat(getComputedStyle(g.grid).rowGap);
+    const idx = Math.max(0, Math.min(g.els.length - 1, Math.floor(((focus - rect.top - first) / pitch) * cols)));
+    if (g.els[idx] !== scrubEl || !activeUrl) { scrubEl = g.els[idx]; g.activate(scrubEl); }
+    return;
+  }
+  scrubEl = null;
+  clearActive();
+}
+const scrubSoon = () => { if (!scrubPending) { scrubPending = true; requestAnimationFrame(scrubUpdate); } };
+addEventListener("scroll", scrubSoon, { passive: true });
+addEventListener("resize", scrubSoon);
+preview.addEventListener("click", () => { if (view === "image" && isMobile() && activeUrl) location.href = activeUrl; });
+narrow.addEventListener("change", () => render());
+
 function render() {
+  scrubEl = null;
+  document.body.classList.remove("scrub");
   clearActive();
   document.querySelectorAll("[data-view]").forEach((a) => a.classList.toggle("active", a.dataset.view === view));
   document.querySelectorAll("[data-sort]").forEach((a) => a.classList.toggle("active", a.dataset.sort === sort));

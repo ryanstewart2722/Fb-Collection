@@ -76,7 +76,7 @@ function renderList() {
       ${list.rows.map((r, i) => `<button class="me-item" data-i="${i}">
         ${tab === "brands" ? "" : `<span class="me-thumb">${r.image_path ? `<img src="${esc(r.image_path)}" alt="" loading="lazy">` : ""}</span>`}
         <span class="me-name">${esc(momsDeckName(r))}${r.color ? ` <em>${esc(r.color)}</em>` : ""}</span>
-        <span class="me-meta">${esc(tab === "brands" ? r.made_in : [r.brands?.name, year(r)].filter(Boolean).join(" · "))}</span>
+        <span class="me-meta">${esc(tab === "brands" ? r.made_in : [r.brands?.name, year(r), !r.image_path && "no photo: not on the site yet"].filter(Boolean).join(" · "))}</span>
       </button>`).join("") || `<p class="me-empty">Nothing here yet.</p>`}
     </div>
     ${list.rows.length < list.total ? `<button class="ad-btn" data-act="more">Show more</button>` : ""}`;

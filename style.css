@@ -119,6 +119,17 @@ h2 {
 .preview.show { opacity: 1; }
 /* touch: the shown image catches the tap that closes it */
 .touch .preview.show { pointer-events: auto; }
+/* mobile image view: the info bar sits on the screen (like the desktop bar over the big photo) and follows your scrolling */
+.scrub .preview.show { pointer-events: auto; cursor: pointer; }
+.scrub .bar {
+  position: fixed; left: 0; right: 0; top: 45%; transform: translateY(-50%);
+  height: auto; min-height: 36px; padding: 9px 16px;
+  display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 14px;
+  font-size: 12px; line-height: 1.25;
+}
+.scrub .bar.show { pointer-events: auto; cursor: pointer; }
+.scrub .bar span { white-space: normal; overflow: visible; padding: 0; }
+.scrub .bar span:first-child { padding-left: 0; font-weight: 500; }
 .touch .item, .touch .row:not(.head) { cursor: pointer; -webkit-tap-highlight-color: transparent; }
 
 /* ---------- List view ---------- */
@@ -183,7 +194,6 @@ h2 {
   .grid { grid-template-columns: repeat(3, max-content); row-gap: 56px; margin-top: 36px; }
   .grid .item { height: clamp(140px, 44vw, 240px); }
   .grid.square .item { height: clamp(90px, 27vw, 140px); }
-  .bar { display: none !important; }
   .controls { padding-right: 14px; }
   .board { grid-template-columns: 1fr; }
   .board-close { writing-mode: horizontal-tb; justify-self: end; order: -1; font-size: 15px; padding-top: 14px; }
