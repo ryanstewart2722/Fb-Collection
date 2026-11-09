@@ -34,8 +34,8 @@ const ORDER = {
   newest: "release_date.desc.nullslast,id.desc",
   brand: "brands(name).asc,release_date.desc.nullslast,id.desc",
 };
-// Lines go between drops (same release date) when newest-first, and between brands when by brand.
-const groupKey = (r) => (sort === "brand" ? r.brands?.slug : r.release_date);
+// A line goes between two rows only when the brand changes (in both Newest and Brand order).
+const groupKey = (r) => r.brands?.slug;
 const boardUrl = (s, r) => `board.html?type=${s.type}&slug=${encodeURIComponent(r.slug)}`;
 
 async function loadSection(s, reset) {
