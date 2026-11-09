@@ -119,7 +119,27 @@ function fitItem(item) {
   item.classList.toggle("wide", span > 1);
   item.style.gridColumn = span > 1 ? `span ${span}` : "";
 }
-const markWide = (img) => fitItem(img.closest(".item"));            // runs when a photo finishes loading
+// Trucks and wheels: measure the product inside its square photo and scale it so the longest side is the same
+// share of the box everywhere, centred. Photos that can't be read (no CORS) keep the default scale in the CSS.
+function normalizeSquare(img) {
+  try {
+    const n = 96, c = document.createElement("canvas"); c.width = c.height = n;
+    const x = c.getContext("2d", { willReadFrequently: true });
+    x.drawImage(img, 0, 0, n, n);
+    const d = x.getImageData(0, 0, n, n).data;
+    let x0 = n, y0 = n, x1 = -1, y1 = -1;
+    for (let y = 0; y < n; y++) for (let i = 0; i < n; i++) if (d[(y * n + i) * 4 + 3] > 24) { if (i < x0) x0 = i; if (i > x1) x1 = i; if (y < y0) y0 = y; if (y > y1) y1 = y; }
+    if (x1 < 0) return;
+    const bw = (x1 - x0 + 1) / n, bh = (y1 - y0 + 1) / n;
+    const k = 0.78 / Math.max(bw, bh);
+    const tx = (0.5 - (x0 + x1 + 1) / 2 / n) * 100, ty = (0.5 - (y0 + y1 + 1) / 2 / n) * 100;
+    img.style.transform = `scale(${k.toFixed(3)}) translate(${tx.toFixed(2)}%, ${ty.toFixed(2)}%)`;
+  } catch (e) { /* tainted canvas: leave the CSS default */ }
+}
+const markWide = (img) => {
+  if (img.closest(".grid.square")) normalizeSquare(img);
+  fitItem(img.closest(".item"));
+};            // runs when a photo finishes loading
 let gridWatchers = [];                                              // re-fit when the grid's width changes (window resize, Refine panel)
 const stopWatching = () => { gridWatchers.forEach((w) => w.disconnect()); gridWatchers = []; };
 
@@ -197,7 +217,7 @@ function renderGrid() {
     return `<section class="grid-section">
       <h2>${esc(s.title)}</h2>
       <div class="grid${s.square ? " square" : ""}" data-s="${si}">
-        ${rows.map((r) => `<div class="item link" data-i="${s.rows.indexOf(r)}"><img src="${esc(photoFor(s, r))}" alt="${esc(r.name)}" loading="lazy" onload="markWide(this)"></div>`).join("")}
+        ${rows.map((r) => `<div class="item link" data-i="${s.rows.indexOf(r)}"><img src="${esc(photoFor(s, r))}" alt="${esc(r.name)}" loading="lazy"${s.square ? ' crossorigin="anonymous"' : ""} onload="markWide(this)"></div>`).join("")}
         <div class="bar"></div>
       </div>
       ${moreButton(s, si)}
