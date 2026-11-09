@@ -26,14 +26,19 @@ html, body {
 a { color: inherit; text-decoration: none; }
 
 /* ---------- Header ---------- */
+/* full-width bar, fixed to the top; the page below leaves room for it */
+:root { --bar-h: 43px; }
+body:has(> .topbar) { padding-top: var(--bar-h); }
 .topbar {
-  margin: var(--gutter) var(--gutter) 0;
-  height: 43px;
-  border: 1px solid var(--line);
+  position: fixed; top: 0; left: 0; right: var(--rf-open-w, 0px); z-index: 15;
+  height: var(--bar-h);
+  background: #fff;
+  border-bottom: 1px solid var(--line);
   display: grid;
   grid-template-columns: 1fr auto 1fr;
   align-items: center;
-  padding: 0 21px 0 16px;
+  padding: 0 var(--gutter);
+  transition: right 0.42s var(--rf-ease, ease);
 }
 .title { font-size: 17px; letter-spacing: -0.02em; }
 .toggle { font-size: 11px; }
@@ -223,11 +228,11 @@ h2 {
 body { --rf-shift: 0px; transition: padding-right 0.42s var(--rf-ease); }
 /* the page keeps a margin on the right for the Refine tab, so lists and the header stop before it */
 body.has-refine { --rf-shift: 18px; padding-right: var(--rf-shift); }
-body.has-refine.rf-open { --rf-shift: calc(var(--rf-w) + 28px); }
+body.has-refine.rf-open { --rf-shift: calc(var(--rf-w) + 28px); --rf-open-w: calc(var(--rf-w) + 28px); }
 
 .refine-tab {
   position: fixed; right: 2px; top: 50%; transform: translateY(-50%); z-index: 22;
-  writing-mode: vertical-rl; font: inherit; font-size: 19px; color: #555;
+  writing-mode: vertical-rl; font: inherit; font-size: 11px; color: #555;
   background: none; border: 0; padding: 14px 3px; cursor: pointer; -webkit-tap-highlight-color: transparent;
   transition: right 0.42s var(--rf-ease), color 0.2s ease;
 }
@@ -276,8 +281,7 @@ body.has-refine.rf-open { --rf-shift: calc(var(--rf-w) + 28px); }
 .rf-show { width: 100%; border: 0; background: #000; color: #fff; padding: 13px; font: inherit; font-size: 12px; cursor: pointer; transition: opacity 0.2s ease; }
 .rf-show:hover { opacity: 0.85; }
 
-.filter-summary { margin-right: auto; color: #555; }
-.filter-summary button, .linklike { font: inherit; font-size: inherit; background: none; border: 0; padding: 0; text-decoration: underline; text-underline-offset: 2px; cursor: pointer; color: #000; }
+.linklike { font: inherit; font-size: inherit; background: none; border: 0; padding: 0; text-decoration: underline; text-underline-offset: 2px; cursor: pointer; color: #000; }
 .empty { margin: 60px var(--gutter) 0; color: #555; }
 
 /* results fade while they refresh */
@@ -291,7 +295,7 @@ body.has-refine.rf-open { --rf-shift: calc(var(--rf-w) + 28px); }
   :root { --rf-w: min(88vw, 400px); }
   .refine-tab { top: 64%; }
   /* small screens: the page slides left as the panel slides in */
-  body.has-refine.rf-open { --rf-shift: 0px; overflow: hidden; }
+  body.has-refine.rf-open { --rf-shift: 0px; --rf-open-w: 0px; overflow: hidden; }
   .topbar, .controls, #app { transition: transform 0.42s var(--rf-ease), opacity 0.25s ease; }
   .rf-open .topbar, .rf-open .controls, .rf-open #app { transform: translateX(calc(-1 * var(--rf-w))); }
   .rf-search, .rf-range input { font-size: 16px; }

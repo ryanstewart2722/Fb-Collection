@@ -3,7 +3,6 @@
 const rfTab = document.querySelector(".refine-tab");
 const rfPanel = document.getElementById("refine-panel");
 const rfCount = document.querySelector(".rf-count");
-const rfSummary = document.getElementById("filter-summary");
 let rfOptions = null;
 
 /* ---------- Open / close ---------- */
@@ -100,7 +99,6 @@ function rfClearAll() {
   rfPanel.querySelectorAll(".rf-chip.on").forEach((c) => { c.classList.remove("on"); c.setAttribute("aria-pressed", "false"); });
   rfApply();
 }
-rfSummary.addEventListener("click", (e) => { if (e.target.closest("button")) rfClearAll(); });
 app.addEventListener("click", (e) => { if (e.target.closest("[data-clear]")) rfClearAll(); });
 
 /* ---------- Counts: on the tab, in the panel's button, and above the lists ---------- */
@@ -113,15 +111,7 @@ function rfUpdateCounts() {
 function rfRefreshLabels() {
   const total = SECTIONS.reduce((sum, s) => sum + (s.total || 0), 0);
   const show = rfPanel.querySelector(".rf-show");
-  if (show) show.textContent = total ? `Show ${total.toLocaleString()} board${total === 1 ? "" : "s"}` : "No boards match";
-  const n = filterCount();
-  rfSummary.hidden = !n;
-  if (n) {
-    const bits = [];
-    if (F.size[0] || F.size[1]) bits.push(`${F.size[0] || "…"}–${F.size[1] || "…"}mm`);
-    if (F.year.length) bits.push([...F.year].sort().reverse().join(", "));
-    rfSummary.innerHTML = `${total.toLocaleString()} board${total === 1 ? "" : "s"}${bits.length ? " · " + esc(bits.join(" · ")) : ""} · <button type="button">Clear filters</button>`;
-  }
+  if (show) show.textContent = total ? "Show results" : "No boards match";
   rfUpdateCounts();
 }
 document.addEventListener("museum:loaded", rfRefreshLabels);
