@@ -423,9 +423,9 @@
     {
       "id": "sec0jvyxx",
       "title": "Obstacles",
-      "gridTitle": "New section",
+      "gridTitle": "Obstacles",
       "showInGrid": true,
-      "square": false,
+      "square": true,
       "columns": [
         {
           "key": "name",
@@ -459,18 +459,45 @@
     },
     {
       "id": "secg5nlwx",
-      "title": "New section",
-      "gridTitle": "New section",
+      "title": "Trucks",
+      "gridTitle": "Trucks",
       "showInGrid": true,
-      "square": false,
+      "square": true,
       "columns": [
         {
           "key": "name",
           "label": "Name"
+        },
+        {
+          "key": "cnf8e0v",
+          "label": "Size"
+        },
+        {
+          "key": "ca3vgy0",
+          "label": "Color"
+        },
+        {
+          "key": "cwh3g70",
+          "label": "New column"
         }
       ],
-      "items": [],
-      "gridOrder": []
+      "items": [
+        {
+          "id": "invdxfz",
+          "img": "",
+          "divider": false,
+          "hideInGrid": false,
+          "values": {
+            "name": "",
+            "cnf8e0v": "",
+            "ca3vgy0": "",
+            "cwh3g70": ""
+          }
+        }
+      ],
+      "gridOrder": [
+        "invdxfz"
+      ]
     }
   ]
 }
