@@ -17,6 +17,7 @@ const TYPES = {
   decks:  { one: "deck",  fields: [["brand_id", "Brand", "brand"], ["name", "Deck name"], ["color", "Color", "text", "Primary color first, then secondary, joined with / (e.g. White/Black). Use Multicolor for lots of colors or a graphic. Capitals are added for you."], ["size", "Size", "text", "e.g. 32mm"],
             ["molds", "Molds", "molds", "Separate with commas, e.g. Freshwater, Freshwater Deep, Saltwater, NotCool FB, KS1"],
             ["shape", "Shape", "text", "e.g. Egg, Cruiser, Old School. Adds a Shape filter to the site once any board has one."],
+            ["drop_no", "Drop", "text", "Dr. M's drop number, e.g. 57. Shows in front of the name: “Drop 57 - 899”."],
             ["mold_code", "Mold letter", "text", "Fills in by itself from the mold (f, d, s, nc, os…) and shows after the name, e.g. “3078 (f)”. Clear it to reset."],
             ["graphic", "Graphic", "text", "e.g. Screenprint Graphic"], ["made_in", "Made in", "text", "e.g. Chicago, IL"], ["release", "Release date", "release"], ["description", "Description", "textarea"]],
             slug: (v, b) => `${v.name} ${v.color || ""} ${b}` },

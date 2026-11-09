@@ -14,7 +14,7 @@ const brandName = (r) => r.brands?.name || "";
 // Columns follow the Figma frames.
 const SECTIONS = [
   { type: "decks", title: "Decks", square: false,
-    select: "id,brand_id,name,mold_code,slug,color,size,release_date,release_precision,image_path,brands(name,slug)",
+    select: "id,brand_id,name,mold_code,drop_no,slug,color,size,release_date,release_precision,image_path,brands(name,slug)",
     cols: [["Deck name", (r) => momsDeckName(r)], ["Manufacturer", brandName], ["Year", (r) => momsYear(r.release_date)], ["Color", (r) => r.color]] },
   { type: "trucks", title: "Trucks", square: true,
     select: "id,brand_id,name,slug,color,size,release_date,release_precision,image_path,brands(name,slug)",
