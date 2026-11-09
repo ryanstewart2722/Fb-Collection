@@ -48,8 +48,7 @@ function rfBuild(o) {
       ${group("Released", `<div class="rf-chips rf-sort">
           <button type="button" class="rf-chip${F.order === "new" ? " on" : ""}" data-f="order" data-v="new" aria-pressed="${F.order === "new"}">New to old</button>
           <button type="button" class="rf-chip${F.order === "old" ? " on" : ""}" data-f="order" data-v="old" aria-pressed="${F.order === "old"}">Old to new</button>
-        </div>`, "") }
-      ${(o.years || []).length ? group("Year", rfChips("year", o.years, F.year)) : ""}
+        </div>${(o.years || []).length ? rfChips("year", o.years, F.year) : ""}`)}
     </div>
     <div class="rf-foot"><button type="button" class="rf-show">Show boards</button></div>`;
   rfUpdateCounts();

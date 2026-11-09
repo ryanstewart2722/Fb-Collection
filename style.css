@@ -272,6 +272,7 @@ body.has-refine.rf-open { --rf-shift: calc(var(--rf-w) + 28px); --rf-open-w: cal
   font: inherit; font-size: 11.5px; padding: 4px 9px; cursor: pointer; -webkit-tap-highlight-color: transparent;
   transition: background-color 0.18s ease, color 0.18s ease, border-color 0.18s ease;
 }
+.rf-chips + .rf-chips { margin-top: 6px; }
 .rf-chip[hidden] { display: none; }
 .rf-chip em { font-style: normal; color: #8c8c8c; transition: color 0.18s ease; }
 .rf-chip:hover { border-color: #000; }
