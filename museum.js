@@ -85,9 +85,16 @@ async function loadSection(s, reset) {
 let loadSeq = 0;
 async function loadAll() {
   const mine = ++loadSeq;                 // ignore a slow older request if filters changed again
+  app.classList.add("loading");
   await Promise.all(SECTIONS.map((s) => loadSection(s, true)));
   if (mine !== loadSeq) return;
   render();
+  if (!app.children.length) {
+    app.innerHTML = filterCount()
+      ? `<p class="empty">No boards match these filters. <button type="button" class="linklike" data-clear>Clear filters</button></p>`
+      : `<p class="empty">Nothing here yet.</p>`;
+  }
+  app.classList.remove("loading");
   document.dispatchEvent(new Event("museum:loaded"));
 }
 
@@ -103,7 +110,7 @@ let scrubGrids = [];    // image-view grids that follow the scroll position
 
 function clearActive() {
   activeUrl = null;
-  document.querySelectorAll(".on").forEach((x) => x.classList.remove("on"));
+  document.querySelectorAll(".row.on, .item.on").forEach((x) => x.classList.remove("on"));
   document.querySelectorAll(".hovering").forEach((x) => x.classList.remove("hovering"));
   document.querySelectorAll(".bar.show").forEach((x) => x.classList.remove("show"));
   hidePreview();
