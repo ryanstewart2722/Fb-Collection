@@ -64,9 +64,11 @@ function filterParams(s) {
   return q.join("&");
 }
 
-const ORDER = {
-  newest: "release_date.desc.nullslast,id.desc",
-  brand: "brands(name).asc,release_date.desc.nullslast,id.desc",
+// Newest first, unless a year is chosen: then that year reads in order, January to December.
+const chronological = () => F.year.length > 0;
+const orderBy = () => {
+  const dir = chronological() ? "asc" : "desc";
+  return (sort === "brand" ? "brands(name).asc," : "") + `release_date.${dir}.nullslast,id.${dir}`;
 };
 // A line goes between two rows only when the brand changes (in both Newest and Brand order).
 const groupKey = (r) => r.brands?.slug;
@@ -77,7 +79,7 @@ async function loadSection(s, reset) {
   const fp = filterParams(s);
   if (fp === null) { s.rows = []; s.total = 0; return; }
   const { rows, total } = await momsFetch(
-    `${s.type}?select=${s.select}&order=${ORDER[sort]}&limit=${PAGE}&offset=${s.rows.length}${fp ? "&" + fp : ""}`, { count: true });
+    `${s.type}?select=${s.select}&order=${orderBy()}&limit=${PAGE}&offset=${s.rows.length}${fp ? "&" + fp : ""}`, { count: true });
   s.rows.push(...rows);
   s.total = total;
 }
@@ -247,6 +249,8 @@ function render() {
   clearActive();
   document.querySelectorAll("[data-view]").forEach((a) => a.classList.toggle("active", a.dataset.view === view));
   document.querySelectorAll("[data-sort]").forEach((a) => a.classList.toggle("active", a.dataset.sort === sort));
+  const newestLink = document.querySelector('[data-sort="newest"]');
+  if (newestLink) newestLink.textContent = chronological() ? "Chronological" : "Newest";
   view === "list" ? renderList() : renderGrid();
 }
 
