@@ -231,7 +231,7 @@ body.rf-open { --rf-shift: calc(var(--rf-w) + 28px); padding-right: var(--rf-shi
 
 .refine-panel {
   position: fixed; top: 0; right: 0; bottom: 0; z-index: 21; width: var(--rf-w);
-  background: #fff; border-left: 1px solid var(--line);
+  background: #fff;
   display: flex; flex-direction: column;
   transform: translateX(100%); visibility: hidden; will-change: transform;
   transition: transform 0.42s var(--rf-ease), visibility 0s linear 0.42s;
