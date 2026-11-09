@@ -103,10 +103,25 @@ async function loadAll() {
   document.dispatchEvent(new Event("museum:loaded"));
 }
 
-// A photo that isn't board-shaped (e.g. a group shot) keeps its own proportions at the same height, in a wider box.
-function markWide(img) {
-  if (img.naturalHeight && img.naturalWidth / img.naturalHeight > 0.6) img.closest(".item")?.classList.add("wide");
+// Photos of any width stay on the grid's columns: a photo takes as many columns as its own proportions need
+// (a normal board takes one, a group shot maybe two or three), always starting at a column edge.
+function fitItem(item) {
+  const img = item.querySelector("img");
+  if (!img || !img.naturalHeight) return;
+  const grid = item.parentElement, cs = getComputedStyle(grid);
+  const tracks = cs.gridTemplateColumns.split(" ").map(parseFloat);
+  const cols = tracks.length, cell = tracks[0];
+  const inner = grid.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
+  const gap = cols > 1 ? (inner - cols * cell) / (cols - 1) : 0;      // columns are spread edge to edge
+  const need = item.offsetHeight * img.naturalWidth / img.naturalHeight;
+  let span = 1;
+  while (span < cols && span * cell + (span - 1) * gap < need - 2) span++;
+  item.classList.toggle("wide", span > 1);
+  item.style.gridColumn = span > 1 ? `span ${span}` : "";
 }
+const markWide = (img) => fitItem(img.closest(".item"));            // runs when a photo finishes loading
+let gridWatchers = [];                                              // re-fit when the grid's width changes (window resize, Refine panel)
+const stopWatching = () => { gridWatchers.forEach((w) => w.disconnect()); gridWatchers = []; };
 
 function showPreview(src) {
   if (!src) return hidePreview();
@@ -149,6 +164,7 @@ const moreButton = (s, si) => s.rows.length < s.total
 
 /* ---------- List view ---------- */
 function renderList() {
+  stopWatching();
   app.innerHTML = SECTIONS.map((s, si) => !s.rows.length ? "" : `
     <section class="list-section">
       <h2>${esc(s.title)}</h2>
@@ -189,12 +205,16 @@ function renderGrid() {
   }).join("");
 
   scrubGrids = [];
+  stopWatching();
   const mobile = isMobile();
   document.body.classList.toggle("scrub", mobile);
   app.querySelectorAll(".grid").forEach((grid) => {
     const s = SECTIONS[grid.dataset.s];
     const bar = grid.querySelector(".bar");
     const els = [...grid.querySelectorAll(".item")];
+    const watcher = new ResizeObserver(() => els.forEach(fitItem));
+    watcher.observe(grid);
+    gridWatchers.push(watcher);
 
     const activate = (el) => {
       clearActive();

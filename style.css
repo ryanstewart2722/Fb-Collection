@@ -63,6 +63,7 @@ h2 {
   position: relative;
   display: grid;
   grid-template-columns: repeat(6, var(--cell));
+  grid-auto-flow: row dense;                    /* a later board fills a gap left by a wide photo that didn't fit at the end of a row */
   justify-content: space-between;
   row-gap: 128px;
   margin-top: 60px;
@@ -84,8 +85,8 @@ h2 {
   transition: opacity var(--ease);
 }
 .grid.hovering .item:not(.on) img { opacity: var(--fade); }
-/* a photo wider than a board takes two cells, lined up with the board edges above it, so the other rows stay in line */
-.grid .item.wide { grid-column: span 2; width: auto; justify-self: start; }
+/* a photo wider than a board takes as many cells as it needs (set in museum.js), starting at a column edge */
+.grid .item.wide { width: auto; justify-self: start; }
 .grid .item.wide img { width: auto; max-width: none; height: 100%; }
 /* wheels and trucks: square product shots, sized so 6 fit across */
 .grid.square { --item-h: clamp(100px, 14vw, 200px); --cell: var(--item-h); }
@@ -304,3 +305,8 @@ body.has-refine.rf-open { --rf-shift: calc(var(--rf-w) + 28px); --rf-open-w: cal
   .rf-open .topbar, .rf-open .controls, .rf-open #app { transform: translateX(calc(-1 * var(--rf-w))); }
   .rf-search, .rf-range input { font-size: 16px; }
 }
+
+/* the sort links end exactly where the Refine tab's text ends */
+body.has-refine { --tab-edge: 10px; }
+body.has-refine.rf-open { --tab-edge: calc(var(--rf-w) + 12px); }
+.has-refine .controls { padding-right: 0; margin-right: calc(var(--tab-edge) - var(--rf-shift)); transition: margin-right 0.42s var(--rf-ease); }
