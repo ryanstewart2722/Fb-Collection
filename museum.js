@@ -15,7 +15,7 @@ const brandName = (r) => r.brands?.name || "";
 const SECTIONS = [
   { type: "decks", title: "Decks", square: false,
     select: "id,brand_id,name,mold_code,slug,color,size,release_date,release_precision,image_path,brands(name,slug)",
-    cols: [["Deck name", (r) => momsDeckName(r)], ["Color", (r) => r.color], ["Year", (r) => momsYear(r.release_date)], ["Manufacturer", brandName]] },
+    cols: [["Deck name", (r) => momsDeckName(r)], ["Manufacturer", brandName], ["Year", (r) => momsYear(r.release_date)], ["Color", (r) => r.color]] },
   { type: "trucks", title: "Trucks", square: true,
     select: "id,brand_id,name,slug,color,size,release_date,release_precision,image_path,brands(name,slug)",
     cols: [["Manufacturer", (r) => r.name], ["Color", (r) => r.color], ["Size", (r) => r.size]] },
