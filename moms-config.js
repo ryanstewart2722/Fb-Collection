@@ -27,5 +27,5 @@ window.momsDate = function (date, precision) {
 window.momsYear = (date) => (date ? date.slice(0, 4) : "");
 
 // A deck's name with its mold letter, e.g. "3078 (d)". The letter is filled in automatically in the database.
-// "Drop 83 On My Way - 1092 (f)": the drop number (and series, if it has one) in front (Dr. M's boards), the mold letter after.
-window.momsDeckName = (r) => `${r.drop_no ? `Drop ${r.drop_no}${r.series ? ` ${r.series}` : ""} - ` : ""}${r.name}${r.mold_code ? ` (${r.mold_code})` : ""}`;
+// Dr. M's boards: 'Drop 127, Dr.M x NotCool FB “Medicinal Practice” - 1740 (nc)': the drop number and its title in front, the mold letter after.
+window.momsDeckName = (r) => `${r.drop_no ? `Drop ${r.drop_no}${r.drop_title ? `, ${r.drop_title}` : ""} - ` : ""}${r.name}${r.mold_code ? ` (${r.mold_code})` : ""}`;
