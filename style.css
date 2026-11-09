@@ -32,8 +32,7 @@ body:has(> .topbar) { padding-top: var(--bar-h); }
 .topbar {
   position: fixed; top: 0; left: 0; right: var(--rf-open-w, 0px); z-index: 15;
   height: var(--bar-h);
-  background: #fff;
-  border-bottom: 1px solid var(--line);
+  background: #000; color: #fff;
   display: grid;
   grid-template-columns: 1fr auto 1fr;
   align-items: center;
