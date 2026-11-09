@@ -34,17 +34,15 @@ let view = params.get("view") === "image" ? "image" : "list";
 let sort = params.get("sort") === "brand" ? "brand" : "newest";
 
 // Refine filters live in the address too, e.g. ?brand=11&mold=Freshwater&size=30-33&color=Black&from=2025-01
-const F = { brand: [], mold: [], shape: [], color: [], size: ["", ""], from: "", to: "" };
+const F = { brand: [], mold: [], shape: [], color: [], year: [], size: ["", ""] };
 (function readFilters() {
   F.brand = params.getAll("brand").filter((x) => /^\d+$/.test(x));
   F.mold = params.getAll("mold"); F.shape = params.getAll("shape"); F.color = params.getAll("color");
   const sz = (params.get("size") || "").split("-");
   F.size = [/^\d+(\.\d+)?$/.test(sz[0] || "") ? sz[0] : "", /^\d+(\.\d+)?$/.test(sz[1] || "") ? sz[1] : ""];
-  F.from = /^\d{4}-\d{2}$/.test(params.get("from") || "") ? params.get("from") : "";
-  F.to = /^\d{4}-\d{2}$/.test(params.get("to") || "") ? params.get("to") : "";
+  F.year = params.getAll("year").filter((y) => /^\d{4}$/.test(y));
 })();
-const filterCount = () => F.brand.length + F.mold.length + F.shape.length + F.color.length + (F.size[0] || F.size[1] ? 1 : 0) + (F.from || F.to ? 1 : 0);
-const nextMonth = (ym) => { const [y, m] = ym.split("-").map(Number); return m === 12 ? `${y + 1}-01-01` : `${y}-${String(m + 1).padStart(2, "0")}-01`; };
+const filterCount = () => F.brand.length + F.mold.length + F.shape.length + F.color.length + (F.size[0] || F.size[1] ? 1 : 0) + F.year.length;
 
 // The database query for the active filters, or null when a filter can't apply to this kind of board
 // (wheels have no mold or size; trucks and wheels have no mold or shape).
@@ -56,11 +54,13 @@ function filterParams(s) {
   if (F.brand.length) q.push(`brand_id=in.(${F.brand.join(",")})`);
   if (F.mold.length) q.push("molds=ov." + encodeURIComponent("{" + F.mold.map((m) => '"' + m.replace(/(["\\])/g, "\\$1") + '"').join(",") + "}"));
   if (F.shape.length) q.push("shape=in." + encodeURIComponent("(" + F.shape.map((m) => '"' + m.replace(/(["\\])/g, "\\$1") + '"').join(",") + ")"));
-  if (F.color.length) q.push("or=" + encodeURIComponent("(" + F.color.map((c) => `color.ilike.*${c.replace(/[,()*]/g, "")}*`).join(",") + ")"));
+  // "any of these colors" and "any of these years" are each an OR group; the groups are ANDed together
+  const any = [];
+  if (F.color.length) any.push("or(" + F.color.map((c) => `color.ilike.*${c.replace(/[,()*]/g, "")}*`).join(",") + ")");
+  if (F.year.length) any.push("or(" + F.year.map((y) => `and(release_date.gte.${y}-01-01,release_date.lt.${+y + 1}-01-01)`).join(",") + ")");
+  if (any.length) q.push("and=" + encodeURIComponent("(" + any.join(",") + ")"));
   if (F.size[0]) q.push(`size_mm=gte.${F.size[0]}`);
   if (F.size[1]) q.push(`size_mm=lte.${F.size[1]}`);
-  if (F.from) q.push(`release_date=gte.${F.from}-01`);
-  if (F.to) q.push(`release_date=lt.${nextMonth(F.to)}`);
   return q.join("&");
 }
 
@@ -257,8 +257,7 @@ function saveState() {
   F.brand.forEach((v) => p.append("brand", v)); F.mold.forEach((v) => p.append("mold", v));
   F.shape.forEach((v) => p.append("shape", v)); F.color.forEach((v) => p.append("color", v));
   if (F.size[0] || F.size[1]) p.set("size", F.size.join("-"));
-  if (F.from) p.set("from", F.from);
-  if (F.to) p.set("to", F.to);
+  F.year.forEach((v) => p.append("year", v));
   history.replaceState(null, "", p.toString() ? `?${p}` : location.pathname);
 }
 

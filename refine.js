@@ -6,8 +6,6 @@ const rfCount = document.querySelector(".rf-count");
 const rfSummary = document.getElementById("filter-summary");
 let rfOptions = null;
 
-const rfMonthName = (ym) => (ym ? momsDate(ym + "-01", "month") : "");
-
 /* ---------- Open / close ---------- */
 function rfOpen() {
   clearActive();
@@ -31,7 +29,7 @@ const rfChips = (name, items, selected, label = (i) => i.name, value = (i) => i.
   `<button type="button" class="rf-chip${selected.includes(String(value(i))) ? " on" : ""}" data-f="${name}" data-v="${esc(value(i))}" data-q="${esc(String(label(i)).toLowerCase())}" aria-pressed="${selected.includes(String(value(i)))}">${esc(label(i))} <em>${i.n}</em></button>`).join("")}</div>`;
 
 function rfBuild(o) {
-  const sizes = o.sizes || {}, dates = o.dates || {};
+  const sizes = o.sizes || {};
   const group = (title, body, extra = "") => `<section class="rf-group"><h3>${title}</h3>${extra}${body}</section>`;
   rfPanel.innerHTML = `
     <div class="rf-head">
@@ -48,10 +46,7 @@ function rfBuild(o) {
         o.molds.length > 8 ? `<input class="rf-search" type="search" placeholder="Search molds" aria-label="Search molds">` : "") : ""}
       ${(o.shapes || []).length ? group("Shape", rfChips("shape", o.shapes, F.shape)) : ""}
       ${(o.colors || []).length ? group("Color", rfChips("color", o.colors, F.color)) : ""}
-      ${group("Released", `<div class="rf-range">
-          <input type="month" data-f="from" min="${(dates.min || "").slice(0, 7)}" max="${(dates.max || "").slice(0, 7)}" value="${esc(F.from)}" aria-label="Released from">
-          <input type="month" data-f="to" min="${(dates.min || "").slice(0, 7)}" max="${(dates.max || "").slice(0, 7)}" value="${esc(F.to)}" aria-label="Released until">
-        </div>`)}
+      ${(o.years || []).length ? group("Released", rfChips("year", o.years, F.year)) : ""}
     </div>
     <div class="rf-foot"><button type="button" class="rf-show">Show boards</button></div>`;
   rfUpdateCounts();
@@ -75,8 +70,6 @@ rfPanel.addEventListener("change", (e) => {
   if (!f) return;
   if (f === "size0") F.size[0] = t.value;
   else if (f === "size1") F.size[1] = t.value;
-  else if (f === "from") F.from = t.value;
-  else if (f === "to") F.to = t.value;
   rfApply();
 });
 rfPanel.addEventListener("input", (e) => {
@@ -102,8 +95,8 @@ rfPanel.addEventListener("click", (e) => {
 });
 
 function rfClearAll() {
-  Object.assign(F, { brand: [], mold: [], shape: [], color: [], size: ["", ""], from: "", to: "" });
-  rfPanel.querySelectorAll("input[type=number], input[type=month]").forEach((i) => (i.value = ""));
+  Object.assign(F, { brand: [], mold: [], shape: [], color: [], year: [], size: ["", ""] });
+  rfPanel.querySelectorAll("input[type=number]").forEach((i) => (i.value = ""));
   rfPanel.querySelectorAll(".rf-chip.on").forEach((c) => { c.classList.remove("on"); c.setAttribute("aria-pressed", "false"); });
   rfApply();
 }
@@ -126,7 +119,7 @@ function rfRefreshLabels() {
   if (n) {
     const bits = [];
     if (F.size[0] || F.size[1]) bits.push(`${F.size[0] || "…"}–${F.size[1] || "…"}mm`);
-    if (F.from || F.to) bits.push(`${rfMonthName(F.from) || "…"} – ${rfMonthName(F.to) || "…"}`);
+    if (F.year.length) bits.push([...F.year].sort().reverse().join(", "));
     rfSummary.innerHTML = `${total.toLocaleString()} board${total === 1 ? "" : "s"}${bits.length ? " · " + esc(bits.join(" · ")) : ""} · <button type="button">Clear filters</button>`;
   }
   rfUpdateCounts();
