@@ -45,7 +45,11 @@ function rfBuild(o) {
         o.molds.length > 8 ? `<input class="rf-search" type="search" placeholder="Search molds" aria-label="Search molds">` : "") : ""}
       ${(o.shapes || []).length ? group("Shape", rfChips("shape", o.shapes, F.shape)) : ""}
       ${(o.colors || []).length ? group("Color", rfChips("color", o.colors, F.color)) : ""}
-      ${(o.years || []).length ? group("Released", rfChips("year", o.years, F.year)) : ""}
+      ${group("Released", `<div class="rf-chips rf-sort">
+          <button type="button" class="rf-chip${F.order === "new" ? " on" : ""}" data-f="order" data-v="new" aria-pressed="${F.order === "new"}">New to old</button>
+          <button type="button" class="rf-chip${F.order === "old" ? " on" : ""}" data-f="order" data-v="old" aria-pressed="${F.order === "old"}">Old to new</button>
+        </div>`, "") }
+      ${(o.years || []).length ? group("Year", rfChips("year", o.years, F.year)) : ""}
     </div>
     <div class="rf-foot"><button type="button" class="rf-show">Show boards</button></div>`;
   rfUpdateCounts();
@@ -83,6 +87,14 @@ rfPanel.addEventListener("input", (e) => {
 });
 rfPanel.addEventListener("click", (e) => {
   const chip = e.target.closest(".rf-chip");
+  if (chip && chip.dataset.f === "order") {              // one or the other; tapping the chosen one again resets it
+    F.order = F.order === chip.dataset.v ? "" : chip.dataset.v;
+    rfPanel.querySelectorAll('.rf-chip[data-f="order"]').forEach((c) => {
+      const on = c.dataset.v === F.order;
+      c.classList.toggle("on", on); c.setAttribute("aria-pressed", on);
+    });
+    return rfApply();
+  }
   if (chip) {
     toggle(F[chip.dataset.f], chip.dataset.v);
     const on = chip.classList.toggle("on");
@@ -94,7 +106,7 @@ rfPanel.addEventListener("click", (e) => {
 });
 
 function rfClearAll() {
-  Object.assign(F, { brand: [], mold: [], shape: [], color: [], year: [], size: ["", ""] });
+  Object.assign(F, { brand: [], mold: [], shape: [], color: [], year: [], size: ["", ""], order: "" });
   rfPanel.querySelectorAll("input[type=number]").forEach((i) => (i.value = ""));
   rfPanel.querySelectorAll(".rf-chip.on").forEach((c) => { c.classList.remove("on"); c.setAttribute("aria-pressed", "false"); });
   rfApply();
@@ -106,7 +118,7 @@ function rfUpdateCounts() {
   const n = filterCount();
   rfCount.hidden = !n;
   rfCount.textContent = n ? ` (${n})` : "";
-  rfPanel.querySelector(".rf-clear")?.toggleAttribute("disabled", !n);
+  rfPanel.querySelector(".rf-clear")?.toggleAttribute("disabled", !n && !F.order);
 }
 function rfRefreshLabels() {
   const total = SECTIONS.reduce((sum, s) => sum + (s.total || 0), 0);

@@ -34,13 +34,14 @@ let view = params.get("view") === "image" ? "image" : "list";
 let sort = params.get("sort") === "brand" ? "brand" : "newest";
 
 // Refine filters live in the address too, e.g. ?brand=11&mold=Freshwater&size=30-33&color=Black&from=2025-01
-const F = { brand: [], mold: [], shape: [], color: [], year: [], size: ["", ""] };
+const F = { brand: [], mold: [], shape: [], color: [], year: [], size: ["", ""], order: "" };
 (function readFilters() {
   F.brand = params.getAll("brand").filter((x) => /^\d+$/.test(x));
   F.mold = params.getAll("mold"); F.shape = params.getAll("shape"); F.color = params.getAll("color");
   const sz = (params.get("size") || "").split("-");
   F.size = [/^\d+(\.\d+)?$/.test(sz[0] || "") ? sz[0] : "", /^\d+(\.\d+)?$/.test(sz[1] || "") ? sz[1] : ""];
   F.year = params.getAll("year").filter((y) => /^\d{4}$/.test(y));
+  F.order = ["new", "old"].includes(params.get("order")) ? params.get("order") : "";
 })();
 const filterCount = () => F.brand.length + F.mold.length + F.shape.length + F.color.length + (F.size[0] || F.size[1] ? 1 : 0) + F.year.length;
 
@@ -65,9 +66,11 @@ function filterParams(s) {
 }
 
 // Newest first, unless a year is chosen: then that year reads in order, January to December.
-const chronological = () => F.year.length > 0;
+// An explicit choice in Refine ("New to old" / "Old to new") wins over both.
+const releaseDir = () => (F.order === "old" ? "asc" : F.order === "new" ? "desc" : F.year.length ? "asc" : "desc");
+const chronological = () => releaseDir() === "asc";
 const orderBy = () => {
-  const dir = chronological() ? "asc" : "desc";
+  const dir = releaseDir();
   return (sort === "brand" ? "brands(name).asc," : "") + `release_date.${dir}.nullslast,id.${dir}`;
 };
 // A line goes between two rows only when the brand changes (in both Newest and Brand order).
@@ -255,7 +258,7 @@ function render() {
   document.querySelectorAll("[data-view]").forEach((a) => a.classList.toggle("active", a.dataset.view === view));
   document.querySelectorAll("[data-sort]").forEach((a) => a.classList.toggle("active", a.dataset.sort === sort));
   const newestLink = document.querySelector('[data-sort="newest"]');
-  if (newestLink) newestLink.textContent = chronological() ? "Chronological" : "Newest";
+  if (newestLink) newestLink.textContent = F.order === "old" ? "Oldest" : chronological() ? "Chronological" : "Newest";
   view === "list" ? renderList() : renderGrid();
 }
 
@@ -267,6 +270,7 @@ function saveState() {
   F.shape.forEach((v) => p.append("shape", v)); F.color.forEach((v) => p.append("color", v));
   if (F.size[0] || F.size[1]) p.set("size", F.size.join("-"));
   F.year.forEach((v) => p.append("year", v));
+  if (F.order) p.set("order", F.order);
   history.replaceState(null, "", p.toString() ? `?${p}` : location.pathname);
 }
 
