@@ -22,6 +22,8 @@ function specs(r) {
   ];
   const right = [
     r.release_date && `Release Date: ${momsDate(r.release_date, r.release_precision)}`,
+    r.attributes?.drop && `Drop: ${r.attributes.drop}`,
+    r.attributes?.collab && `Collab: ${r.attributes.collab}`,
     r.color && `Color: ${r.color}`,
     r.size && `Size: ${r.size}`,
   ];
@@ -42,7 +44,7 @@ async function load() {
   const photo = r.image_path || "";
 
   const brand = r.brands?.name || "";
-  const title = brand ? `${r.name} - ${brand}` : r.name;
+  const title = brand ? `${momsDeckName(r)} - ${brand}` : momsDeckName(r);
   document.title = `${title} · The Museum of Mini Skateboards`;
 
   root.innerHTML = `

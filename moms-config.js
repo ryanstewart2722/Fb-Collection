@@ -25,3 +25,6 @@ window.momsDate = function (date, precision) {
   return String(y);
 };
 window.momsYear = (date) => (date ? date.slice(0, 4) : "");
+
+// A deck's name with its mold letter, e.g. "3078 (d)". The letter is filled in automatically in the database.
+window.momsDeckName = (r) => (r.mold_code ? `${r.name} (${r.mold_code})` : r.name);

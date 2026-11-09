@@ -15,8 +15,9 @@ const MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Se
 // What each tab edits. Field kinds: text, textarea, brand, molds, release.
 const TYPES = {
   decks:  { one: "deck",  fields: [["brand_id", "Brand", "brand"], ["name", "Deck name"], ["color", "Color"], ["size", "Size", "text", "e.g. 32mm"],
-            ["molds", "Molds", "molds", "Separate with commas, e.g. KS1, KL2"], ["graphic", "Graphic", "text", "e.g. Screenprint Graphic"],
-            ["made_in", "Made in", "text", "e.g. Chicago, IL"], ["release", "Release date", "release"], ["description", "Description", "textarea"]],
+            ["molds", "Molds", "molds", "Separate with commas, e.g. Freshwater, Freshwater Deep, Saltwater, NotCool FB, KS1"],
+            ["mold_code", "Mold letter", "text", "Fills in by itself from the mold (f, d, s, nc, os…) and shows after the name, e.g. “3078 (f)”. Clear it to reset."],
+            ["graphic", "Graphic", "text", "e.g. Screenprint Graphic"], ["made_in", "Made in", "text", "e.g. Chicago, IL"], ["release", "Release date", "release"], ["description", "Description", "textarea"]],
             slug: (v, b) => `${v.name} ${v.color || ""} ${b}` },
   trucks: { one: "truck", fields: [["brand_id", "Brand", "brand"], ["name", "Truck name"], ["color", "Color"], ["size", "Size", "text", "e.g. 32mm"],
             ["release", "Release date", "release"], ["description", "Description", "textarea"]],
@@ -74,7 +75,7 @@ function renderList() {
     <div class="me-list">
       ${list.rows.map((r, i) => `<button class="me-item" data-i="${i}">
         ${tab === "brands" ? "" : `<span class="me-thumb">${r.image_path ? `<img src="${esc(r.image_path)}" alt="" loading="lazy">` : ""}</span>`}
-        <span class="me-name">${esc(r.name)}${r.color ? ` <em>${esc(r.color)}</em>` : ""}</span>
+        <span class="me-name">${esc(momsDeckName(r))}${r.color ? ` <em>${esc(r.color)}</em>` : ""}</span>
         <span class="me-meta">${esc(tab === "brands" ? r.made_in : [r.brands?.name, year(r)].filter(Boolean).join(" · "))}</span>
       </button>`).join("") || `<p class="me-empty">Nothing here yet.</p>`}
     </div>
@@ -159,6 +160,7 @@ async function save() {
     row[key] = kind === "molds" ? v.molds.split(",").map((s) => s.trim()).filter(Boolean) : (v[key] || null);
   });
   row.name = v.name;
+  if ("mold_code" in row) row.mold_code = (v.mold_code || "").toLowerCase().replace(/[^a-z0-9.]/g, "").slice(0, 8) || null;
 
   if (tab !== "brands") {
     // Brand: existing, or a new one (created when saving, below).
