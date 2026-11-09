@@ -58,9 +58,11 @@ h2 {
 .grid-section + .grid-section { margin-top: 150px; }
 
 .grid {
+  --item-h: clamp(150px, 20vw, 290px);          /* board height; a cell is one board wide */
+  --cell: calc(var(--item-h) * 529 / 1200);
   position: relative;
   display: grid;
-  grid-template-columns: repeat(6, max-content);
+  grid-template-columns: repeat(6, var(--cell));
   justify-content: space-between;
   row-gap: 128px;
   margin-top: 60px;
@@ -68,8 +70,8 @@ h2 {
 }
 /* Every board gets the same box (the shape of the deck photos, 529×1200); photos fit inside it. */
 .grid .item {
-  height: clamp(150px, 20vw, 290px);
-  aspect-ratio: 529 / 1200;
+  height: var(--item-h);
+  width: var(--cell);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -82,10 +84,11 @@ h2 {
   transition: opacity var(--ease);
 }
 .grid.hovering .item:not(.on) img { opacity: var(--fade); }
-.grid .item.wide { aspect-ratio: auto; }
+/* a photo wider than a board takes two cells, lined up with the board edges above it, so the other rows stay in line */
+.grid .item.wide { grid-column: span 2; width: auto; justify-self: start; }
 .grid .item.wide img { width: auto; max-width: none; height: 100%; }
 /* wheels and trucks: square product shots, sized so 6 fit across */
-.grid.square .item { height: clamp(100px, 14vw, 200px); aspect-ratio: 1; }
+.grid.square { --item-h: clamp(100px, 14vw, 200px); --cell: var(--item-h); }
 
 /* black info bar */
 .bar {
@@ -198,9 +201,8 @@ h2 {
 @media (max-width: 760px) {
   .title { font-size: 15px; }
   h2 { font-size: 28px; }
-  .grid { grid-template-columns: repeat(3, max-content); row-gap: 56px; margin-top: 36px; }
-  .grid .item { height: clamp(140px, 44vw, 240px); }
-  .grid.square .item { height: clamp(90px, 27vw, 140px); }
+  .grid { --item-h: clamp(140px, 44vw, 240px); grid-template-columns: repeat(3, var(--cell)); row-gap: 56px; margin-top: 36px; }
+  .grid.square { --item-h: clamp(90px, 27vw, 140px); --cell: var(--item-h); }
   .controls { padding-right: 14px; }
   .board { grid-template-columns: 1fr; }
   .board-close { writing-mode: horizontal-tb; justify-self: end; order: -1; font-size: 15px; padding-top: 14px; }
