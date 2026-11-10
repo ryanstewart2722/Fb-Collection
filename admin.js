@@ -325,12 +325,30 @@ app.addEventListener("click", (e) => {
 // Resize in the browser (max 1200px tall / 1400px wide) so the site stays fast.
 async function prepareImage(file) {
   const bitmap = await createImageBitmap(file);
-  const scale = Math.min(1, 1200 / bitmap.height, 1400 / bitmap.width);
-  const canvas = document.createElement("canvas");
-  canvas.width = Math.round(bitmap.width * scale);
-  canvas.height = Math.round(bitmap.height * scale);
-  canvas.getContext("2d").drawImage(bitmap, 0, 0, canvas.width, canvas.height);
   const isJpeg = file.type === "image/jpeg";
+  let src = bitmap, sx = 0, sy = 0, sw = bitmap.width, sh = bitmap.height;
+  // Transparent cutouts: trim the empty margin so every deck fills its frame the same way.
+  if (!isJpeg) {
+    const t = document.createElement("canvas"); t.width = sw; t.height = sh;
+    const tx = t.getContext("2d", { willReadFrequently: true }); tx.drawImage(bitmap, 0, 0);
+    const d = tx.getImageData(0, 0, sw, sh).data;
+    let x0 = sw, y0 = sh, x1 = -1, y1 = -1;
+    for (let y = 0; y < sh; y += 2) for (let x = 0; x < sw; x += 2)
+      if (d[(y * sw + x) * 4 + 3] > 24) { if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; }
+    if (x1 > 0 && (x0 > 4 || y0 > 4 || x1 < sw - 5 || y1 < sh - 5)) { sx = x0; sy = y0; sw = x1 - x0 + 2; sh = y1 - y0 + 2; }
+  }
+  const canvas = document.createElement("canvas");
+  const ctx = canvas.getContext("2d");
+  if (!isJpeg && sh > sw * 1.6) {
+    // Tall decks: the same 530x1200 frame as the museum, filled to 96%.
+    canvas.width = 530; canvas.height = 1200;
+    const k = Math.min(530 / sw, 1200 / sh) * 0.96, w = sw * k, h = sh * k;
+    ctx.drawImage(src, sx, sy, sw, sh, (530 - w) / 2, (1200 - h) / 2, w, h);
+  } else {
+    const scale = Math.min(1, 1200 / sh, 1400 / sw);
+    canvas.width = Math.round(sw * scale); canvas.height = Math.round(sh * scale);
+    ctx.drawImage(src, sx, sy, sw, sh, 0, 0, canvas.width, canvas.height);
+  }
   const dataUrl = canvas.toDataURL(isJpeg ? "image/jpeg" : "image/png", 0.86);
   return { dataUrl, base64: dataUrl.split(",")[1], ext: isJpeg ? "jpg" : "png" };
 }
