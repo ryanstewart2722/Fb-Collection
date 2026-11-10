@@ -413,7 +413,7 @@
       "items": [
         {
           "id": "incxofh",
-          "img": "",
+          "img": "Images/web/podium-mwaqz477.png",
           "divider": false,
           "hideInGrid": false,
           "values": {
@@ -441,7 +441,7 @@
           "values": {
             "name": "Parking Curb",
             "c8awj5u": "CreteDoctor",
-            "cd03y1f": "Cement"
+            "cd03y1f": "Concrete"
           }
         },
         {
@@ -468,11 +468,11 @@
         },
         {
           "id": "idzccm5",
-          "img": "",
+          "img": "Images/web/br-brick-ledge-mwaqsxhb.png",
           "divider": true,
           "hideInGrid": false,
           "values": {
-            "name": "Brick Ledge",
+            "name": "BR Brick Ledge",
             "c8awj5u": "Blackriver Ramps",
             "cd03y1f": "Wood/Brick"
           }
