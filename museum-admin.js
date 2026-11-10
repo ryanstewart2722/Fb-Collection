@@ -34,7 +34,7 @@ const TYPES = {
 
 let brands = [];
 let tab = "decks";
-let list = { rows: [], total: 0, search: "", brand: "" };
+let list = { rows: [], total: 0, search: "", brand: "", photo: "" };
 let editing = null;   // row being edited ({} for a new one), or null when showing the list
 let photo = null;     // new photo waiting to upload: { blob, ext, preview }
 let formDirty = false;
@@ -61,6 +61,8 @@ async function loadList(reset = true) {
     : sb.from(tab).select("*,brands(name)", { count: "exact" }).order("release_date", { ascending: false, nullsFirst: false }).order("id", { ascending: false });
   if (list.search) q = q.ilike("name", `%${list.search}%`);
   if (list.brand && tab !== "brands") q = q.eq("brand_id", list.brand);
+  if (list.photo === "without" && tab !== "brands") q = q.is("image_path", null);
+  if (list.photo === "with" && tab !== "brands") q = q.not("image_path", "is", null);
   const size = view === "images" && tab !== "brands" ? 120 : PAGE;
   const { data, error, count } = await q.range(list.rows.length, list.rows.length + size - 1);
   if (error) throw error;
@@ -75,16 +77,17 @@ function renderList() {
   app.innerHTML = `
     <div class="me-toolbar">
       <input id="search" type="search" placeholder="Search ${tab}…" value="${esc(list.search)}">
+      ${tab === "brands" ? "" : `<select id="photo-filter" aria-label="Filter by photo"><option value="">All boards</option><option value="without" ${list.photo === "without" ? "selected" : ""}>No photo yet</option><option value="with" ${list.photo === "with" ? "selected" : ""}>Has a photo</option></select>`}
       ${tab === "brands" ? "" : `<select id="brand-filter" aria-label="Filter by brand"><option value="">All brands</option>${brands.map((b) => `<option value="${b.id}" ${String(b.id) === String(list.brand) ? "selected" : ""}>${esc(b.name)}</option>`).join("")}</select>`}
       <button class="ad-btn ad-btn-dark" data-act="new">+ Add ${t.one}</button>
     </div>
     <p class="me-count">${list.total} ${list.total === 1 ? t.one : tab}${tab === "brands" ? "" : `<span class="me-views"><button class="ad-link${view === "list" ? " on" : ""}" data-act="view-list">List</button> / <button class="ad-link${view === "images" ? " on" : ""}" data-act="view-images">Images</button></span>`}</p>
     ${view === "images" && tab !== "brands" ? `<div class="me-grid">
-      ${list.rows.map((r, i) => !r.image_path ? "" : `<div class="me-card" data-i="${i}">
-        <button class="me-card-img" data-act="open" title="Open ${esc(r.name)}"><img src="${esc(r.image_path)}" alt="${esc(r.name)}" loading="lazy"></button>
+      ${list.rows.map((r, i) => `<div class="me-card" data-i="${i}">
+        <button class="me-card-img${r.image_path ? "" : " none"}" data-act="open" title="Open ${esc(r.name)}">${r.image_path ? `<img src="${esc(r.image_path)}" alt="${esc(r.name)}" loading="lazy">` : `<span>No photo yet</span>`}</button>
         <span class="me-card-name">${esc(momsDeckName(r))}</span>
-        <button class="ad-btn me-card-rot" data-act="rotate-card">Rotate 180°</button>
-      </div>`).join("") || `<p class="me-empty">No photos here yet.</p>`}
+        ${r.image_path ? `<button class="ad-btn me-card-rot" data-act="rotate-card">Rotate 180°</button>` : `<button class="ad-btn me-card-rot" data-act="open">Add photo</button>`}
+      </div>`).join("") || `<p class="me-empty">Nothing here.</p>`}
     </div>` : `<div class="me-list">
       ${list.rows.map((r, i) => `<button class="me-item" data-i="${i}">
         ${tab === "brands" ? "" : `<span class="me-thumb">${r.image_path ? `<img src="${esc(r.image_path)}" alt="" loading="lazy">` : ""}</span>`}
@@ -94,6 +97,10 @@ function renderList() {
     </div>`}
     ${list.rows.length < list.total ? `<button class="ad-btn" data-act="more">Show more</button> <button class="ad-btn" data-act="all">View all (${list.total - list.rows.length} more)</button>` : ""}`;
 
+  $("#photo-filter")?.addEventListener("change", (e) => {
+    list.photo = e.target.value;
+    loadList().then(renderList).catch(fail("Couldn't load"));
+  });
   $("#brand-filter")?.addEventListener("change", (e) => {
     list.brand = e.target.value;
     loadList().then(renderList).catch(fail("Couldn't load"));
@@ -493,7 +500,7 @@ app.addEventListener("click", async (e) => {
 document.querySelectorAll(".ad-tabs button").forEach((b) => b.addEventListener("click", async () => {
   if (!leaveForm()) return;
   tab = b.dataset.tab;
-  editing = null; photo = null; list.search = ""; list.brand = "";
+  editing = null; photo = null; list.search = ""; list.brand = ""; list.photo = "";
   document.querySelectorAll(".ad-tabs button").forEach((x) => x.classList.toggle("active", x === b));
   setStatus("");
   await loadList().catch(fail("Couldn't load"));
