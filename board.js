@@ -64,7 +64,6 @@ async function load() {
     <div class="board-info">
       <h1>${esc(title)}</h1>
       <div class="board-specs">${specs(r)}</div>
-      ${r.description ? `<p class="board-desc">${esc(r.description)}</p>` : ""}
       <div class="board-brand">
         <span>${esc(brand)}</span>
         <div class="board-more${type === "decks" ? "" : " square"}"></div>
