@@ -181,6 +181,25 @@ if (!canHover) {
   document.addEventListener("click", () => { if (view === "list") clearActive(); });
 }
 
+/* Hover while scrolling: browsers don't fire mouseenter when the page moves under a still pointer,
+   so after each scroll re-check what is under the pointer and hover it. */
+if (canHover) {
+  let px = -1, py = -1, ticking = false;
+  document.addEventListener("mousemove", (e) => { px = e.clientX; py = e.clientY; }, { passive: true });
+  window.addEventListener("scroll", () => {
+    if (ticking || px < 0) return;
+    ticking = true;
+    requestAnimationFrame(() => {
+      ticking = false;
+      const el = document.elementFromPoint(px, py)?.closest(".row:not(.head), .item");
+      const cur = document.querySelector(".row.on, .item.on");
+      if (el === cur) return;
+      if (el) el.dispatchEvent(new MouseEvent("mouseenter"));
+      else if (cur) cur.dispatchEvent(new MouseEvent("mouseleave"));
+    });
+  }, { passive: true });
+}
+
 const moreButton = (s, si) => s.rows.length < s.total
   ? `<button class="more" data-s="${si}">Show more ${esc(s.title.toLowerCase())} (${s.total - s.rows.length})</button><button class="more all" data-s="${si}" data-all>View all</button>` : "";
 
