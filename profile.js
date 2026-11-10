@@ -205,14 +205,5 @@ async function load() {
   paint();
 }
 
-// "My Collection" goes to your page when you're signed in, or to sign-in when you're not.
-(async () => {
-  const { data: { session } } = await sb.auth.getSession();
-  const link = $("#my-link");
-  if (!session) return;
-  const { data } = await sb.from("profiles").select("username").eq("id", session.user.id).maybeSingle();
-  if (data?.username) { link.href = "/u/" + data.username; link.textContent = "My Collection"; }
-})();
-
 load().catch((err) => { console.error(err); app.innerHTML = `<p class="p-empty">Couldn't load this page. Please refresh.</p>`; });
 })();
