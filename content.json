@@ -525,9 +525,21 @@
       ],
       "items": [
         {
+          "id": "i63f3r7",
+          "img": "Images/web/sunpower-wheels-satori-mwaqr4f5.png",
+          "divider": false,
+          "hideInGrid": false,
+          "values": {
+            "name": "Sunpower Wheels, Satori ",
+            "color": "Whire",
+            "material": "Urethane",
+            "duro": "Unknown"
+          }
+        },
+        {
           "id": "w27",
           "img": "Images/web/OakMini.png",
-          "divider": false,
+          "divider": true,
           "hideInGrid": false,
           "values": {
             "name": "Oak Mini",
@@ -538,7 +550,8 @@
         }
       ],
       "gridOrder": [
-        "w27"
+        "w27",
+        "i63f3r7"
       ]
     },
     {
