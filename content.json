@@ -391,6 +391,115 @@
       ]
     },
     {
+      "id": "sec0jvyxx",
+      "title": "Obstacles",
+      "gridTitle": "Obstacles",
+      "showInGrid": true,
+      "square": true,
+      "columns": [
+        {
+          "key": "name",
+          "label": "NAME"
+        },
+        {
+          "key": "c8awj5u",
+          "label": "MANUFACTURER"
+        },
+        {
+          "key": "cd03y1f",
+          "label": "MATERIAL"
+        }
+      ],
+      "items": [
+        {
+          "id": "incxofh",
+          "img": "",
+          "divider": false,
+          "hideInGrid": false,
+          "values": {
+            "name": "Podium",
+            "c8awj5u": "Yarnbody",
+            "cd03y1f": "Wood/Granite"
+          }
+        },
+        {
+          "id": "i23qnwg",
+          "img": "",
+          "divider": true,
+          "hideInGrid": false,
+          "values": {
+            "name": "Ledge/Display Frame",
+            "c8awj5u": "Tech Deck",
+            "cd03y1f": "Wood/Metal"
+          }
+        },
+        {
+          "id": "i3pea5a",
+          "img": "",
+          "divider": true,
+          "hideInGrid": false,
+          "values": {
+            "name": "Parking Curb",
+            "c8awj5u": "CreteDoctor",
+            "cd03y1f": "Cement"
+          }
+        },
+        {
+          "id": "iacr2kj",
+          "img": "",
+          "divider": true,
+          "hideInGrid": false,
+          "values": {
+            "name": "Black and Silver Kicker",
+            "c8awj5u": "Unknown",
+            "cd03y1f": "Aluminum"
+          }
+        },
+        {
+          "id": "iz3bej0",
+          "img": "",
+          "divider": false,
+          "hideInGrid": false,
+          "values": {
+            "name": "Black Bench",
+            "c8awj5u": "Unknown",
+            "cd03y1f": "Aluminum"
+          }
+        },
+        {
+          "id": "idzccm5",
+          "img": "",
+          "divider": true,
+          "hideInGrid": false,
+          "values": {
+            "name": "Brick Ledge",
+            "c8awj5u": "Blackriver Ramps",
+            "cd03y1f": "Wood/Brick"
+          }
+        },
+        {
+          "id": "i7rczze",
+          "img": "",
+          "divider": true,
+          "hideInGrid": false,
+          "values": {
+            "name": "Granite Ledge",
+            "c8awj5u": "Flatface",
+            "cd03y1f": "Granite"
+          }
+        }
+      ],
+      "gridOrder": [
+        "i23qnwg",
+        "i7rczze",
+        "idzccm5",
+        "iacr2kj",
+        "iz3bej0",
+        "i3pea5a",
+        "incxofh"
+      ]
+    },
+    {
       "id": "wheels",
       "title": "Wheels",
       "gridTitle": "My Wheels",
@@ -430,43 +539,6 @@
       ],
       "gridOrder": [
         "w27"
-      ]
-    },
-    {
-      "id": "sec0jvyxx",
-      "title": "Obstacles",
-      "gridTitle": "Obstacles",
-      "showInGrid": true,
-      "square": true,
-      "columns": [
-        {
-          "key": "name",
-          "label": "NAME"
-        },
-        {
-          "key": "c8awj5u",
-          "label": "MANUFACTURER"
-        },
-        {
-          "key": "cd03y1f",
-          "label": "MATERIAL"
-        }
-      ],
-      "items": [
-        {
-          "id": "i23qnwg",
-          "img": "",
-          "divider": false,
-          "hideInGrid": false,
-          "values": {
-            "name": "Ledge/Display Frame",
-            "c8awj5u": "Tech Deck",
-            "cd03y1f": "Wood/Metal"
-          }
-        }
-      ],
-      "gridOrder": [
-        "i23qnwg"
       ]
     },
     {
