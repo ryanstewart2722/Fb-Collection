@@ -104,6 +104,17 @@
           }
         },
         {
+          "id": "irkusp4",
+          "img": "Images/web/jazzclub-30mm-h-mw8r216w.png",
+          "divider": true,
+          "hideInGrid": false,
+          "values": {
+            "name": "Jazzclub 30mm (h)",
+            "trucks": "Joycult x Indepedent 29mm Silver",
+            "wheels": "Oak Rv2 Tan"
+          }
+        },
+        {
           "id": "s8",
           "img": "Images/web/catfishbbq-x-dr-m-s-research-institute-r-mw8r1p7m.png",
           "divider": true,
@@ -145,17 +156,6 @@
             "name": "CATFISHBBQ Artshow Real Wear 32mm Black/Wood (f)",
             "trucks": "Y Trucks 32mm Raw",
             "wheels": "Y Wheels Tan"
-          }
-        },
-        {
-          "id": "irkusp4",
-          "img": "Images/web/jazzclub-30mm-h-mw8r216w.png",
-          "divider": true,
-          "hideInGrid": false,
-          "values": {
-            "name": "Jazzclub 30mm (h)",
-            "trucks": "Joycult x Indepedent 29mm Silver",
-            "wheels": "Oak Rv2 Tan"
           }
         },
         {
