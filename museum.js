@@ -143,6 +143,8 @@ const markWide = (img) => {
 let gridWatchers = [];                                              // re-fit when the grid's width changes (window resize, Refine panel)
 const stopWatching = () => { gridWatchers.forEach((w) => w.disconnect()); gridWatchers = []; };
 
+const warmed = new Set();   // photos already requested, so a hover never waits on the network
+const warm = (src) => { if (src && !warmed.has(src)) { warmed.add(src); new Image().src = src; } };
 function showPreview(src) {
   if (!src) return hidePreview();
   preview.src = src;
@@ -203,6 +205,8 @@ function renderList() {
         clearActive();
         row.classList.add("on");
         showPreview(photoFor(s, r));
+        const i = +row.dataset.i;   // fetch the neighbours now so scrolling down or up never waits
+        for (let k = -3; k <= 6; k++) if (s.rows[i + k]) warm(photoFor(s, s.rows[i + k]));
       });
       if (canHover) row.addEventListener("mouseleave", clearActive);
     });

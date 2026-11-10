@@ -125,7 +125,7 @@ h2 {
   transform: translate(-50%, -50%);
   pointer-events: none;
   opacity: 0;
-  transition: opacity var(--ease);
+  transition: none;
   z-index: 2;
 }
 .preview.show { opacity: 1; }
@@ -166,8 +166,7 @@ h2 {
   letter-spacing: 0.02em;
 }
 .row.divide { border-top: 1px solid var(--line); }
-.row:not(.head) { transition: background var(--ease), color var(--ease); }
-.row:not(.head) span:first-child { transition: padding var(--ease); }
+.row:not(.head), .row:not(.head) span:first-child { transition: none; }   /* instant, so a fast scroll registers every line */
 .row.on { background: #000; color: #fff; position: relative; z-index: 3; /* on top of the big image */ }
 .row.on span:first-child { padding-left: 14px; }
 .add-new { display: flex; align-items: center; height: 32.3px; border-top: 1px solid var(--line); color: #8c8c8c; }
@@ -297,7 +296,7 @@ body.has-refine.rf-open { --rf-shift: calc(var(--rf-w) + 28px); --rf-open-w: cal
 #app.loading { opacity: 0.4; }
 
 /* the big hover photo stays centred in the part of the page that is left */
-.preview { left: calc(50% - var(--rf-shift) / 2); transition: opacity var(--ease), left 0.42s var(--rf-ease); }
+.preview { left: calc(50% - var(--rf-shift) / 2); transition: left 0.42s var(--rf-ease); }
 
 @media (max-width: 760px) {
   :root { --rf-w: min(88vw, 400px); }
