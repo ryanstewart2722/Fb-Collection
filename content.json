@@ -234,17 +234,6 @@
             "trucks": "Tech Deck Trucks 26mm",
             "wheels": "Dynamic Bowl Pink"
           }
-        },
-        {
-          "id": "ir4ik8l",
-          "img": "",
-          "divider": false,
-          "hideInGrid": false,
-          "values": {
-            "name": "",
-            "trucks": "",
-            "wheels": ""
-          }
         }
       ],
       "gridOrder": [
@@ -266,8 +255,7 @@
         "s16",
         "s17",
         "s18",
-        "irkusp4",
-        "ir4ik8l"
+        "irkusp4"
       ]
     },
     {
