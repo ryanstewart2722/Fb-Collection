@@ -134,6 +134,7 @@ function renderForm() {
       ${tab === "brands" ? "" : `<div class="me-photo">
         <div class="me-photo-box">${img ? `<img src="${esc(img)}" alt="">` : `<span>No photo yet</span>`}</div>
         <button class="ad-btn" data-act="photo">${img ? "Replace photo" : "Add photo"}</button>
+        ${img ? `<button class="ad-btn" data-act="rotate" title="Turn the photo upside down">Rotate 180°</button>` : ""}
         <small>Transparent PNGs are kept exactly as they are, just sized to match. Photos on a plain backdrop (white, grey, any single colour) have the backdrop removed.</small>
       </div>`}
       <div class="me-fields">${t.fields.map((f) => fieldHtml(f, r)).join("")}</div>
@@ -358,6 +359,29 @@ function visibleBox(px, w, h) {
   return { x: x0, y: y0, w: x1 - x0 + 1, h: y1 - y0 + 1 };
 }
 
+// Turn the current photo (the one being added, or the saved one) upside down. Nothing goes live until Save.
+async function rotatePhoto() {
+  const src = photo?.preview || editing?.image_path;
+  if (!src) return;
+  setStatus("Rotating…");
+  try {
+    const bitmap = await createImageBitmap(await (await fetch(src, { cache: "no-store" })).blob());
+    const c = document.createElement("canvas");
+    c.width = bitmap.width; c.height = bitmap.height;
+    const x = c.getContext("2d");
+    x.translate(c.width, c.height); x.rotate(Math.PI);
+    x.drawImage(bitmap, 0, 0);
+    const blob = await new Promise((res) => c.toBlob(res, "image/png"));
+    if (photo?.preview) URL.revokeObjectURL(photo.preview);
+    photo = { blob, ext: "png", preview: URL.createObjectURL(blob) };
+    app.querySelector(".me-photo-box").innerHTML = `<img src="${photo.preview}" alt="">`;
+    formDirty = true;
+    setStatus("Rotated. Save to put it on the site.");
+  } catch (err) {
+    setStatus("Couldn't rotate that photo: " + err.message, true);
+  }
+}
+
 fileInput.addEventListener("change", async () => {
   const file = fileInput.files[0];
   if (!file) return;
@@ -402,6 +426,7 @@ app.addEventListener("click", async (e) => {
   if (act === "back" && leaveForm()) { editing = null; photo = null; setStatus(""); await loadList().catch(fail("Couldn't load")); renderList(); }
   if (act === "more") { await loadList(false).catch(fail("Couldn't load")); renderList(); }
   if (act === "photo") { fileInput.value = ""; fileInput.click(); }
+  if (act === "rotate") rotatePhoto();
   if (act === "save") save();
   if (act === "delete") del();
 });
