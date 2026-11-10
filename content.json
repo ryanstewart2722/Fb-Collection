@@ -160,7 +160,7 @@
         },
         {
           "id": "s12",
-          "img": "Images/web/WormGraffitiJ.png",
+          "img": "Images/web/worm-graffiti-34mm-h-mwathk92.png",
           "divider": true,
           "hideInGrid": false,
           "values": {
@@ -171,7 +171,7 @@
         },
         {
           "id": "s13",
-          "img": "Images/web/WormApple.png",
+          "img": "Images/web/worm-apple-32mm-h-mwathu6o.png",
           "divider": false,
           "hideInGrid": false,
           "values": {
@@ -234,6 +234,17 @@
             "trucks": "Tech Deck Trucks 26mm",
             "wheels": "Dynamic Bowl Pink"
           }
+        },
+        {
+          "id": "insq02d",
+          "img": "",
+          "divider": false,
+          "hideInGrid": false,
+          "values": {
+            "name": "",
+            "trucks": "",
+            "wheels": ""
+          }
         }
       ],
       "gridOrder": [
@@ -255,7 +266,8 @@
         "s15",
         "s16",
         "s17",
-        "s18"
+        "s18",
+        "insq02d"
       ]
     },
     {
