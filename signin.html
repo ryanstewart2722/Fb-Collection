@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title>Sign in · MoMS</title>
+  <link rel="icon" type="image/png" href="favicon.png">
+  <link rel="icon" href="favicon.ico" sizes="any">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
+  <link rel="stylesheet" href="style.css?v=b4f985b5">
+  <link rel="stylesheet" href="profile.css?v=39b0ca50">
+</head>
+<body>
+  <header class="topbar">
+    <span></span>
+    <a class="title" href="/" aria-label="The Museum of Mini Skateboards"><span class="t-full">The Museum of Mini Skateboards</span><span class="t-short">MoMS</span></a>
+    <span></span>
+  </header>
+
+  <main class="auth">
+    <!-- 1. Email -->
+    <section id="v-email">
+      <h1>Sign in</h1>
+      <p class="auth-note">Type your email and we'll send you a link. No password needed. New here? The same link makes your account.</p>
+      <form id="f-email" class="auth-form">
+        <input id="email" type="email" placeholder="Email" autocomplete="email" required>
+        <button type="submit" class="auth-btn">Email me a sign-in link</button>
+      </form>
+      <p id="e-email" class="auth-error" hidden></p>
+      <p class="auth-alt"><button class="auth-link" data-show="password">Use a password instead</button></p>
+    </section>
+
+    <!-- 2. Link sent -->
+    <section id="v-sent" hidden>
+      <h1>Check your email</h1>
+      <p class="auth-note">We sent a sign-in link to <b id="sent-to"></b>. Open it on this device and you'll be signed in. It can take a minute to arrive, and it may land in spam.</p>
+      <p class="auth-alt"><button class="auth-link" data-show="email">Use a different email</button></p>
+    </section>
+
+    <!-- 3. Pick a username (first sign-in) -->
+    <section id="v-pick" hidden>
+      <h1>Pick a username</h1>
+      <p class="auth-note">This is your page address: <span class="auth-url">museumofminiskateboards.org/u/<b id="pick-preview">yourname</b></span>. 5 to 30 letters, numbers or underscores. You can't change it later, so choose carefully.</p>
+      <form id="f-pick" class="auth-form">
+        <input id="username" type="text" placeholder="username" autocomplete="off" autocapitalize="none" spellcheck="false" maxlength="30" required>
+        <input id="display" type="text" placeholder="Display name (optional)" maxlength="60">
+        <button type="submit" class="auth-btn" id="pick-btn" disabled>Create my page</button>
+      </form>
+      <p id="pick-msg" class="auth-note" aria-live="polite"></p>
+    </section>
+
+    <!-- 4. Password sign-in -->
+    <section id="v-password" hidden>
+      <h1>Sign in with a password</h1>
+      <form id="f-password" class="auth-form">
+        <input id="pw-email" type="email" placeholder="Email" autocomplete="username" required>
+        <input id="pw" type="password" placeholder="Password" autocomplete="current-password" required>
+        <button type="submit" class="auth-btn">Sign in</button>
+      </form>
+      <p id="e-password" class="auth-error" hidden></p>
+      <p class="auth-alt"><button class="auth-link" id="forgot">Forgot your password?</button> · <button class="auth-link" data-show="email">Email me a link instead</button></p>
+      <p id="m-password" class="auth-note" hidden></p>
+    </section>
+
+    <!-- 5. Set a new password (after a reset email) -->
+    <section id="v-reset" hidden>
+      <h1>Set a new password</h1>
+      <form id="f-reset" class="auth-form">
+        <input id="newpw" type="password" placeholder="New password (8+ characters)" autocomplete="new-password" minlength="8" required>
+        <button type="submit" class="auth-btn">Save password</button>
+      </form>
+      <p id="e-reset" class="auth-error" hidden></p>
+    </section>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+  <script src="moms-config.js?v=e1dbbd27"></script>
+  <script src="signin.js?v=ed0083af"></script>
+</body>
+</html>
