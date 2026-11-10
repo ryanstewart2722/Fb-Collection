@@ -180,7 +180,7 @@ if (!canHover) {
 }
 
 const moreButton = (s, si) => s.rows.length < s.total
-  ? `<button class="more" data-s="${si}">Show more ${esc(s.title.toLowerCase())} (${s.total - s.rows.length})</button>` : "";
+  ? `<button class="more" data-s="${si}">Show more ${esc(s.title.toLowerCase())} (${s.total - s.rows.length})</button><button class="more all" data-s="${si}" data-all>View all</button>` : "";
 
 /* ---------- List view ---------- */
 function renderList() {
@@ -328,7 +328,11 @@ app.addEventListener("click", async (e) => {
   if (!btn) return;
   e.stopPropagation();
   btn.disabled = true;
-  await loadSection(SECTIONS[btn.dataset.s], false);
+  const s = SECTIONS[btn.dataset.s];
+  if (btn.hasAttribute("data-all")) {
+    let before = -1;
+    while (s.rows.length < s.total && s.rows.length !== before) { before = s.rows.length; await loadSection(s, false); }
+  } else await loadSection(s, false);
   render();
 });
 
