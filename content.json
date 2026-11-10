@@ -234,17 +234,6 @@
             "trucks": "Tech Deck Trucks 26mm",
             "wheels": "Dynamic Bowl Pink"
           }
-        },
-        {
-          "id": "insq02d",
-          "img": "",
-          "divider": true,
-          "hideInGrid": false,
-          "values": {
-            "name": "",
-            "trucks": "",
-            "wheels": ""
-          }
         }
       ],
       "gridOrder": [
@@ -266,8 +255,7 @@
         "s15",
         "s16",
         "s17",
-        "s18",
-        "insq02d"
+        "s18"
       ]
     },
     {
@@ -424,7 +412,7 @@
         },
         {
           "id": "i23qnwg",
-          "img": "Images/web/ledge-display-frame-mwaukfpq.png",
+          "img": "Images/web/ledge-display-frame-mwautt2m.png",
           "divider": true,
           "hideInGrid": false,
           "values": {
@@ -435,7 +423,7 @@
         },
         {
           "id": "i3pea5a",
-          "img": "Images/web/parking-curb-mwaukk9h.png",
+          "img": "Images/web/parking-curb-mwautpcr.png",
           "divider": true,
           "hideInGrid": false,
           "values": {
@@ -446,7 +434,7 @@
         },
         {
           "id": "iacr2kj",
-          "img": "Images/web/black-and-silver-kicker-mwaukvwu.png",
+          "img": "Images/web/black-and-silver-kicker-mwaussdv.png",
           "divider": true,
           "hideInGrid": false,
           "values": {
@@ -457,7 +445,7 @@
         },
         {
           "id": "iz3bej0",
-          "img": "Images/web/black-bench-mwaul1ew.png",
+          "img": "Images/web/black-bench-mwausnbr.png",
           "divider": false,
           "hideInGrid": false,
           "values": {
@@ -479,7 +467,7 @@
         },
         {
           "id": "i7rczze",
-          "img": "Images/web/granite-ledge-mwaul727.png",
+          "img": "Images/web/granite-ledge-mwaush36.png",
           "divider": true,
           "hideInGrid": false,
           "values": {
