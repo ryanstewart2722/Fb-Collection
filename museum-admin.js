@@ -34,7 +34,7 @@ const TYPES = {
 
 let brands = [];
 let tab = "decks";
-let list = { rows: [], total: 0, search: "" };
+let list = { rows: [], total: 0, search: "", brand: "" };
 let editing = null;   // row being edited ({} for a new one), or null when showing the list
 let photo = null;     // new photo waiting to upload: { blob, ext, preview }
 let formDirty = false;
@@ -60,6 +60,7 @@ async function loadList(reset = true) {
     ? sb.from("brands").select("*", { count: "exact" }).order("name")
     : sb.from(tab).select("*,brands(name)", { count: "exact" }).order("release_date", { ascending: false, nullsFirst: false }).order("id", { ascending: false });
   if (list.search) q = q.ilike("name", `%${list.search}%`);
+  if (list.brand && tab !== "brands") q = q.eq("brand_id", list.brand);
   const size = view === "images" && tab !== "brands" ? 120 : PAGE;
   const { data, error, count } = await q.range(list.rows.length, list.rows.length + size - 1);
   if (error) throw error;
@@ -74,6 +75,7 @@ function renderList() {
   app.innerHTML = `
     <div class="me-toolbar">
       <input id="search" type="search" placeholder="Search ${tab}…" value="${esc(list.search)}">
+      ${tab === "brands" ? "" : `<select id="brand-filter" aria-label="Filter by brand"><option value="">All brands</option>${brands.map((b) => `<option value="${b.id}" ${String(b.id) === String(list.brand) ? "selected" : ""}>${esc(b.name)}</option>`).join("")}</select>`}
       <button class="ad-btn ad-btn-dark" data-act="new">+ Add ${t.one}</button>
     </div>
     <p class="me-count">${list.total} ${list.total === 1 ? t.one : tab}${tab === "brands" ? "" : `<span class="me-views"><button class="ad-link${view === "list" ? " on" : ""}" data-act="view-list">List</button> / <button class="ad-link${view === "images" ? " on" : ""}" data-act="view-images">Images</button></span>`}</p>
@@ -92,6 +94,10 @@ function renderList() {
     </div>`}
     ${list.rows.length < list.total ? `<button class="ad-btn" data-act="more">Show more</button>` : ""}`;
 
+  $("#brand-filter")?.addEventListener("change", (e) => {
+    list.brand = e.target.value;
+    loadList().then(renderList).catch(fail("Couldn't load"));
+  });
   let timer;
   $("#search").addEventListener("input", (e) => {
     clearTimeout(timer);
@@ -481,7 +487,7 @@ app.addEventListener("click", async (e) => {
 document.querySelectorAll(".ad-tabs button").forEach((b) => b.addEventListener("click", async () => {
   if (!leaveForm()) return;
   tab = b.dataset.tab;
-  editing = null; photo = null; list.search = "";
+  editing = null; photo = null; list.search = ""; list.brand = "";
   document.querySelectorAll(".ad-tabs button").forEach((x) => x.classList.toggle("active", x === b));
   setStatus("");
   await loadList().catch(fail("Couldn't load"));

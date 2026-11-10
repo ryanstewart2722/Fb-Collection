@@ -61,3 +61,5 @@
 .me-card-img img { height: 230px; width: auto; max-width: 100%; object-fit: contain; display: block; }
 .me-card-name { font-size: 11px; line-height: 1.3; min-height: 28px; }
 .me-card-rot { font-size: 11px; padding: 6px 8px; }
+
+.me-toolbar select { border: 1px solid var(--line); padding: 8px 10px; font-size: 16px; max-width: 40%; background: #fff; }
