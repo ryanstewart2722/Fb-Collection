@@ -92,7 +92,7 @@ function renderList() {
         <span class="me-meta">${esc(tab === "brands" ? r.made_in : [r.brands?.name, year(r), !r.image_path && "no photo: not on the site yet"].filter(Boolean).join(" · "))}</span>
       </button>`).join("") || `<p class="me-empty">Nothing here yet.</p>`}
     </div>`}
-    ${list.rows.length < list.total ? `<button class="ad-btn" data-act="more">Show more</button>` : ""}`;
+    ${list.rows.length < list.total ? `<button class="ad-btn" data-act="more">Show more</button> <button class="ad-btn" data-act="all">View all (${list.total - list.rows.length} more)</button>` : ""}`;
 
   $("#brand-filter")?.addEventListener("change", (e) => {
     list.brand = e.target.value;
@@ -477,6 +477,12 @@ app.addEventListener("click", async (e) => {
   }
   if (act === "new") { editing = {}; photo = null; renderForm(); }
   if (act === "back" && leaveForm()) { editing = null; photo = null; setStatus(""); await loadList().catch(fail("Couldn't load")); renderList(); }
+  if (act === "all") {
+    setStatus("Loading everything…");
+    try { let before = -1; while (list.rows.length < list.total && list.rows.length !== before) { before = list.rows.length; await loadList(false); } setStatus(""); }
+    catch (err) { fail("Couldn't load")(err); }
+    renderList();
+  }
   if (act === "more") { await loadList(false).catch(fail("Couldn't load")); renderList(); }
   if (act === "photo") { fileInput.value = ""; fileInput.click(); }
   if (act === "rotate") rotatePhoto();
