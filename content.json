@@ -165,8 +165,8 @@
           "hideInGrid": false,
           "values": {
             "name": "Worm Graffiti 34mm (h)",
-            "trucks": "Joycult x Indepedent 32mm Silver",
-            "wheels": "Oak R2V2 Tan"
+            "trucks": "Blackriver 4.0 32mm Raw",
+            "wheels": "Joycult XL Tan"
           }
         },
         {
@@ -176,7 +176,7 @@
           "hideInGrid": false,
           "values": {
             "name": "Worm Apple 32mm (h)",
-            "trucks": "Blackriver 4.0 32mm Raw",
+            "trucks": "Blackriver 4.0 32mm Black",
             "wheels": "Bloob Micro Red"
           }
         },
@@ -234,6 +234,17 @@
             "trucks": "Tech Deck Trucks 26mm",
             "wheels": "Dynamic Bowl Pink"
           }
+        },
+        {
+          "id": "ir4ik8l",
+          "img": "",
+          "divider": false,
+          "hideInGrid": false,
+          "values": {
+            "name": "",
+            "trucks": "",
+            "wheels": ""
+          }
         }
       ],
       "gridOrder": [
@@ -255,7 +266,8 @@
         "s16",
         "s17",
         "s18",
-        "irkusp4"
+        "irkusp4",
+        "ir4ik8l"
       ]
     },
     {
