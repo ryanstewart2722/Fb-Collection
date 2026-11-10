@@ -160,7 +160,7 @@
         },
         {
           "id": "s12",
-          "img": "Images/web/worm-graffiti-34mm-h-mwathk92.png",
+          "img": "Images/web/worm-graffiti-34mm-h-mwau52ef.png",
           "divider": true,
           "hideInGrid": false,
           "values": {
@@ -171,7 +171,7 @@
         },
         {
           "id": "s13",
-          "img": "Images/web/worm-apple-32mm-h-mwathu6o.png",
+          "img": "Images/web/worm-apple-32mm-h-mwau4x9v.png",
           "divider": false,
           "hideInGrid": false,
           "values": {
@@ -238,7 +238,7 @@
         {
           "id": "insq02d",
           "img": "",
-          "divider": false,
+          "divider": true,
           "hideInGrid": false,
           "values": {
             "name": "",
