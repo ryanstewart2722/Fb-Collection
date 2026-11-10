@@ -8,8 +8,8 @@
     '<img class="fb-logo" src="/footer-logo.png" alt="MoMS" width="783" height="735">' +
     '<p class="fb-credit">Designed, curated and developed by <a href="/u/r">Ryan Stewart</a> view collection <a href="/collection.html">here</a></p>' +
     '<nav class="fb-links" aria-label="Site">' +
-      '<div><a href="/">Museum</a><a class="fb-soon">Submit New</a><a class="fb-soon">Users</a></div>' +
-      '<div><a href="/signin.html" data-me>My Account</a><a href="/signin.html" data-me>My Collection</a><a class="fb-soon">Contact</a></div>' +
+      '<div><a href="/">Museum</a><a href="mailto:yo@ryanforprez.org?subject=Submit%20to%20the%20Museum%20of%20Mini%20Skateboards">Submit New</a><a class="fb-soon">Users</a></div>' +
+      '<div><a href="/signin.html" data-me>My Account</a><a href="/signin.html" data-me>My Collection</a><a href="mailto:yo@ryanforprez.org">Contact</a></div>' +
     '</nav>' +
     '<div class="fb-boards" aria-hidden="true">' + ANGLES.map(function (a) { return '<span style="--r:' + a + 'deg">' + BOARD + '</span>'; }).join("") + '</div>' +
     '<p class="fb-title">The Museum of Mini Skateboards</p>';
