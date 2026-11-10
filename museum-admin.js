@@ -38,6 +38,7 @@ let list = { rows: [], total: 0, search: "" };
 let editing = null;   // row being edited ({} for a new one), or null when showing the list
 let photo = null;     // new photo waiting to upload: { blob, ext, preview }
 let formDirty = false;
+let view = (() => { try { return localStorage.getItem("me-view") === "images" ? "images" : "list"; } catch { return "list"; } })();
 
 function setStatus(text, isError = false) {
   const el = $("#status");
@@ -59,7 +60,8 @@ async function loadList(reset = true) {
     ? sb.from("brands").select("*", { count: "exact" }).order("name")
     : sb.from(tab).select("*,brands(name)", { count: "exact" }).order("release_date", { ascending: false, nullsFirst: false }).order("id", { ascending: false });
   if (list.search) q = q.ilike("name", `%${list.search}%`);
-  const { data, error, count } = await q.range(list.rows.length, list.rows.length + PAGE - 1);
+  const size = view === "images" && tab !== "brands" ? 120 : PAGE;
+  const { data, error, count } = await q.range(list.rows.length, list.rows.length + size - 1);
   if (error) throw error;
   list.rows.push(...data);
   list.total = count;
@@ -74,14 +76,20 @@ function renderList() {
       <input id="search" type="search" placeholder="Search ${tab}…" value="${esc(list.search)}">
       <button class="ad-btn ad-btn-dark" data-act="new">+ Add ${t.one}</button>
     </div>
-    <p class="me-count">${list.total} ${list.total === 1 ? t.one : tab}</p>
-    <div class="me-list">
+    <p class="me-count">${list.total} ${list.total === 1 ? t.one : tab}${tab === "brands" ? "" : `<span class="me-views"><button class="ad-link${view === "list" ? " on" : ""}" data-act="view-list">List</button> / <button class="ad-link${view === "images" ? " on" : ""}" data-act="view-images">Images</button></span>`}</p>
+    ${view === "images" && tab !== "brands" ? `<div class="me-grid">
+      ${list.rows.map((r, i) => !r.image_path ? "" : `<div class="me-card" data-i="${i}">
+        <button class="me-card-img" data-act="open" title="Open ${esc(r.name)}"><img src="${esc(r.image_path)}" alt="${esc(r.name)}" loading="lazy"></button>
+        <span class="me-card-name">${esc(momsDeckName(r))}</span>
+        <button class="ad-btn me-card-rot" data-act="rotate-card">Rotate 180°</button>
+      </div>`).join("") || `<p class="me-empty">No photos here yet.</p>`}
+    </div>` : `<div class="me-list">
       ${list.rows.map((r, i) => `<button class="me-item" data-i="${i}">
         ${tab === "brands" ? "" : `<span class="me-thumb">${r.image_path ? `<img src="${esc(r.image_path)}" alt="" loading="lazy">` : ""}</span>`}
         <span class="me-name">${esc(momsDeckName(r))}${r.color ? ` <em>${esc(r.color)}</em>` : ""}</span>
         <span class="me-meta">${esc(tab === "brands" ? r.made_in : [r.brands?.name, year(r), !r.image_path && "no photo: not on the site yet"].filter(Boolean).join(" · "))}</span>
       </button>`).join("") || `<p class="me-empty">Nothing here yet.</p>`}
-    </div>
+    </div>`}
     ${list.rows.length < list.total ? `<button class="ad-btn" data-act="more">Show more</button>` : ""}`;
 
   let timer;
@@ -359,6 +367,34 @@ function visibleBox(px, w, h) {
   return { x: x0, y: y0, w: x1 - x0 + 1, h: y1 - y0 + 1 };
 }
 
+// Image view: turn one board's saved photo upside down and put it live right away.
+async function rotateCard(card) {
+  const row = list.rows[card.dataset.i];
+  const btn = card.querySelector(".me-card-rot"), img = card.querySelector("img");
+  btn.disabled = true; btn.textContent = "Rotating…";
+  try {
+    const bitmap = await createImageBitmap(await (await fetch(row.image_path, { cache: "no-store" })).blob());
+    const c = document.createElement("canvas");
+    c.width = bitmap.width; c.height = bitmap.height;
+    const x = c.getContext("2d");
+    x.translate(c.width, c.height); x.rotate(Math.PI); x.drawImage(bitmap, 0, 0);
+    const blob = await new Promise((res) => c.toBlob(res, "image/png"));
+    const path = `${tab}/${row.slug}-${Date.now().toString(36)}.png`;
+    const { error: upErr } = await sb.storage.from(BUCKET).upload(path, blob, { contentType: "image/png", cacheControl: "31536000" });
+    if (upErr) throw upErr;
+    const url = sb.storage.from(BUCKET).getPublicUrl(path).data.publicUrl;
+    const { data, error } = await sb.from(tab).update({ image_path: url }).eq("id", row.id).select("id");
+    if (error || !data.length) throw error || { code: "42501", message: "not allowed" };
+    const old = row.image_path;
+    row.image_path = url; img.src = url;
+    removeOurPhoto(old).catch(() => {});
+    setStatus(`Rotated “${row.name}” ✓ Live on the site.`);
+  } catch (err) {
+    setStatus("Couldn't rotate: " + friendly(err), true);
+  }
+  btn.disabled = false; btn.textContent = "Rotate 180°";
+}
+
 // Turn the current photo (the one being added, or the saved one) upside down. Nothing goes live until Save.
 async function rotatePhoto() {
   const src = photo?.preview || editing?.image_path;
@@ -415,6 +451,12 @@ app.addEventListener("change", (e) => {
 });
 
 app.addEventListener("click", async (e) => {
+  const card = e.target.closest(".me-card");
+  if (card) {
+    const a = e.target.closest("[data-act]")?.dataset.act;
+    if (a === "rotate-card") return rotateCard(card);
+    if (a === "open") { editing = { ...list.rows[card.dataset.i] }; photo = null; return renderForm(); }
+  }
   const item = e.target.closest(".me-item");
   if (item) {
     editing = { ...list.rows[item.dataset.i] };
@@ -422,6 +464,11 @@ app.addEventListener("click", async (e) => {
     return renderForm();
   }
   const act = e.target.closest("[data-act]")?.dataset.act;
+  if (act === "view-list" || act === "view-images") {
+    view = act === "view-images" ? "images" : "list";
+    try { localStorage.setItem("me-view", view); } catch {}
+    await loadList().catch(fail("Couldn't load")); return renderList();
+  }
   if (act === "new") { editing = {}; photo = null; renderForm(); }
   if (act === "back" && leaveForm()) { editing = null; photo = null; setStatus(""); await loadList().catch(fail("Couldn't load")); renderList(); }
   if (act === "more") { await loadList(false).catch(fail("Couldn't load")); renderList(); }
