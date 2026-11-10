@@ -1,3 +1,4 @@
+(() => {
 // A person's collection page: /u/<username>. Reads from the database; the database rules decide what
 // each visitor may see (a private collection shows only to its owner).
 const sb = supabase.createClient(MOMS.url, MOMS.key, { auth: { persistSession: true, detectSessionInUrl: false } });
@@ -188,7 +189,8 @@ async function load() {
   // The owner's own collection (r) is the full collection page.
   if (username === "r") {
     const html = await (await fetch("/collection.html")).text();
-    document.open(); document.write(html.replace("<head>", '<head><base href="/">')); document.close();
+    // moms-config.js is already loaded here; loading it again would redeclare its constants.
+    document.open(); document.write(html.replace(/<script src="moms-config\.js[^>]*><\/script>\s*/, "").replace("<head>", '<head><base href="/">')); document.close();
     return;
   }
 
@@ -213,3 +215,4 @@ async function load() {
 })();
 
 load().catch((err) => { console.error(err); app.innerHTML = `<p class="p-empty">Couldn't load this page. Please refresh.</p>`; });
+})();
