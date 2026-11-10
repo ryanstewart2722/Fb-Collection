@@ -40,6 +40,7 @@ body:has(> .topbar) { padding-top: var(--bar-h); }
   transition: right 0.42s var(--rf-ease, ease);
 }
 .title { font-size: 17px; letter-spacing: -0.02em; }
+.title .t-short { display: none; }
 .toggle { font-size: 11px; }
 .insta { justify-self: end; font-size: 11px; }
 .toggle a.active { text-decoration: underline; text-underline-offset: 2px; }
@@ -203,6 +204,8 @@ h2 {
 /* ---------- Small screens ---------- */
 @media (max-width: 760px) {
   .title { font-size: 15px; }
+  .title .t-full { display: none; }
+  .title .t-short { display: inline; }
   h2 { font-size: 28px; }
   .grid { --item-h: clamp(140px, 44vw, 240px); grid-template-columns: repeat(3, var(--cell)); row-gap: 56px; margin-top: 36px; }
   .grid.square { --item-h: clamp(90px, 27vw, 140px); --cell: var(--item-h); }
