@@ -54,6 +54,19 @@ async function load() {
   }
   const photo = r.image_path || "";
 
+  // Previous / Next walk through this brand in the museum's order (newest first), wrapping at the ends.
+  let prev = null, next = null;
+  if (r.brand_id) {
+    const { rows: all } = await momsFetch(
+      `${type}?select=slug&brand_id=eq.${r.brand_id}&order=release_date.desc.nullslast,id.desc&limit=5000`);
+    const i = all.findIndex((x) => x.slug === r.slug);
+    if (i >= 0 && all.length > 1) {
+      prev = all[(i - 1 + all.length) % all.length].slug;
+      next = all[(i + 1) % all.length].slug;
+    }
+  }
+  const link = (s) => `board.html?type=${type}&slug=${encodeURIComponent(s)}`;
+
   const brand = r.brands?.name || "";
   const title = brand ? `${momsDeckName(r)} - ${brand}` : momsDeckName(r);
   document.title = `${title} · The Museum of Mini Skateboards`;
@@ -61,11 +74,12 @@ async function load() {
   root.innerHTML = `
     <div class="board-img">${photo ? `<img src="${esc(photo)}" alt="${esc(title)}">` : ""}</div>
     <a class="board-close" href="${esc(backHref)}">Close</a>
+    ${prev ? `<a class="board-nav prev" href="${esc(link(prev))}">Previous</a><a class="board-nav next" href="${esc(link(next))}">Next</a>` : ""}
     <div class="board-info">
       <h1>${esc(title)}</h1>
       <div class="board-specs">${specs(r)}</div>
       <div class="board-brand">
-        <span>${esc(brand)}</span>
+        ${r.brand_id ? `<a class="board-brand-link" href="./?brand=${r.brand_id}">${esc(brand)}</a>` : `<span>${esc(brand)}</span>`}
         <div class="board-more${type === "decks" ? "" : " square"}"></div>
       </div>
     </div>`;

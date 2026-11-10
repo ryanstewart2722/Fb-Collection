@@ -190,6 +190,11 @@ h2 {
 .board-img img { max-height: min(950px, 78vh); max-width: 100%; }
 .board-close { writing-mode: vertical-rl; align-self: center; justify-self: center; font-size: 11.5px; color: #555; }
 .board-close:hover { color: #000; }
+.board-nav { position: fixed; bottom: 14px; z-index: 5; font-size: 11.5px; color: #555; }
+.board-nav:hover, .board-brand-link:hover { color: #000; }
+.board-nav.prev { left: var(--gutter); }
+.board-nav.next { right: var(--gutter); }
+.board-brand-link { color: inherit; text-decoration: underline; text-underline-offset: 3px; }
 .board-info { display: flex; flex-direction: column; padding: 52px 0 24px; }
 .board-info h1 { font-size: 46px; font-weight: 500; letter-spacing: -0.035em; line-height: 1.05; margin: 0 0 30px; }
 .board-specs { display: grid; grid-template-columns: 1fr 1fr; gap: 0 24px; font-size: 15px; line-height: 1.35; }
