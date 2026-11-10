@@ -10,6 +10,8 @@ let CONTENT = null;
 const canEdit = (() => { try { return !!localStorage.getItem("fb-editor-token"); } catch { return false; } })();
 
 const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
+// Rows saved with nothing filled in (no text, no photo) are skipped.
+const isBlank = (item) => !item.img && !Object.values(item.values || {}).some((v) => String(v || "").trim());
 const cells = (s, item) => s.columns.map((c) => item.values[c.key] || "");
 const spans = (list) => list.map((c) => `<span>${esc(c)}</span>`).join("");
 
@@ -100,7 +102,7 @@ function renderList() {
       <h2>${esc(s.title)}</h2>
       <div class="list-wrap"><div class="list" data-s="${si}" style="--cols:${colsFor(s.columns.length)}">
         <div class="row head">${spans(s.columns.map((c) => c.label))}</div>
-        ${s.items.map((d, i) => `<div class="row${d.divider && i > 0 ? " divide" : ""}" data-i="${i}">${spans(cells(s, d))}</div>`).join("")}
+        ${s.items.map((d, i) => isBlank(d) ? "" : `<div class="row${d.divider && i > 0 ? " divide" : ""}" data-i="${i}">${spans(cells(s, d))}</div>`).join("")}
         ${canEdit ? `<a class="add-new" href="admin.html#add=${encodeURIComponent(s.id)}">+ Add new</a>` : ""}
       </div></div>
     </section>`).join("");
