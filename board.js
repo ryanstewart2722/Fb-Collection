@@ -40,8 +40,18 @@ async function load() {
     return;
   }
   // The brand's other photos, shown below.
-  const { rows: more } = r.brand_id ? await momsFetch(
-    `${type}?select=id,name,slug,image_path&brand_id=eq.${r.brand_id}&id=neq.${r.id}&image_path=not.is.null&order=release_date.desc.nullslast&limit=8`) : { rows: [] };
+  // A random handful from the same brand: count them, read a window at a random place, shuffle it.
+  let more = [];
+  if (r.brand_id) {
+    const q = `${type}?select=id,name,slug,image_path&brand_id=eq.${r.brand_id}&id=neq.${r.id}&image_path=not.is.null&order=id.asc`;
+    const { total } = await momsFetch(`${q}&limit=1`, { count: true });
+    const win = Math.min(total || 0, 120);
+    if (win) {
+      const { rows } = await momsFetch(`${q}&limit=${win}&offset=${Math.floor(Math.random() * (total - win + 1))}`);
+      for (let i = rows.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [rows[i], rows[j]] = [rows[j], rows[i]]; }
+      more = rows.slice(0, 8);
+    }
+  }
   const photo = r.image_path || "";
 
   const brand = r.brands?.name || "";
