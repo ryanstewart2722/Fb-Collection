@@ -6,7 +6,7 @@
   footer.className = "site-footer";
   footer.innerHTML =
     '<img class="fb-logo" src="/footer-logo.png" alt="MoMS" width="783" height="735">' +
-    '<p class="fb-credit">Designed, curated and developed by <a href="/u/r">Ryan Stewart</a> view collection <a href="/collection.html">here</a></p>' +
+    '<p class="fb-credit">Designed, curated and developed by <a href="/u/r">Ryan Stewart</a> view his collection <a href="/collection.html">here</a></p>' +
     '<nav class="fb-links" aria-label="Site">' +
       '<div><a href="/">Museum</a><a href="/submit.html">Submit New</a><a href="/users.html">Users</a></div>' +
       '<div><a href="/account.html">My Account</a><a href="/signin.html" data-me>My Collection</a><a href="/privacy.html">Privacy</a><a href="mailto:contact@museumofminiskateboards.org">Contact</a></div>' +

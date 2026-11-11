@@ -350,7 +350,7 @@ body.has-refine.rf-open { --tab-edge: calc(var(--rf-w) + 12px); }
   .fb-boards span { width: 64px; }
   .fb-boards span:nth-child(n+3) { display: none; }
   .fb-board { width: 64px; }
-  .fb-credit { grid-column: 1 / -1; grid-row: 3; text-align: right; white-space: normal; max-width: 260px; justify-self: end; }
+  .fb-credit { grid-column: 1 / -1; grid-row: 3; text-align: right; white-space: nowrap; justify-self: end; font-size: min(11.5px, 2.5vw); }
 }
 
 /* black scrollbar */
