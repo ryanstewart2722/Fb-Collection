@@ -11,7 +11,7 @@ const spans = (list) => list.map((c) => `<span>${esc(c)}</span>`).join("");
 
 // Same sections and columns as the museum owner's own collection. Each field is [key, header, placeholder].
 const SCHEMA = {
-  setups:    { title: "Setups",    fields: [["name", "Manufacturer", "Setup name (required)"], ["trucks", "Trucks", "Trucks"], ["wheels", "Wheels", "Wheels"]] },
+  setups:    { title: "Setups",    fields: [["name", "Deck", "Deck (required)"], ["trucks", "Trucks", "Trucks"], ["wheels", "Wheels", "Wheels"]] },
   decks:     { title: "Decks",     fields: [["name", "Deck name/color", "Deck name/color (required)"], ["maker", "Manufacturer", "Manufacturer"], ["mold", "Mold", "Mold"], ["size", "Size", "Size, e.g. 32mm"]] },
   obstacles: { title: "Obstacles", fields: [["name", "Name", "Name (required)"], ["maker", "Manufacturer", "Manufacturer"], ["material", "Material", "Material"]] },
   wheels:    { title: "Wheels",    fields: [["name", "Wheel/manufacturer", "Wheel/manufacturer (required)"], ["color", "Color", "Color"], ["material", "Material", "Material"], ["duro", "Duro", "Duro"]] },
