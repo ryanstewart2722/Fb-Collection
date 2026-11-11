@@ -66,7 +66,7 @@ async function photoUrl(item) {
 function sections() {
   const by = {};
   state.items.forEach((i) => (by[i.section] ||= []).push(i));
-  return ORDER.filter((s) => by[s]).map((s) => ({ id: s, title: SCHEMA[s].title, items: by[s] }));
+  return ORDER.filter((s) => by[s] || state.owner).map((s) => ({ id: s, title: SCHEMA[s].title, items: by[s] || [] }));
 }
 
 /* ---------- header block ---------- */
@@ -83,7 +83,6 @@ function fieldsHtml(sec) {
 function ownerBar() {
   const p = state.profile;
   return `<div class="p-owner">
-    <button class="auth-link" data-act="add">+ Add a board</button> ·
     <button class="auth-link" data-act="edit">Edit name and bio</button> ·
     <button class="auth-link" data-act="private">${p.is_private ? "Make my collection public" : "Make my collection private"}</button> ·
     <button class="auth-link" data-act="signout">Sign out</button>
@@ -110,6 +109,7 @@ function renderList() {
     <div class="list-wrap"><div class="list" data-s="${s.id}" style="--cols:${colsFor(SCHEMA[s.id].fields.length)}">
       <div class="row head">${spans(SCHEMA[s.id].fields.map((f) => f[1]))}</div>
       ${s.items.map((i, n) => `<div class="row${n > 0 && brandOf(s.id, i) !== brandOf(s.id, s.items[n - 1]) ? " divide" : ""}" data-id="${esc(i.id)}">${spans(rowCells(s.id, i))}${i.status !== "approved" ? `<em class="p-pending">${esc(i.status === "pending" ? "waiting for review" : i.status)}</em>` : ""}${state.owner ? `<button class="p-x" data-act="remove" data-id="${esc(i.id)}" title="Remove">Remove</button>` : ""}</div>`).join("")}
+      ${state.owner ? `<a class="add-new" href="#" data-act="add" data-section="${s.id}">+ Add new</a>` : ""}
     </div></div></section>`).join("");
 }
 function renderGrid() {
@@ -122,10 +122,11 @@ function renderGrid() {
 }
 function paintItems() {
   const box = $("#items");
+  if (state.owner && !state.items.length) view = "list";   // nothing to show as pictures yet
   clearActive();
   document.querySelectorAll("#views a").forEach((a) => a.classList.toggle("active", a.dataset.view === view));
   document.body.classList.toggle("list-view", view === "list");
-  if (!state.items.length) {
+  if (!state.items.length && !state.owner) {
     box.innerHTML = `<p class="p-empty">${state.owner ? "You haven't added anything yet." : "Nothing here yet."}</p>`;
     return;
   }
@@ -158,8 +159,8 @@ window.addEventListener("hashchange", () => { view = location.hash === "#list" ?
 /* ---------- page ---------- */
 function paint() {
   document.title = `${state.profile.display_name || state.profile.username} · MoMS`;
-  $("#views").hidden = !state.items.length;
-  $("#views-gap").hidden = !!state.items.length;
+  $("#views").hidden = !state.items.length && !state.owner;
+  $("#views-gap").hidden = !!state.items.length || state.owner;
   app.innerHTML = headHtml() + `<div id="items"></div>`;
   paintItems();
 }
@@ -174,7 +175,12 @@ app.addEventListener("click", async (e) => {
   if (state.profile.id === "sample" && !["add", "edit"].includes(act)) return (msg.textContent = "This is a preview. Nothing is saved here.");
   if (act === "signout") { await sb.auth.signOut(); location.href = "/"; }
   if (act === "edit") { const f = $("#edit-form"); f.hidden = !f.hidden; }
-  if (act === "add") { const f = $("#add-form"); f.hidden = !f.hidden; if (!f.hidden) $("#ad-name").focus(); }
+  if (act === "add") {
+    e.preventDefault();
+    const f = $("#add-form"), sec = e.target.closest("[data-act]").dataset.section;
+    if (sec) { $("#ad-section").value = sec; $("#ad-fields").innerHTML = fieldsHtml(sec); }
+    f.hidden = false; window.scrollTo({ top: 0, behavior: "smooth" }); $("#ad-name").focus({ preventScroll: true });
+  }
   if (act === "remove") {
     const id = e.target.closest("[data-id]").dataset.id, it = state.items.find((i) => i.id === id);
     if (!it || !confirm(`Remove “${it.name}” from your collection?`)) return;
