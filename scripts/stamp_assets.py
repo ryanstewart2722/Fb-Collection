@@ -13,7 +13,7 @@ changed = 0
 for page in sorted(root.glob("*.html")):
     text = page.read_text()
     def stamp(m):
-        f = root / m.group(2)
+        f = root / m.group(2).lstrip("/")
         if not f.is_file():
             return m.group(0)
         return f'{m.group(1)}{m.group(2)}?v={hashlib.md5(f.read_bytes()).hexdigest()[:8]}{m.group(3)}'
