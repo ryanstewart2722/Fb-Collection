@@ -126,27 +126,42 @@ function keepMainPieces(d, w, h) {
   for (let i = 0; i < w * h; i++) if (d[i * 4 + 3] && (!lab[i] || sizes[lab[i]] < big * 0.25)) d[i * 4 + 3] = 0;
 }
 
-// Final pass on the finished frame: smooth the outline, shave a hair off it (drops the backdrop's dark/light rim),
-// and re-colour the edge pixels from the board's own nearby colours so no backdrop colour is left on the edge.
-function cleanEdges(ctx, W, H) {
-  const img = ctx.getImageData(0, 0, W, H), d = img.data, n = W * H;
-  const A = new Float32Array(n), I = new Float32Array(n);
-  for (let i = 0; i < n; i++) A[i] = d[i * 4 + 3] / 255;
-  const S = boxBlur(boxBlur(A, W, H, 3), W, H, 3);   // outline smoothing (about 3px)
-  const Q = new Float32Array(n);
-  for (let i = 0; i < n; i++) Q[i] = ss(0.5, 0.86, S[i]);   // slight shrink + anti-aliased edge
-  // "inside" = solid and at least ~3px from the edge
-  const bin = new Float32Array(n);
-  for (let i = 0; i < n; i++) bin[i] = A[i] > 0.97 ? 1 : 0;
-  const inner = boxBlur(bin, W, H, 3);
-  for (let i = 0; i < n; i++) I[i] = inner[i] > 0.995 ? 1 : 0;
-  const ch = [0, 1, 2].map((c) => { const p = new Float32Array(n); for (let i = 0; i < n; i++) p[i] = I[i] ? d[i * 4 + c] : 0; return boxBlur(p, W, H, 7); });
-  const wgt = boxBlur(I, W, H, 7);
+// Turn the (rough) cut-out into one solid silhouette: the main object only, no holes, a smooth contour.
+// The photo is then clipped by this shape; nothing inside it is touched.
+function solidSilhouette(A, W, H) {
+  const n = W * H, bin = new Uint8Array(n), lab = new Int32Array(n), sizes = [0], stack = new Int32Array(n);
+  for (let i = 0; i < n; i++) bin[i] = A[i] > 0.5 ? 1 : 0;
   for (let i = 0; i < n; i++) {
-    if (!I[i] && Q[i] > 0 && wgt[i] > 0.01) { d[i * 4] = Math.round(ch[0][i] / wgt[i]); d[i * 4 + 1] = Math.round(ch[1][i] / wgt[i]); d[i * 4 + 2] = Math.round(ch[2][i] / wgt[i]); }
-    d[i * 4 + 3] = Math.round(255 * Q[i]);
+    if (!bin[i] || lab[i]) continue;
+    const id = sizes.length; let cnt = 0, sp = 0; stack[sp++] = i; lab[i] = id;
+    while (sp) {
+      const k = stack[--sp]; cnt++; const x = k % W;
+      if (x > 0 && bin[k - 1] && !lab[k - 1]) { lab[k - 1] = id; stack[sp++] = k - 1; }
+      if (x < W - 1 && bin[k + 1] && !lab[k + 1]) { lab[k + 1] = id; stack[sp++] = k + 1; }
+      if (k >= W && bin[k - W] && !lab[k - W]) { lab[k - W] = id; stack[sp++] = k - W; }
+      if (k < n - W && bin[k + W] && !lab[k + W]) { lab[k + W] = id; stack[sp++] = k + W; }
+    }
+    sizes.push(cnt);
   }
-  ctx.putImageData(img, 0, 0);
+  const big = Math.max(0, ...sizes), solid = new Uint8Array(n);
+  for (let i = 0; i < n; i++) solid[i] = lab[i] && sizes[lab[i]] >= big * 0.25 ? 1 : 0;
+  // fill holes: whatever the outside cannot reach is part of the object
+  const out = new Uint8Array(n); let sp = 0;
+  for (let x = 0; x < W; x++) for (const k of [x, (H - 1) * W + x]) if (!solid[k] && !out[k]) { out[k] = 1; stack[sp++] = k; }
+  for (let y = 0; y < H; y++) for (const k of [y * W, y * W + W - 1]) if (!solid[k] && !out[k]) { out[k] = 1; stack[sp++] = k; }
+  while (sp) {
+    const k = stack[--sp], x = k % W;
+    if (x > 0 && !solid[k - 1] && !out[k - 1]) { out[k - 1] = 1; stack[sp++] = k - 1; }
+    if (x < W - 1 && !solid[k + 1] && !out[k + 1]) { out[k + 1] = 1; stack[sp++] = k + 1; }
+    if (k >= W && !solid[k - W] && !out[k - W]) { out[k - W] = 1; stack[sp++] = k - W; }
+    if (k < n - W && !solid[k + W] && !out[k + W]) { out[k + W] = 1; stack[sp++] = k + W; }
+  }
+  const f = new Float32Array(n);
+  for (let i = 0; i < n; i++) f[i] = out[i] ? 0 : 1;
+  // smooth the contour (about 3-4px), then a narrow ramp for an anti-aliased edge, shaved by a hair to lose any backdrop rim
+  const S = boxBlur(boxBlur(boxBlur(f, W, H, 2), W, H, 2), W, H, 2), q = new Float32Array(n);
+  for (let i = 0; i < n; i++) q[i] = ss(0.46, 0.60, S[i]);
+  return q;
 }
 
 window.momsPreparePhoto = async function (file, section) {
@@ -219,24 +234,20 @@ window.momsPreparePhoto = async function (file, section) {
     const [W, H, fill] = tall && box.h > box.w * 1.4 ? [530, 1200, 0.96] : [800, 800, 0.9];
     out.width = W; out.height = H;
     const k = Math.min(W / box.w, H / box.h) * fill;
-    o.imageSmoothingQuality = "high";
-    o.imageSmoothingQuality = "high";
-    // The outline was worked out on a smaller copy. Cut the board from the ORIGINAL photo at full size,
-    // and only shrink it at the very end, straight into the frame.
+    // The outline was worked out on a smaller copy. The board's pixels come straight from the ORIGINAL photo at full
+    // size and are only shrunk at the very end, into the frame; the outline becomes a solid clipping shape.
+    const dx = (W - box.w * k) / 2, dy = (H - box.h * k) / 2, dw = box.w * k, dh = box.h * k;
     const sx = bmp.width / w, sy = bmp.height / h;
-    const rx = Math.max(0, Math.floor(box.x * sx)), ry = Math.max(0, Math.floor(box.y * sy));
-    const rw = Math.min(bmp.width - rx, Math.ceil(box.w * sx)), rh = Math.min(bmp.height - ry, Math.ceil(box.h * sy));
-    if (rw > 0 && rh > 0 && rw * rh <= 20e6) {
-      const A = document.createElement("canvas"); A.width = rw; A.height = rh;
-      const ax = A.getContext("2d"); ax.imageSmoothingQuality = "high";
-      ax.drawImage(bmp, rx, ry, rw, rh, 0, 0, rw, rh);
-      ax.globalCompositeOperation = "destination-in";
-      ax.drawImage(c, box.x, box.y, box.w, box.h, 0, 0, rw, rh);   // the cut-out's outline, stretched to full size
-      o.drawImage(A, 0, 0, rw, rh, (W - box.w * k) / 2, (H - box.h * k) / 2, box.w * k, box.h * k);
-    } else {
-      o.drawImage(c, box.x, box.y, box.w, box.h, (W - box.w * k) / 2, (H - box.h * k) / 2, box.w * k, box.h * k);
-    }
-    cleanEdges(o, W, H);
+    o.imageSmoothingQuality = "high";
+    o.drawImage(bmp, Math.max(0, box.x * sx), Math.max(0, box.y * sy), Math.min(bmp.width, box.w * sx), Math.min(bmp.height, box.h * sy), dx, dy, dw, dh);
+    const mk = document.createElement("canvas"); mk.width = W; mk.height = H;
+    const mx = mk.getContext("2d", { willReadFrequently: true }); mx.imageSmoothingQuality = "high";
+    mx.drawImage(c, box.x, box.y, box.w, box.h, dx, dy, dw, dh);   // the rough cut-out, stretched into the frame
+    const md = mx.getImageData(0, 0, W, H).data, rough = new Float32Array(W * H);
+    for (let i = 0; i < rough.length; i++) rough[i] = md[i * 4 + 3] / 255;
+    const shape = solidSilhouette(rough, W, H), od = o.getImageData(0, 0, W, H);
+    for (let i = 0; i < shape.length; i++) od.data[i * 4 + 3] = Math.round(255 * shape[i]);
+    o.putImageData(od, 0, 0);
     return { blob: await new Promise((r) => out.toBlob(r, "image/png")), ext: "png", type: "image/png", cut: true };
   }
   out.width = w; out.height = h; o.fillStyle = "#fff"; o.fillRect(0, 0, w, h); o.drawImage(bmp, 0, 0, w, h);
