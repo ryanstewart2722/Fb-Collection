@@ -212,9 +212,9 @@ function renderList() {
       <div class="list-wrap"><div class="list" data-s="${si}">
         <div class="row head">${spans(s.cols.map((c) => c[0]))}</div>
         ${s.rows.map((r, i) => `<div class="row link${i > 0 && groupKey(r) !== groupKey(s.rows[i - 1]) ? " divide" : ""}" data-i="${i}">${spans(s.cols.map((c) => c[1](r)))}</div>`).join("")}
+        <a class="add-new submit-row" href="submit.html?type=${esc(s.type)}">+ Submit</a>
       </div></div>
       ${moreButton(s, si)}
-      <a class="add-new submit-row" href="submit.html?type=${esc(s.type)}">+ Submit</a>
     </section>`).join("");
 
   app.querySelectorAll(".list").forEach((list) => {
