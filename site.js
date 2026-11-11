@@ -9,7 +9,7 @@
     '<p class="fb-credit">Designed, curated and developed by <a href="/u/r">Ryan Stewart</a> view collection <a href="/collection.html">here</a></p>' +
     '<nav class="fb-links" aria-label="Site">' +
       '<div><a href="/">Museum</a><a href="/submit.html">Submit New</a><a href="/users.html">Users</a></div>' +
-      '<div><a href="/account.html">My Account</a><a href="/signin.html" data-me>My Collection</a><a href="mailto:contact@museumofminiskateboards.org">Contact</a></div>' +
+      '<div><a href="/account.html">My Account</a><a href="/signin.html" data-me>My Collection</a><a href="/privacy.html">Privacy</a><a href="mailto:contact@museumofminiskateboards.org">Contact</a></div>' +
     '</nav>' +
     '<div class="fb-boards" aria-hidden="true">' + ANGLES.map(function (a) { return '<span style="--r:' + a + 'deg">' + BOARD + '</span>'; }).join("") + '</div>' +
     '<p class="fb-title">The Museum of Mini Skateboards</p>';
