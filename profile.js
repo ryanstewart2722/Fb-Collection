@@ -129,7 +129,7 @@ function elThumb(i) { return `<label class="el-thumb">${i && i.url ? `<img src="
 function elInputs(sec, i) {
   return `<span class="el-fields">${SCHEMA[sec].fields.map(([k, h, ph]) => {
     const v = esc(i ? val(i, k) : ""), max = k === "name" ? 120 : 60, common = `class="el-in" data-k="${k}" placeholder="${esc(ph)}" maxlength="${max}" aria-label="${esc(h)}"`;
-    return SUGGEST_KIND[k]
+    return SUGGEST_KIND[k] && !matchMedia("(max-width: 760px)").matches   // phones: boxes wrap instead of offering suggestions
       ? `<input ${common} type="text" list="dl-${SUGGEST_KIND[k]}" autocomplete="off" value="${v}">`
       : `<textarea ${common} rows="1" spellcheck="false">${v}</textarea>`;   // wraps, so long names stay readable on a phone
   }).join("")}</span>`;

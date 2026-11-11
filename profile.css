@@ -103,15 +103,15 @@ textarea.el-in { resize: none; overflow: hidden; }
 .el-in:hover { border-color: var(--line); }
 .el-in:focus { outline: 0; border-color: #000; background: #fff; }
 @media (max-width: 760px) {
-  .el-row { grid-template-columns: 34px minmax(0, 1.6fr) minmax(0, 1fr) minmax(0, 1fr) 26px; align-items: start; padding: 5px 0; min-height: 0; gap: 0; }
-  .el-n4 .el-row { grid-template-columns: 34px minmax(0, 1.3fr) minmax(0, 1.25fr) minmax(0, 1.05fr) minmax(0, .85fr) 26px; }
+  .el-row { grid-template-columns: 30px minmax(0, 1.6fr) minmax(0, 1fr) minmax(0, 1fr) 22px; align-items: start; padding: 5px 0; min-height: 0; gap: 0; }
+  .el-n4 .el-row { grid-template-columns: 30px minmax(0, 1.1fr) minmax(0, 1.25fr) minmax(0, 1.05fr) minmax(0, .8fr) 22px; }
   .el-head { display: grid; padding: 0 0 10px; }
   .el-head .el-h { font-size: 6px; padding: 0 3px; letter-spacing: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .el-thumb { width: 28px; height: 40px; }
-  .el-in { font-size: 13px; line-height: 1.3; padding: 9px 3px; margin: 0; border-color: #ececec; min-height: 42px; overflow-wrap: anywhere; }
-  .el-x { width: 26px; height: 42px; font-size: 20px; }
-  .el-new, .el-n3 .el-new { grid-template-columns: 34px minmax(0, 1.6fr) minmax(0, 1fr) minmax(0, 1fr); }
-  .el-n4 .el-new { grid-template-columns: 34px minmax(0, 1.3fr) minmax(0, 1.25fr) minmax(0, 1.05fr) minmax(0, .85fr); }
+  .el-thumb { width: 26px; height: 40px; }
+  .el-in { font-size: 13px; line-height: 1.3; padding: 9px 3px; margin: 0; border-color: #ececec; min-height: 42px; overflow-wrap: break-word; word-break: normal; }
+  .el-x { width: 22px; height: 42px; font-size: 20px; }
+  .el-new, .el-n3 .el-new { grid-template-columns: 30px minmax(0, 1.6fr) minmax(0, 1fr) minmax(0, 1fr); }
+  .el-n4 .el-new { grid-template-columns: 30px minmax(0, 1.1fr) minmax(0, 1.25fr) minmax(0, 1.05fr) minmax(0, .8fr); }
   .el-new .el-save { grid-column: 1 / -1; width: 100%; min-height: 44px; margin: 10px 0 0; font-size: 15px; background: #000; color: #fff; }
   .el-add { width: 100%; min-height: 44px; margin-top: 14px; font-size: 15px; }
 }
