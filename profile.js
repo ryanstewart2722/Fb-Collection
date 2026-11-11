@@ -251,11 +251,14 @@ function loadTerms() {
     const official = (kind, name) => { const k = tkey(name); if (!k) return; const cur = TERMS[kind].get(k); if (!cur || caps(name) > caps(cur)) TERMS[kind].set(k, name); };
     const [b, d, u] = await Promise.all([
       sb.from("brands").select("name").limit(500),
-      sb.from("decks").select("molds").limit(3000),
+      sb.from("decks").select("molds,mold_code").limit(3000),
       sb.from("user_terms").select("kind,name").limit(2000),
     ]);
     (b.data || []).forEach((r) => official("brand", r.name));
     (d.data || []).forEach((r) => (r.molds || []).forEach((m) => official("mold", m)));
+    const codes = new Map();   // short mold codes like "f", "nc", "c2" count too, when a code always means one mold
+    (d.data || []).forEach((r) => { if (r.mold_code && (r.molds || []).length === 1) { const k = tkey(r.mold_code); (codes.get(k) || codes.set(k, new Set()).get(k)).add(r.molds[0]); } });
+    codes.forEach((names, k) => { if (names.size === 1 && !TERMS.mold.has(k)) TERMS.mold.set(k, [...names][0]); });
     (u.data || []).forEach((r) => { const k = tkey(r.name); if (TERMS[r.kind] && k && !TERMS[r.kind].has(k)) TERMS[r.kind].set(k, r.name); });
   })().catch(() => {}));
 }
