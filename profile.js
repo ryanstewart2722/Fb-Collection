@@ -113,10 +113,10 @@ function loadSuggestions() {
   return (suggestReady ||= (async () => {
     const top = (arr) => { const c = new Map(); arr.forEach((v) => { v = String(v ?? "").trim(); if (v && v.length <= 40) c.set(v, (c.get(v) || 0) + 1); }); return [...c].sort((a, b) => b[1] - a[1]).map((x) => x[0]).slice(0, 150); };
     const get = async (t, cols) => { const { data } = await sb.from(t).select(cols).limit(3000); return data || []; };
-    const [brands, decks, trucks, wheels] = await Promise.all([get("brands", "name"), get("decks", "mold_code,size,color"), get("trucks", "size,color"), get("wheels", "color,material")]);
+    const [brands, decks, trucks, wheels] = await Promise.all([get("brands", "name"), get("decks", "molds,size,color"), get("trucks", "size,color"), get("wheels", "color,material")]);
     const lists = {
       brand: brands.map((b) => b.name).filter(Boolean).sort((a, b) => a.localeCompare(b)),
-      dsize: top(decks.map((d) => d.size)), tsize: top(trucks.map((t) => t.size)), mold: top(decks.map((d) => d.mold_code)),
+      dsize: top(decks.map((d) => d.size)), tsize: top(trucks.map((t) => t.size)), mold: top(decks.flatMap((d) => d.molds || [])),
       color: top([...decks, ...trucks, ...wheels].map((x) => x.color)), material: top(wheels.map((w) => w.material)),
     };
     const box = document.createElement("div"); box.hidden = true;
