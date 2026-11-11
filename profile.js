@@ -11,8 +11,8 @@ const spans = (list) => list.map((c) => `<span>${esc(c)}</span>`).join("");
 
 // Same sections and columns as the museum owner's own collection. Each field is [key, header, placeholder].
 const SCHEMA = {
-  setups:    { title: "Setups",    fields: [["name", "Deck name", "Deck name (required)"], ["maker", "Manufacturer", "Manufacturer"], ["size", "Size", "Size, e.g. 32mm"], ["mold", "Mold", "Mold"], ["color", "Color", "Color"], ["tmaker", "Trucks manufacturer", "Trucks manufacturer"], ["tsize", "Trucks size", "Trucks size"], ["tcolor", "Trucks color", "Trucks color"], ["wmaker", "Wheels manufacturer", "Wheels manufacturer"], ["wsize", "Wheels size", "Wheels size"], ["wcolor", "Wheels color", "Wheels color"]] },
-  decks:     { title: "Decks",     fields: [["name", "Name", "Name (required)"], ["maker", "Manufacturer", "Manufacturer"], ["size", "Size", "Size, e.g. 32mm"], ["mold", "Mold", "Mold"], ["color", "Color", "Color"]] },
+  setups:    { title: "Setups",    fields: [["name", "Name", "Name"],["maker", "Manufacturer", "Manufacturer"],["size", "Size", "Size"],["mold", "Mold", "Mold"],["color", "Color", "Color"],["tmaker", "Trucks manufacturer", "Manufacturer"],["tsize", "Trucks size", "Size"],["tcolor", "Trucks color", "Color"],["wmaker", "Wheels manufacturer", "Manufacturer"],["wsize", "Wheels size", "Size"],["wcolor", "Wheels color", "Color"]] },
+  decks:     { title: "Decks",     fields: [["name", "Name", "Name"],["maker", "Manufacturer", "Manufacturer"],["size", "Size", "Size"],["mold", "Mold", "Mold"],["color", "Color", "Color"]] },
   obstacles: { title: "Obstacles", fields: [["name", "Name", "Name (required)"], ["maker", "Manufacturer", "Manufacturer"], ["material", "Material", "Material"]] },
   wheels:    { title: "Wheels",    fields: [["name", "Wheel/manufacturer", "Wheel/manufacturer (required)"], ["color", "Color", "Color"], ["material", "Material", "Material"], ["duro", "Duro", "Duro"]] },
   trucks:    { title: "Trucks",    fields: [["name", "Name", "Name (required)"], ["size", "Size", "Size, e.g. 32mm"], ["color", "Color", "Color"]] },
