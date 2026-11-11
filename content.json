@@ -14,7 +14,7 @@
       "columns": [
         {
           "key": "name",
-          "label": "Manufacturer"
+          "label": "Deck & Manufacturer"
         },
         {
           "key": "trucks",

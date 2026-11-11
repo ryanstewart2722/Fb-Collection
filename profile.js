@@ -11,7 +11,7 @@ const spans = (list) => list.map((c) => `<span>${esc(c)}</span>`).join("");
 
 // Same sections and columns as the museum owner's own collection. Each field is [key, header, placeholder].
 const SCHEMA = {
-  setups:    { title: "Setups",    fields: [["name", "Deck", "Deck (required)"], ["trucks", "Trucks", "Trucks"], ["wheels", "Wheels", "Wheels"]] },
+  setups:    { title: "Setups",    fields: [["name", "Deck & Manufacturer", "Deck & manufacturer (required)"], ["trucks", "Trucks", "Trucks"], ["wheels", "Wheels", "Wheels"]] },
   decks:     { title: "Decks",     fields: [["name", "Deck name/color", "Deck name/color (required)"], ["maker", "Manufacturer", "Manufacturer"], ["mold", "Mold", "Mold"], ["size", "Size", "Size, e.g. 32mm"]] },
   obstacles: { title: "Obstacles", fields: [["name", "Name", "Name (required)"], ["maker", "Manufacturer", "Manufacturer"], ["material", "Material", "Material"]] },
   wheels:    { title: "Wheels",    fields: [["name", "Wheel/manufacturer", "Wheel/manufacturer (required)"], ["color", "Color", "Color"], ["material", "Material", "Material"], ["duro", "Duro", "Duro"]] },
@@ -22,6 +22,8 @@ const TALL = new Set(["decks", "setups"]);
 // Older items were saved as brand/size/color; still show them.
 const val = (i, k) => k === "name" ? i.name : (i.details?.[k] ?? (k === "maker" ? i.details?.brand : "")) || "";
 const colsFor = (n) => n <= 4 ? "473fr 355fr 237fr 335fr" : "473fr " + Array(n - 1).fill(Math.round(927 / (n - 1)) + "fr").join(" ");
+// A line goes between brands: the manufacturer when there is one, otherwise the start of the name ("Sunpower Wheels, Satori" -> "Sunpower Wheels").
+const brandOf = (sec, i) => (val(i, "maker") || i.name.split(/[,(*]|\s\d/)[0]).trim().toLowerCase();
 const rowCells = (sec, i) => SCHEMA[sec].fields.map(([k]) => val(i, k));
 
 // A built-in sample so you can see what a page looks like before anyone has signed up.
@@ -110,7 +112,7 @@ function renderList() {
     <h2>${esc(s.title)}</h2>
     <div class="list-wrap"><div class="list" data-s="${s.id}" style="--cols:${colsFor(SCHEMA[s.id].fields.length)}">
       <div class="row head">${spans(SCHEMA[s.id].fields.map((f) => f[1]))}</div>
-      ${s.items.map((i, n) => `<div class="row" data-id="${esc(i.id)}">${spans(rowCells(s.id, i))}${i.status !== "approved" ? `<em class="p-pending">${esc(i.status === "pending" ? "waiting for review" : i.status)}</em>` : ""}${state.owner ? `<button class="p-x" data-act="remove" data-id="${esc(i.id)}" title="Remove">Remove</button>` : ""}</div>`).join("")}
+      ${s.items.map((i, n) => `<div class="row${n > 0 && brandOf(s.id, i) !== brandOf(s.id, s.items[n - 1]) ? " divide" : ""}" data-id="${esc(i.id)}">${spans(rowCells(s.id, i))}${i.status !== "approved" ? `<em class="p-pending">${esc(i.status === "pending" ? "waiting for review" : i.status)}</em>` : ""}${state.owner ? `<button class="p-x" data-act="remove" data-id="${esc(i.id)}" title="Remove">Remove</button>` : ""}</div>`).join("")}
     </div></div></section>`).join("");
 }
 function renderGrid() {

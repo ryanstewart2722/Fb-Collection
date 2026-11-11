@@ -13,6 +13,12 @@ const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<
 // Rows saved with nothing filled in (no text, no photo) are skipped.
 const isBlank = (item) => !item.img && !Object.values(item.values || {}).some((v) => String(v || "").trim());
 const cells = (s, item) => s.columns.map((c) => item.values[c.key] || "");
+// A line goes between brands: the Manufacturer column when the section has one, otherwise the start of the name.
+const brandOf = (s, item) => {
+  const col = s.columns.find((c) => /manufacturer/i.test(c.label) && c.key !== "name");
+  const v = col ? item.values[col.key] : "";
+  return String(v || (item.values.name || "").split(/[,(*]|\s\d/)[0]).trim().toLowerCase();
+};
 const spans = (list) => list.map((c) => `<span>${esc(c)}</span>`).join("");
 
 // Column widths from the Figma frame; extra columns share the space after the first.
@@ -102,7 +108,7 @@ function renderList() {
       <h2>${esc(s.title)}</h2>
       <div class="list-wrap"><div class="list" data-s="${si}" style="--cols:${colsFor(s.columns.length)}">
         <div class="row head">${spans(s.columns.map((c) => c.label))}</div>
-        ${s.items.map((d, i) => isBlank(d) ? "" : `<div class="row${d.divider && i > 0 ? " divide" : ""}" data-i="${i}">${spans(cells(s, d))}</div>`).join("")}
+        ${s.items.map((d, i, all) => isBlank(d) ? "" : `<div class="row${i > 0 && (d.divider || brandOf(s, d) !== brandOf(s, all[i - 1])) ? " divide" : ""}" data-i="${i}">${spans(cells(s, d))}</div>`).join("")}
         ${canEdit ? `<a class="add-new" href="admin.html#add=${encodeURIComponent(s.id)}">+ Add new</a>` : ""}
       </div></div>
     </section>`).join("");
