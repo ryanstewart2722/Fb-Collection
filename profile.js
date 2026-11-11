@@ -202,7 +202,7 @@ function paint() {
   document.title = `${state.profile.display_name || state.profile.username} · MoMS`;
   $("#views").hidden = !state.items.length && !state.owner;
   $("#views-gap").hidden = !!state.items.length || state.owner;
-  app.innerHTML = `<div id="items"></div>` + headHtml() + (state.owner ? `<button class="edit-fab" data-act="editimg">${state.edit ? "Done editing" : "Edit"}</button>` : "");   // the link and owner links sit at the bottom of the page
+  app.innerHTML = `<div id="items"></div>` + headHtml();   // the link and owner links sit at the bottom of the page
   paintItems();
 }
 function notFound(name) {
