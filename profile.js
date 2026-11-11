@@ -267,7 +267,7 @@ async function tryInsert(row) {
     if (error) { if (image_path) sb.storage.from("uploads").remove([image_path]).catch(() => {}); throw error; }
     data.url = await photoUrl(data);
     state.items.push(data); state.draft = null; paint();
-    $("#owner-msg").textContent = "Added. Other people see it once it's been reviewed.";
+    $("#owner-msg").textContent = "Added.";
   } catch (err) { msg.textContent = "Couldn't add that. " + (err.message || err); }
 }
 async function saveRow(row) {
@@ -282,7 +282,7 @@ async function saveRow(row) {
   const { data, error } = await sb.from("collection_items").update({ name, details }).eq("id", it.id).select();
   if (error || !data?.length) return (msg.textContent = "Couldn't save. " + (error?.message || ""));
   const url = it.url; Object.assign(it, data[0]); it.url = url;
-  msg.textContent = "Saved. Changes show to other people once they've been reviewed.";
+  msg.textContent = "Saved.";
 }
 app.addEventListener("change", (e) => {
   if (!e.target.classList.contains("el-in")) return;
@@ -307,7 +307,7 @@ app.addEventListener("change", async (e) => {
     if (error || !data?.length) { sb.storage.from("uploads").remove([path]).catch(() => {}); throw error || new Error("not saved"); }
     if (it.image_path && !/^https?:/.test(it.image_path)) sb.storage.from("uploads").remove([it.image_path]).catch(() => {});
     Object.assign(it, data[0]); it.url = await photoUrl(it);
-    paint(); $("#owner-msg").textContent = "Photo saved. Other people see it once it's been reviewed.";
+    paint(); $("#owner-msg").textContent = "Photo saved.";
   } catch (err) { msg.textContent = "Couldn't save that photo. " + (err.message || err); }
 });
 app.addEventListener("change", (e) => { if (e.target.id === "ad-section") $("#ad-fields").innerHTML = fieldsHtml(e.target.value); });
@@ -334,7 +334,7 @@ app.addEventListener("submit", async (e) => {
       if (error) { if (image_path) sb.storage.from("uploads").remove([image_path]).catch(() => {}); throw error; }
       data.url = await photoUrl(data);
       state.items.push(data); paint();
-      $("#owner-msg").textContent = image_path ? "Added. Your photo shows to other people once it's been reviewed." : "Added.";
+      $("#owner-msg").textContent = image_path ? "Added." : "Added.";
       $("#add-form").hidden = false; $("#add-form").reset(); $("#ad-fields").innerHTML = fieldsHtml($("#ad-section").value);
     } catch (err) {
       msg.textContent = "Couldn't add that. " + (err.message || err);
