@@ -41,3 +41,4 @@
 .s-tabs { font-size: 13px; margin: 0 0 16px; }
 .s-tabs .on { text-decoration: none; font-weight: 500; color: #000; }
 .auth-form textarea { font: inherit; resize: vertical; }
+#ad-fields { display: contents; }

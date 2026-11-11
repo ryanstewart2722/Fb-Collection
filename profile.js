@@ -9,8 +9,20 @@ const canHover = matchMedia("(hover: hover)").matches;
 const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
 const spans = (list) => list.map((c) => `<span>${esc(c)}</span>`).join("");
 
-const SECTION_TITLES = { setups: "Setups", decks: "Decks", trucks: "Trucks", wheels: "Wheels" };
-const COLS = [["Name", (i) => i.name], ["Brand", (i) => i.details?.brand || ""], ["Size", (i) => i.details?.size || ""], ["Color", (i) => i.details?.color || ""]];
+// Same sections and columns as the museum owner's own collection. Each field is [key, header, placeholder].
+const SCHEMA = {
+  setups:    { title: "Setups",    fields: [["name", "Manufacturer", "Setup name (required)"], ["trucks", "Trucks", "Trucks"], ["wheels", "Wheels", "Wheels"]] },
+  decks:     { title: "Decks",     fields: [["name", "Deck name/color", "Deck name/color (required)"], ["maker", "Manufacturer", "Manufacturer"], ["mold", "Mold", "Mold"], ["size", "Size", "Size, e.g. 32mm"]] },
+  obstacles: { title: "Obstacles", fields: [["name", "Name", "Name (required)"], ["maker", "Manufacturer", "Manufacturer"], ["material", "Material", "Material"]] },
+  wheels:    { title: "Wheels",    fields: [["name", "Wheel/manufacturer", "Wheel/manufacturer (required)"], ["color", "Color", "Color"], ["material", "Material", "Material"], ["duro", "Duro", "Duro"]] },
+  trucks:    { title: "Trucks",    fields: [["name", "Name", "Name (required)"], ["size", "Size", "Size, e.g. 32mm"], ["color", "Color", "Color"]] },
+};
+const ORDER = ["setups", "decks", "obstacles", "wheels", "trucks"];
+const TALL = new Set(["decks", "setups"]);
+// Older items were saved as brand/size/color; still show them.
+const val = (i, k) => k === "name" ? i.name : (i.details?.[k] ?? (k === "maker" ? i.details?.brand : "")) || "";
+const colsFor = (n) => n <= 4 ? "473fr 355fr 237fr 335fr" : "473fr " + Array(n - 1).fill(Math.round(927 / (n - 1)) + "fr").join(" ");
+const rowCells = (sec, i) => SCHEMA[sec].fields.map(([k]) => val(i, k));
 
 // A built-in sample so you can see what a page looks like before anyone has signed up.
 const D = (f) => `https://museumofminiskateboards.org/Images/museum/decks/${f}.png`;
@@ -21,7 +33,7 @@ const SAMPLE = {
     ["decks", "Drop 82, Dr.M’s airbrushed - 1082 (f)", "Dr. M's Research Institute", "32mm", "Multicolor", "drm-1082"], ["decks", "Frame", "CATFISHBBQ", "34mm", "Red", "cfbbq-ig330"],
     ["decks", "Washi Spring", "CATFISHBBQ", "32mm", "Green", "cfbbq-1869"], ["decks", "Wish", "CATFISHBBQ", "32mm", "Natural/Blue", "cfbbq-2"],
     ["setups", "Daily skate", "", "32mm", "", "cfbbq-1830"], ["setups", "Display shelf", "", "34mm", "", "cfbbq-1860"],
-  ].map(([section, name, brand, size, color, f], n) => ({ id: "s" + n, section, name, details: { brand, size, color }, image_path: D(f), status: "approved" })),
+  ].map(([section, name, brand, size, color, f], n) => ({ id: "s" + n, section, name, details: { maker: brand, size, ...(section === "setups" ? { trucks: "Independent 32mm", wheels: "Classic 3.0" } : { mold: color ? "Freshwater" : "" }) }, image_path: D(f), status: "approved" })),
 };
 
 let view = location.hash === "#list" ? "list" : "image";
@@ -52,7 +64,7 @@ async function photoUrl(item) {
 function sections() {
   const by = {};
   state.items.forEach((i) => (by[i.section] ||= []).push(i));
-  return ["setups", "decks", "trucks", "wheels"].filter((s) => by[s]).map((s) => ({ id: s, title: SECTION_TITLES[s], items: by[s] }));
+  return ORDER.filter((s) => by[s]).map((s) => ({ id: s, title: SCHEMA[s].title, items: by[s] }));
 }
 
 /* ---------- header block ---------- */
@@ -66,6 +78,9 @@ function headHtml() {
     ${owner ? ownerBar() : ""}
   </section>`;
 }
+function fieldsHtml(sec) {
+  return SCHEMA[sec].fields.map(([k, , ph], n) => `<input id="ad-${k}" data-k="${k}" type="text" placeholder="${esc(ph)}" maxlength="${k === "name" ? 120 : 60}"${n === 0 ? " required" : ""}>`).join("");
+}
 function ownerBar() {
   const p = state.profile;
   return `<div class="p-owner">
@@ -74,11 +89,8 @@ function ownerBar() {
     <button class="auth-link" data-act="private">${p.is_private ? "Make my collection public" : "Make my collection private"}</button> ·
     <button class="auth-link" data-act="signout">Sign out</button>
     <form id="add-form" class="auth-form p-edit" hidden>
-      <select id="ad-section" aria-label="What is it?"><option value="decks">Deck</option><option value="setups">Complete setup</option><option value="trucks">Trucks</option><option value="wheels">Wheels</option></select>
-      <input id="ad-name" type="text" placeholder="Name (required)" maxlength="120" required>
-      <input id="ad-brand" type="text" placeholder="Brand" maxlength="60">
-      <input id="ad-size" type="text" placeholder="Size, e.g. 32mm" maxlength="30">
-      <input id="ad-color" type="text" placeholder="Color" maxlength="40">
+      <select id="ad-section" aria-label="What is it?"><option value="decks">Deck</option><option value="setups">Complete setup</option><option value="obstacles">Obstacle</option><option value="trucks">Trucks</option><option value="wheels">Wheels</option></select>
+      <span id="ad-fields">${fieldsHtml("decks")}</span>
       <label class="p-file">Photo of yours <input id="ad-file" type="file" accept="image/jpeg,image/png,image/webp,image/*"></label>
       <p class="auth-note">Photos are reviewed before other people can see them. Use a photo of your own board.</p>
       <button class="auth-btn" type="submit" id="ad-btn">Add</button>
@@ -96,17 +108,17 @@ function ownerBar() {
 function renderList() {
   return sections().map((s) => `<section class="list-section">
     <h2>${esc(s.title)}</h2>
-    <div class="list-wrap"><div class="list" data-s="${s.id}" style="--cols:473fr 355fr 237fr 335fr">
-      <div class="row head">${spans(COLS.map((c) => c[0]))}</div>
-      ${s.items.map((i, n) => `<div class="row" data-id="${esc(i.id)}">${spans(COLS.map((c) => c[1](i)))}${i.status !== "approved" ? `<em class="p-pending">${esc(i.status === "pending" ? "waiting for review" : i.status)}</em>` : ""}${state.owner ? `<button class="p-x" data-act="remove" data-id="${esc(i.id)}" title="Remove">Remove</button>` : ""}</div>`).join("")}
+    <div class="list-wrap"><div class="list" data-s="${s.id}" style="--cols:${colsFor(SCHEMA[s.id].fields.length)}">
+      <div class="row head">${spans(SCHEMA[s.id].fields.map((f) => f[1]))}</div>
+      ${s.items.map((i, n) => `<div class="row" data-id="${esc(i.id)}">${spans(rowCells(s.id, i))}${i.status !== "approved" ? `<em class="p-pending">${esc(i.status === "pending" ? "waiting for review" : i.status)}</em>` : ""}${state.owner ? `<button class="p-x" data-act="remove" data-id="${esc(i.id)}" title="Remove">Remove</button>` : ""}</div>`).join("")}
     </div></div></section>`).join("");
 }
 function renderGrid() {
   return sections().filter((s) => s.items.some((i) => i.url)).map((s) => `<section class="grid-section">
     <h2>${esc(s.title)}</h2>
-    <div class="grid${s.id === "trucks" || s.id === "wheels" ? " square" : ""}" data-s="${s.id}">
+    <div class="grid${TALL.has(s.id) ? "" : " square"}" data-s="${s.id}">
       ${s.items.filter((i) => i.url).map((i) => `<div class="item" data-id="${esc(i.id)}"><img src="${esc(i.url)}" alt="${esc(i.name)}" loading="lazy"></div>`).join("")}
-      <div class="bar" style="--cols:473fr 355fr 237fr 335fr"></div>
+      <div class="bar" style="--cols:${colsFor(SCHEMA[s.id].fields.length)}"></div>
     </div></section>`).join("");
 }
 function paintItems() {
@@ -134,7 +146,7 @@ function paintItems() {
         el.classList.add("on"); grid.classList.add("hovering");
         const gap = parseFloat(getComputedStyle(grid).rowGap);
         bar.style.top = el.offsetTop + img.offsetHeight + gap / 2 - 16 + "px";
-        bar.innerHTML = spans(COLS.map((c) => c[1](d)));
+        bar.innerHTML = spans(rowCells(grid.dataset.s, d));
         bar.classList.add("show");
         showPreview(d.url);
       }));
@@ -180,6 +192,7 @@ app.addEventListener("click", async (e) => {
     $("#owner-msg").textContent = is_private ? "Your collection is now private. Only you can see it." : "Your collection is now public.";
   }
 });
+app.addEventListener("change", (e) => { if (e.target.id === "ad-section") $("#ad-fields").innerHTML = fieldsHtml(e.target.value); });
 app.addEventListener("submit", async (e) => {
   if (e.target.id === "add-form") {
     e.preventDefault();
@@ -196,14 +209,14 @@ app.addEventListener("submit", async (e) => {
         const up = await sb.storage.from("uploads").upload(image_path, p.blob, { contentType: p.type, cacheControl: "3600" });
         if (up.error) throw up.error;
       }
-      const details = Object.fromEntries([["brand", $("#ad-brand").value], ["size", $("#ad-size").value], ["color", $("#ad-color").value]].map(([k, v]) => [k, v.trim()]).filter(([, v]) => v));
+      const details = Object.fromEntries([...document.querySelectorAll("#ad-fields [data-k]")].filter((el) => el.dataset.k !== "name").map((el) => [el.dataset.k, el.value.trim()]).filter(([, v]) => v));
       const position = state.items.reduce((m, i) => Math.max(m, i.position || 0), 0) + 1;
       const { data, error } = await sb.from("collection_items").insert({ section, name, details, image_path, position }).select().single();
       if (error) { if (image_path) sb.storage.from("uploads").remove([image_path]).catch(() => {}); throw error; }
       data.url = await photoUrl(data);
       state.items.push(data); paint();
       $("#owner-msg").textContent = image_path ? "Added. Your photo shows to other people once it's been reviewed." : "Added.";
-      $("#add-form").hidden = false; $("#add-form").reset();
+      $("#add-form").hidden = false; $("#add-form").reset(); $("#ad-fields").innerHTML = fieldsHtml($("#ad-section").value);
     } catch (err) {
       msg.textContent = "Couldn't add that. " + (err.message || err);
     }
