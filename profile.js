@@ -126,8 +126,9 @@ function loadSuggestions() {
   })().catch(() => {}));
 }
 function elThumb(i) { return `<label class="el-thumb">${i && i.url ? `<img src="${esc(i.url)}" alt="">` : "+"}<input class="ed-file" type="file" accept="image/*"></label>`; }
+const SHORT_FIELDS = new Set(["size", "mold", "color", "material", "duro"]);
 function elInputs(sec, i) {
-  return `<span class="el-fields">${SCHEMA[sec].fields.map(([k, , ph]) => `<input class="el-in" data-k="${k}" type="text"${SUGGEST_KIND[k] ? ` list="dl-${SUGGEST_KIND[k]}" autocomplete="off"` : ""} value="${esc(i ? val(i, k) : "")}" placeholder="${esc(ph.replace(" (required)", ""))}" maxlength="${k === "name" ? 120 : 60}">`).join("")}</span>`;
+  return `<span class="el-fields">${SCHEMA[sec].fields.map(([k, h, ph]) => `<label class="el-f${SHORT_FIELDS.has(k) ? " el-short" : ""}"><span class="el-l">${esc(h)}</span><input class="el-in" data-k="${k}" type="text"${SUGGEST_KIND[k] ? ` list="dl-${SUGGEST_KIND[k]}" autocomplete="off"` : ""} value="${esc(i ? val(i, k) : "")}" placeholder="${esc(ph)}" maxlength="${k === "name" ? 120 : 60}"></label>`).join("")}</span>`;
 }
 function renderListEdit() {
   loadSuggestions();
@@ -198,12 +199,22 @@ function paintItems() {
 window.addEventListener("hashchange", () => { view = location.hash === "#list" ? "list" : "image"; if (state) paint(); });
 
 /* ---------- page ---------- */
+function syncEditHeader() {
+  const t = document.querySelector(".insta"), editing = !!(state && state.owner && state.edit);
+  document.body.classList.toggle("editing", editing);
+  if (!t) return;
+  if (editing && matchMedia("(max-width: 760px)").matches) {
+    if (t.dataset.prev === undefined) t.dataset.prev = t.textContent;
+    t.textContent = "Done"; t.onclick = (e) => { e.preventDefault(); state.edit = false; state.draft = null; paint(); };
+  } else if (t.dataset.prev !== undefined) { t.textContent = t.dataset.prev; t.onclick = null; delete t.dataset.prev; }
+}
 function paint() {
   document.title = `${state.profile.display_name || state.profile.username} · MoMS`;
   $("#views").hidden = !state.items.length && !state.owner;
   $("#views-gap").hidden = !!state.items.length || state.owner;
   app.innerHTML = `<div id="items"></div>` + headHtml();   // the link and owner links sit at the bottom of the page
   paintItems();
+  syncEditHeader();
 }
 function notFound(name) {
   app.innerHTML = `<section class="p-head"><h1>No one here</h1><p class="p-bio">There's no collection at <b>/u/${esc(name)}</b>. <a href="/signin.html">Sign in</a> to make yours.</p></section>`;

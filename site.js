@@ -26,7 +26,7 @@
     .then(function (r) { return r.json(); })
     .then(function (rows) {
       var u = rows[0] && rows[0].username; if (!u) return;
-      if (top) { top.href = "/u/" + u; top.textContent = "My Collection"; }
+      if (top) { top.href = "/u/" + u; if (top.dataset.prev !== undefined) top.dataset.prev = "My Collection"; else top.textContent = "My Collection"; }
       footer.querySelectorAll("[data-me]").forEach(function (a) { a.href = "/u/" + u; });
     }).catch(function () {});
 })();

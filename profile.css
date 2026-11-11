@@ -70,13 +70,6 @@
 .el-x:hover { color: #000; }
 .el-add { margin-top: 14px; align-self: start; justify-self: start; }
 .el-list { display: block; }
-@media (max-width: 760px) {
-  .el-row { grid-template-columns: 40px 1fr 24px; padding: 6px 0; }
-  .el-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 2px 6px; }
-  .el-fields .el-in:first-child { grid-column: 1 / -1; }
-  .el-head { display: none; }
-  .el-in { margin-right: 0; width: 100%; box-sizing: border-box; }
-}
 .profile-page .p-head { margin: 60px 0 50px; }
 #items { margin-top: 30px; }
 .list.is-empty .row.head, .list.is-empty .el-head { border-bottom-color: var(--line); }
@@ -102,3 +95,26 @@
 .el-new .el-save { margin-left: 4px; align-self: center; }
 .el-new { grid-template-columns: 40px var(--cols) 56px; }
 @media (max-width: 760px) { .el-new { grid-template-columns: 40px 1fr 56px; } }
+
+/* editable list: each field is a labelled box (the labels show on phones; on desktop the column headings do that job) */
+.el-f { display: block; min-width: 0; padding-right: 8px; }
+.el-l { display: none; }
+.el-in { display: block; width: 100%; box-sizing: border-box; margin: 0; }
+@media (max-width: 760px) {
+  .el-head { display: none; }
+  .el-row, .el-new { display: grid; grid-template-columns: 64px 1fr; gap: 0 12px; padding: 16px 0; border-top: 1px solid var(--line); align-items: start; position: relative; min-height: 0; }
+  .el-row.divide { border-top: 1px solid #000; }
+  .el-thumb { width: 56px; height: 76px; border: 1px dashed #bbb; }
+  .el-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 8px; padding-right: 30px; }
+  .el-f { grid-column: 1 / -1; padding-right: 0; }
+  .el-f.el-short { grid-column: auto; }
+  .el-l { display: block; font-family: "Areal Mono", ui-monospace, monospace; font-size: 8px; text-transform: uppercase; letter-spacing: 0.03em; color: #777; margin: 0 0 4px; }
+  .el-in { font-size: 16px; padding: 11px 12px; border: 1px solid #cfcfcf; background: #fff; min-height: 44px; }
+  .el-in:focus { border-color: #000; }
+  .el-x { position: absolute; top: 8px; right: 0; width: 40px; height: 40px; font-size: 22px; line-height: 1; }
+  .el-new .el-save { grid-column: 1 / -1; width: 100%; min-height: 46px; margin: 14px 0 0; font-size: 15px; background: #000; color: #fff; }
+  .el-new .el-fields { padding-right: 0; }
+  .el-add { width: 100%; min-height: 46px; margin-top: 16px; font-size: 15px; }
+  .ed-grid { grid-template-columns: 1fr 1fr; }
+  .ed-btn { min-height: 38px; padding: 8px 12px; font-size: 13px; }
+}
