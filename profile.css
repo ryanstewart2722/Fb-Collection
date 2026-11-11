@@ -76,3 +76,5 @@
   .el-head { display: none; }
   .el-in { margin-right: 0; width: 100%; box-sizing: border-box; }
 }
+.profile-page .p-head { margin: 60px 0 50px; }
+#items { margin-top: 30px; }
