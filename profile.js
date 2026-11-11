@@ -239,11 +239,63 @@ app.addEventListener("click", async (e) => {
     $("#owner-msg").textContent = is_private ? "Your collection is now private. Only you can see it." : "Your collection is now public.";
   }
 });
+// Brands and molds that people type are matched to the museum's own names ("dr. m" becomes "Dr. M's Research Institute",
+// "catfishbbq" becomes "CATFISHBBQ"). Something genuinely new is added to a shared list, so the next person gets the same spelling.
+const TERM_KIND = { maker: "brand", mold: "mold" };
+const tkey = (x) => String(x || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+const TERMS = { brand: new Map(), mold: new Map() };   // simplified spelling -> the name we keep
+let termsReady = null;
+function loadTerms() {
+  return (termsReady ||= (async () => {
+    const caps = (n) => (n.match(/[A-Z]/g) || []).length;
+    const official = (kind, name) => { const k = tkey(name); if (!k) return; const cur = TERMS[kind].get(k); if (!cur || caps(name) > caps(cur)) TERMS[kind].set(k, name); };
+    const [b, d, u] = await Promise.all([
+      sb.from("brands").select("name").limit(500),
+      sb.from("decks").select("molds").limit(3000),
+      sb.from("user_terms").select("kind,name").limit(2000),
+    ]);
+    (b.data || []).forEach((r) => official("brand", r.name));
+    (d.data || []).forEach((r) => (r.molds || []).forEach((m) => official("mold", m)));
+    (u.data || []).forEach((r) => { const k = tkey(r.name); if (TERMS[r.kind] && k && !TERMS[r.kind].has(k)) TERMS[r.kind].set(k, r.name); });
+  })().catch(() => {}));
+}
+function canonTerm(kind, typed) {
+  const raw = String(typed || "").replace(/\s+/g, " ").trim();
+  if (!raw) return { name: "", status: "empty" };
+  const map = TERMS[kind], k = tkey(raw);
+  if (map.has(k)) return { name: map.get(k), status: map.get(k) === raw ? "same" : "fixed" };
+  if (k.length >= 3) {
+    const longer = [...map.keys()].filter((x) => x.startsWith(k)).sort((a, b) => a.length - b.length);   // they typed the start of a known name
+    if (longer.length && longer.every((x) => x.startsWith(longer[0]))) return { name: map.get(longer[0]), status: "fixed" };
+    const lead = [...map.keys()].filter((x) => x.length >= 4 && k.startsWith(x)).sort((a, b) => b.length - a.length)[0];   // a known name plus extra words
+    if (lead) return { name: map.get(lead), status: "fixed" };
+  }
+  const name = raw === raw.toLowerCase() ? raw.replace(/\b[a-z]/g, (m) => m.toUpperCase()) : raw;
+  return { name, status: "new" };
+}
+async function canonRow(row, preview) {
+  await loadTerms();
+  const notes = [];
+  for (const inp of row.querySelectorAll(".el-in")) {
+    const kind = TERM_KIND[inp.dataset.k]; if (!kind) continue;
+    const old = inp.value, r = canonTerm(kind, old);
+    if (r.status === "empty") continue;
+    if (r.name !== old) inp.value = r.name;
+    if (r.status === "fixed" && r.name !== old.trim()) notes.push(`“${old.trim()}” is ${r.name}`);
+    if (r.status === "new") {
+      notes.push(`New ${kind} added: ${r.name}`);
+      TERMS[kind].set(tkey(r.name), r.name);
+      if (!preview) sb.from("user_terms").insert({ kind, name: r.name }).then(() => {}, () => {});
+    }
+  }
+  return notes.length ? " " + notes.join(". ") + "." : "";
+}
 async function tryInsert(row) {
   const msg = $("#owner-msg"), section = row.dataset.section;
   const name = row.querySelector('[data-k="name"]').value.replace(/\s+/g, " ").trim();
   if (!name) return;
-  if (state.profile.id === "sample") return (msg.textContent = "This is a preview. Nothing is saved here.");
+  const note = await canonRow(row, state.profile.id === "sample");
+  if (state.profile.id === "sample") return (msg.textContent = "This is a preview. Nothing is saved here." + note);
   msg.textContent = "Adding… (cutting out the background can take a few seconds)";
   try {
     let image_path = null;
@@ -260,12 +312,13 @@ async function tryInsert(row) {
     if (error) { if (image_path) sb.storage.from("uploads").remove([image_path]).catch(() => {}); throw error; }
     data.url = await photoUrl(data);
     state.items.push(data); state.draft = null; paint();
-    $("#owner-msg").textContent = "Added.";
+    $("#owner-msg").textContent = "Added." + note;
   } catch (err) { msg.textContent = "Couldn't add that. " + (err.message || err); }
 }
 async function saveRow(row) {
   const msg = $("#owner-msg");
-  if (state.profile.id === "sample") return (msg.textContent = "This is a preview. Nothing is saved here.");
+  const note = await canonRow(row, state.profile.id === "sample");
+  if (state.profile.id === "sample") return (msg.textContent = "This is a preview. Nothing is saved here." + note);
   const it = state.items.find((i) => i.id === row.dataset.id);
   if (!it) return;
   const name = row.querySelector('[data-k="name"]').value.replace(/\s+/g, " ").trim();
@@ -275,7 +328,7 @@ async function saveRow(row) {
   const { data, error } = await sb.from("collection_items").update({ name, details }).eq("id", it.id).select();
   if (error || !data?.length) return (msg.textContent = "Couldn't save. " + (error?.message || ""));
   const url = it.url; Object.assign(it, data[0]); it.url = url;
-  msg.textContent = "Saved.";
+  msg.textContent = "Saved." + note;
 }
 app.addEventListener("keydown", (e) => {
   if (e.key !== "Enter" || !e.target.classList.contains("el-in")) return;
