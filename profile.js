@@ -23,7 +23,8 @@ const TALL = new Set(["decks", "setups"]);
 const val = (i, k) => k === "name" ? i.name : (i.details?.[k] ?? (k === "maker" ? i.details?.brand : "")) || "";
 const colsFor = (n) => n <= 4 ? "473fr 355fr 237fr 335fr" : "473fr " + Array(n - 1).fill(Math.round(927 / (n - 1)) + "fr").join(" ");
 // A line goes between brands: the manufacturer when there is one, otherwise the start of the name ("Sunpower Wheels, Satori" -> "Sunpower Wheels").
-const brandOf = (sec, i) => (val(i, "maker") || i.name.split(/[,(*]|\s\d/)[0]).trim().toLowerCase();
+const nameBrand = (n) => { const t = String(n || "").trim().toLowerCase().split(/\s+/); return (/^dr\.?$/.test(t[0]) ? t.slice(0, 2).join(" ") : t[0]) || ""; };
+const brandOf = (sec, i) => String(val(i, "maker") || "").trim().toLowerCase() || nameBrand(i.name);
 const rowCells = (sec, i) => SCHEMA[sec].fields.map(([k]) => val(i, k));
 
 // A built-in sample so you can see what a page looks like before anyone has signed up.

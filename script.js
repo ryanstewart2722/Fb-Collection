@@ -19,10 +19,11 @@ const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<
 const isBlank = (item) => !item.img && !Object.values(item.values || {}).some((v) => String(v || "").trim());
 const cells = (s, item) => s.columns.map((c) => item.values[c.key] || "");
 // A line goes between brands: the Manufacturer column when the section has one, otherwise the start of the name.
+const nameBrand = (n) => { const t = String(n || "").trim().toLowerCase().split(/\s+/); return (/^dr\.?$/.test(t[0]) ? t.slice(0, 2).join(" ") : t[0]) || ""; };
 const brandOf = (s, item) => {
   const col = s.columns.find((c) => /manufacturer/i.test(c.label) && c.key !== "name");
   const v = col ? item.values[col.key] : "";
-  return String(v || (item.values.name || "").split(/[,(*]|\s\d/)[0]).trim().toLowerCase();
+  return String(v || "").trim().toLowerCase() || nameBrand(item.values.name);
 };
 const spans = (list) => list.map((c) => `<span>${esc(c)}</span>`).join("");
 
