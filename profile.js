@@ -285,7 +285,7 @@ async function canonRow(row, preview) {
     if (r.status === "empty") continue;
     if (r.name !== old) inp.value = r.name;
     if (r.status === "fixed" && r.name !== old.trim()) notes.push(`“${old.trim()}” is ${r.name}`);
-    if (r.status === "new") {
+    if (r.status === "new" && r.name.length >= 3) {   // one- and two-letter entries are kept as typed, not added to the shared list
       notes.push(`New ${kind} added: ${r.name}`);
       TERMS[kind].set(tkey(r.name), r.name);
       if (!preview) sb.from("user_terms").insert({ kind, name: r.name }).then(() => {}, () => {});
