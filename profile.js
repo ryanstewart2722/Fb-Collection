@@ -126,15 +126,19 @@ function loadSuggestions() {
   })().catch(() => {}));
 }
 function elThumb(i) { return `<label class="el-thumb">${i && i.url ? `<img src="${esc(i.url)}" alt="">` : "+"}<input class="ed-file" type="file" accept="image/*"></label>`; }
-const SHORT_FIELDS = new Set(["size", "mold", "color", "material", "duro"]);
 function elInputs(sec, i) {
-  return `<span class="el-fields">${SCHEMA[sec].fields.map(([k, h, ph]) => `<label class="el-f${SHORT_FIELDS.has(k) ? " el-short" : ""}"><span class="el-l">${esc(h)}</span><input class="el-in" data-k="${k}" type="text"${SUGGEST_KIND[k] ? ` list="dl-${SUGGEST_KIND[k]}" autocomplete="off"` : ""} value="${esc(i ? val(i, k) : "")}" placeholder="${esc(ph)}" maxlength="${k === "name" ? 120 : 60}"></label>`).join("")}</span>`;
+  return `<span class="el-fields">${SCHEMA[sec].fields.map(([k, h, ph]) => {
+    const v = esc(i ? val(i, k) : ""), max = k === "name" ? 120 : 60, common = `class="el-in" data-k="${k}" placeholder="${esc(ph)}" maxlength="${max}" aria-label="${esc(h)}"`;
+    return SUGGEST_KIND[k]
+      ? `<input ${common} type="text" list="dl-${SUGGEST_KIND[k]}" autocomplete="off" value="${v}">`
+      : `<textarea ${common} rows="1" spellcheck="false">${v}</textarea>`;   // wraps, so long names stay readable on a phone
+  }).join("")}</span>`;
 }
 function renderListEdit() {
   loadSuggestions();
   return sections().map((s) => `<section class="list-section">
     <h2>${esc(s.title)}</h2>
-    <div class="list-wrap"><div class="list el-list${s.items.length || state.draft === s.id ? "" : " is-empty"}" data-s="${s.id}" style="--cols:${colsFor(SCHEMA[s.id].fields.length)}">
+    <div class="list-wrap"><div class="list el-list el-n${SCHEMA[s.id].fields.length}${s.items.length || state.draft === s.id ? "" : " is-empty"}" data-s="${s.id}" style="--cols:${colsFor(SCHEMA[s.id].fields.length)}">
       <div class="el-row el-head"><span></span>${SCHEMA[s.id].fields.map((f) => `<span class="el-h">${esc(f[1])}</span>`).join("")}<span></span></div>
       ${s.items.map((i, n) => `<div class="el-row${n > 0 && brandOf(s.id, i) !== brandOf(s.id, s.items[n - 1]) ? " divide" : ""}" data-id="${esc(i.id)}">${elThumb(i)}${elInputs(s.id, i)}<button class="el-x" data-act="remove" data-id="${esc(i.id)}" title="Remove">×</button></div>`).join("")}
       ${state.draft === s.id ? `<div class="el-row el-new" data-section="${s.id}">${elThumb(null)}${elInputs(s.id, null)}<button class="ed-btn el-save" data-act="savenew">Add</button></div>` : ""}
@@ -199,6 +203,10 @@ function paintItems() {
 window.addEventListener("hashchange", () => { view = location.hash === "#list" ? "list" : "image"; if (state) paint(); });
 
 /* ---------- page ---------- */
+function growBoxes(root) {
+  (root || document).querySelectorAll("textarea.el-in").forEach((t) => { t.style.height = "auto"; t.style.height = t.scrollHeight + "px"; });
+}
+document.addEventListener("input", (e) => { if (e.target.matches && e.target.matches("textarea.el-in")) growBoxes(e.target.parentNode); });
 function syncEditHeader() {
   const t = document.querySelector(".insta"), editing = !!(state && state.owner && state.edit);
   document.body.classList.toggle("editing", editing);
@@ -215,6 +223,7 @@ function paint() {
   app.innerHTML = `<div id="items"></div>` + headHtml();   // the link and owner links sit at the bottom of the page
   paintItems();
   syncEditHeader();
+  requestAnimationFrame(() => growBoxes(document));
 }
 function notFound(name) {
   app.innerHTML = `<section class="p-head"><h1>No one here</h1><p class="p-bio">There's no collection at <b>/u/${esc(name)}</b>. <a href="/signin.html">Sign in</a> to make yours.</p></section>`;
@@ -260,7 +269,7 @@ app.addEventListener("click", async (e) => {
 });
 async function tryInsert(row) {
   const msg = $("#owner-msg"), section = row.dataset.section;
-  const name = row.querySelector('[data-k="name"]').value.trim();
+  const name = row.querySelector('[data-k="name"]').value.replace(/\s+/g, " ").trim();
   if (!name) return;
   if (state.profile.id === "sample") return (msg.textContent = "This is a preview. Nothing is saved here.");
   msg.textContent = "Adding… (cutting out the background can take a few seconds)";
@@ -287,7 +296,7 @@ async function saveRow(row) {
   if (state.profile.id === "sample") return (msg.textContent = "This is a preview. Nothing is saved here.");
   const it = state.items.find((i) => i.id === row.dataset.id);
   if (!it) return;
-  const name = row.querySelector('[data-k="name"]').value.trim();
+  const name = row.querySelector('[data-k="name"]').value.replace(/\s+/g, " ").trim();
   if (!name) { msg.textContent = "A name is needed."; return paint(); }
   const details = { ...(it.details || {}) };
   row.querySelectorAll(".el-in").forEach((el) => { if (el.dataset.k !== "name") { if (el.value.trim()) details[el.dataset.k] = el.value.trim(); else delete details[el.dataset.k]; } });
@@ -299,7 +308,8 @@ async function saveRow(row) {
 app.addEventListener("keydown", (e) => {
   if (e.key !== "Enter" || !e.target.classList.contains("el-in")) return;
   const row = e.target.closest(".el-new");
-  if (row) { e.preventDefault(); tryInsert(row); } else e.target.blur();
+  e.preventDefault();
+  if (row) tryInsert(row); else e.target.blur();
 });
 app.addEventListener("change", (e) => {
   if (!e.target.classList.contains("el-in")) return;
