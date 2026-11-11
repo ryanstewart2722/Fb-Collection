@@ -53,3 +53,26 @@
 .ed-btn { border: 1px solid #000; background: #fff; color: #000; padding: 3px 8px; font: inherit; cursor: pointer; border-radius: 0; }
 .ed-btn:hover { background: #000; color: #fff; }
 .ed-file { display: none; }
+
+/* editable list (owner) */
+.el-list { min-width: 0; }
+.el-row { display: grid; grid-template-columns: 40px var(--cols) 24px; align-items: center; gap: 0; min-height: 49px; }
+.el-fields { display: contents; }
+.el-head { min-height: 0; padding-bottom: 14px; border-bottom: 1px solid #000; font-family: "Areal Mono", ui-monospace, monospace; font-size: 7.5px; text-transform: uppercase; letter-spacing: 0.02em; align-items: end; }
+.el-row.divide { border-top: 1px solid var(--line); }
+.el-thumb { display: flex; align-items: center; justify-content: center; width: 32px; height: 40px; cursor: pointer; color: #8c8c8c; border: 1px dashed transparent; }
+.el-thumb img { max-width: 100%; max-height: 100%; object-fit: contain; }
+.el-new .el-thumb { border-color: #bbb; }
+.el-in { border: 1px solid transparent; background: transparent; font: inherit; font-size: 11.5px; padding: 7px 8px; margin-right: 8px; min-width: 0; border-radius: 0; }
+.el-in:hover { border-color: var(--line); }
+.el-in:focus { outline: 0; border-color: #000; background: #fff; }
+.el-x { border: 0; background: none; font: inherit; font-size: 14px; cursor: pointer; color: #8c8c8c; }
+.el-x:hover { color: #000; }
+.el-add { margin-top: 14px; align-self: start; justify-self: start; }
+.el-list { display: block; }
+@media (max-width: 760px) {
+  .el-row { grid-template-columns: 40px 1fr 24px; padding: 6px 0; }
+  .el-fields { display: grid; gap: 2px; }
+  .el-head { display: none; }
+  .el-in { margin-right: 0; width: 100%; box-sizing: border-box; }
+}

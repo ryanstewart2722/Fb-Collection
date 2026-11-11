@@ -83,17 +83,10 @@ function fieldsHtml(sec) {
 function ownerBar() {
   const p = state.profile;
   return `<div class="p-owner">
-    ${view === "image" && state.items.length ? `<button class="auth-link" data-act="editimg">${state.edit ? "Done editing" : "Edit"}</button> · ` : ""}
+    <button class="auth-link" data-act="editimg">${state.edit ? "Done editing" : "Edit"}</button> ·
     <button class="auth-link" data-act="edit">Edit name and bio</button> ·
     <button class="auth-link" data-act="private">${p.is_private ? "Make my collection public" : "Make my collection private"}</button> ·
     <button class="auth-link" data-act="signout">Sign out</button>
-    <form id="add-form" class="auth-form p-edit" hidden>
-      <select id="ad-section" aria-label="What is it?"><option value="decks">Deck</option><option value="setups">Complete setup</option><option value="obstacles">Obstacle</option><option value="trucks">Trucks</option><option value="wheels">Wheels</option></select>
-      <span id="ad-fields">${fieldsHtml("decks")}</span>
-      <label class="p-file">Photo of yours <input id="ad-file" type="file" accept="image/jpeg,image/png,image/webp,image/*"></label>
-      <p class="auth-note">Photos are reviewed before other people can see them. Use a photo of your own board.</p>
-      <button class="auth-btn" type="submit" id="ad-btn">Add</button>
-    </form>
     <form id="edit-form" class="auth-form p-edit" hidden>
       <input id="ed-name" type="text" placeholder="Display name" maxlength="60" value="${esc(p.display_name || "")}">
       <textarea id="ed-bio" placeholder="A short bio (optional)" maxlength="300" rows="3">${esc(p.bio || "")}</textarea>
@@ -111,6 +104,20 @@ function renderList() {
       <div class="row head">${spans(SCHEMA[s.id].fields.map((f) => f[1]))}</div>
       ${s.items.map((i, n) => `<div class="row${n > 0 && brandOf(s.id, i) !== brandOf(s.id, s.items[n - 1]) ? " divide" : ""}" data-id="${esc(i.id)}">${spans(rowCells(s.id, i))}${i.status !== "approved" ? `<em class="p-pending">${esc(i.status === "pending" ? "waiting for review" : i.status)}</em>` : ""}${state.owner ? `<button class="p-x" data-act="remove" data-id="${esc(i.id)}" title="Remove">Remove</button>` : ""}</div>`).join("")}
       ${state.owner ? `<a class="add-new" href="#" data-act="add" data-section="${s.id}">+ Add new</a>` : ""}
+    </div></div></section>`).join("");
+}
+function elThumb(i) { return `<label class="el-thumb">${i && i.url ? `<img src="${esc(i.url)}" alt="">` : "+"}<input class="ed-file" type="file" accept="image/*"></label>`; }
+function elInputs(sec, i) {
+  return `<span class="el-fields">${SCHEMA[sec].fields.map(([k, , ph]) => `<input class="el-in" data-k="${k}" type="text" value="${esc(i ? val(i, k) : "")}" placeholder="${esc(ph.replace(" (required)", ""))}" maxlength="${k === "name" ? 120 : 60}">`).join("")}</span>`;
+}
+function renderListEdit() {
+  return sections().map((s) => `<section class="list-section">
+    <h2>${esc(s.title)}</h2>
+    <div class="list-wrap"><div class="list el-list" data-s="${s.id}" style="--cols:${colsFor(SCHEMA[s.id].fields.length)}">
+      <div class="el-row el-head"><span></span>${SCHEMA[s.id].fields.map((f) => `<span class="el-h">${esc(f[1])}</span>`).join("")}<span></span></div>
+      ${s.items.map((i, n) => `<div class="el-row${n > 0 && brandOf(s.id, i) !== brandOf(s.id, s.items[n - 1]) ? " divide" : ""}" data-id="${esc(i.id)}">${elThumb(i)}${elInputs(s.id, i)}<button class="el-x" data-act="remove" data-id="${esc(i.id)}" title="Remove">×</button></div>`).join("")}
+      ${state.draft === s.id ? `<div class="el-row el-new" data-section="${s.id}">${elThumb(null)}${elInputs(s.id, null)}<span></span></div>` : ""}
+      <button class="ed-btn el-add" data-act="newrow" data-section="${s.id}">+ Add to My ${esc(s.title)}</button>
     </div></div></section>`).join("");
 }
 function renderEdit() {
@@ -142,7 +149,9 @@ function paintItems() {
     box.innerHTML = `<p class="p-empty">${state.owner ? "You haven't added anything yet." : "Nothing here yet."}</p>`;
     return;
   }
-  box.innerHTML = view === "list" ? renderList() : state.edit && state.owner ? renderEdit() : renderGrid();
+  const editing = state.edit && state.owner;
+  box.innerHTML = view === "list" ? (editing ? renderListEdit() : renderList()) : editing ? renderEdit() : renderGrid();
+  if (editing && state.draft) { const n = box.querySelector(".el-new .el-in"); if (n) n.focus({ preventScroll: false }); }
   const find = (id) => state.items.find((i) => i.id === id);
   if (view === "list") {
     box.querySelectorAll(".row:not(.head)").forEach((row) => {
@@ -184,9 +193,15 @@ app.addEventListener("click", async (e) => {
   const act = e.target.closest("[data-act]")?.dataset.act;
   if (!act || !state?.owner) return;
   const msg = $("#owner-msg");
-  if (state.profile.id === "sample" && !["add", "edit", "editimg"].includes(act)) return (msg.textContent = "This is a preview. Nothing is saved here.");
+  if (state.profile.id === "sample" && !["add", "newrow", "edit", "editimg"].includes(act)) return (msg.textContent = "This is a preview. Nothing is saved here.");
   if (act === "editimg") { state.edit = !state.edit; paint(); return; }
   if (act === "signout") { await sb.auth.signOut(); location.href = "/"; }
+  if (act === "edit") { const f = $("#edit-form"); f.hidden = !f.hidden; }
+  if (act === "add" || act === "newrow") {
+    e.preventDefault();
+    state.edit = true; state.draft = e.target.closest("[data-act]").dataset.section; paint();
+    return;
+  }
   if (act === "edit") { const f = $("#edit-form"); f.hidden = !f.hidden; }
   if (act === "add") {
     e.preventDefault();
@@ -211,10 +226,54 @@ app.addEventListener("click", async (e) => {
     $("#owner-msg").textContent = is_private ? "Your collection is now private. Only you can see it." : "Your collection is now public.";
   }
 });
+async function tryInsert(row) {
+  const msg = $("#owner-msg"), section = row.dataset.section;
+  const name = row.querySelector('[data-k="name"]').value.trim();
+  if (!name) return;
+  if (state.profile.id === "sample") return (msg.textContent = "This is a preview. Nothing is saved here.");
+  msg.textContent = "Adding…";
+  try {
+    let image_path = null;
+    const file = row.querySelector(".ed-file").files[0];
+    if (file) {
+      const p = await window.momsPreparePhoto(file, section);
+      image_path = `${state.profile.id}/${crypto.randomUUID()}.${p.ext}`;
+      const up = await sb.storage.from("uploads").upload(image_path, p.blob, { contentType: p.type, cacheControl: "3600" });
+      if (up.error) throw up.error;
+    }
+    const details = Object.fromEntries([...row.querySelectorAll(".el-in")].filter((el) => el.dataset.k !== "name").map((el) => [el.dataset.k, el.value.trim()]).filter(([, v]) => v));
+    const position = state.items.reduce((m, i) => Math.max(m, i.position || 0), 0) + 1;
+    const { data, error } = await sb.from("collection_items").insert({ section, name, details, image_path, position }).select().single();
+    if (error) { if (image_path) sb.storage.from("uploads").remove([image_path]).catch(() => {}); throw error; }
+    data.url = await photoUrl(data);
+    state.items.push(data); state.draft = null; paint();
+    $("#owner-msg").textContent = "Added. Other people see it once it's been reviewed.";
+  } catch (err) { msg.textContent = "Couldn't add that. " + (err.message || err); }
+}
+async function saveRow(row) {
+  const msg = $("#owner-msg");
+  if (state.profile.id === "sample") return (msg.textContent = "This is a preview. Nothing is saved here.");
+  const it = state.items.find((i) => i.id === row.dataset.id);
+  if (!it) return;
+  const name = row.querySelector('[data-k="name"]').value.trim();
+  if (!name) { msg.textContent = "A name is needed."; return paint(); }
+  const details = { ...(it.details || {}) };
+  row.querySelectorAll(".el-in").forEach((el) => { if (el.dataset.k !== "name") { if (el.value.trim()) details[el.dataset.k] = el.value.trim(); else delete details[el.dataset.k]; } });
+  const { data, error } = await sb.from("collection_items").update({ name, details }).eq("id", it.id).select();
+  if (error || !data?.length) return (msg.textContent = "Couldn't save. " + (error?.message || ""));
+  const url = it.url; Object.assign(it, data[0]); it.url = url;
+  msg.textContent = "Saved. Changes show to other people once they've been reviewed.";
+}
+app.addEventListener("change", (e) => {
+  if (!e.target.classList.contains("el-in")) return;
+  const row = e.target.closest(".el-row");
+  row.classList.contains("el-new") ? tryInsert(row) : saveRow(row);
+});
 app.addEventListener("change", async (e) => {
   if (!e.target.classList.contains("ed-file") || !state?.owner) return;
   const msg = $("#owner-msg"), file = e.target.files[0];
   if (!file) return;
+  if (e.target.closest(".el-new")) { e.target.closest(".el-thumb").firstChild.textContent = "✓"; return tryInsert(e.target.closest(".el-new")); }
   if (state.profile.id === "sample") return (msg.textContent = "This is a preview. Nothing is saved here.");
   const it = state.items.find((i) => i.id === e.target.closest("[data-id]").dataset.id);
   if (!it) return;
