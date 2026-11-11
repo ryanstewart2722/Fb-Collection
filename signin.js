@@ -42,6 +42,17 @@ $("#f-email").addEventListener("submit", async (e) => {
   show("sent");
 });
 
+/* ---------- emailed code (works on any device) ---------- */
+$("#f-code").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  say("#e-code", "");
+  const btn = e.target.querySelector("button"); btn.disabled = true;
+  const token = $("#code").value.replace(/\s/g, "");
+  const { error } = await sb.auth.verifyOtp({ email: $("#sent-to").textContent, token, type: "email" });
+  btn.disabled = false;
+  if (error) say("#e-code", "That code didn't work. Check it, or ask for a new one.");
+});
+
 /* ---------- password ---------- */
 $("#f-password").addEventListener("submit", async (e) => {
   e.preventDefault();
