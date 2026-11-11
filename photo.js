@@ -158,8 +158,8 @@ function solidSilhouette(A, W, H) {
   }
   const f = new Float32Array(n);
   for (let i = 0; i < n; i++) f[i] = out[i] ? 0 : 1;
-  // smooth the contour (about 3-4px), then a narrow ramp for an anti-aliased edge, shaved by a hair to lose any backdrop rim
-  const S = boxBlur(boxBlur(boxBlur(f, W, H, 2), W, H, 2), W, H, 2), q = new Float32Array(n);
+  // smooth the contour (about 4-5px), then a narrow ramp for an anti-aliased edge, shaved by a hair to lose any backdrop rim
+  const S = boxBlur(boxBlur(boxBlur(f, W, H, 4), W, H, 4), W, H, 4), q = new Float32Array(n);
   for (let i = 0; i < n; i++) q[i] = ss(0.46, 0.60, S[i]);
   return q;
 }
