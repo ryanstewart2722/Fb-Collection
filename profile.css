@@ -27,3 +27,17 @@
   .p-head h1 { font-size: 30px; }
 }
 .acct-h { font-size: 20px; font-weight: 500; letter-spacing: -0.02em; margin: 30px 0 8px; }
+.p-file { display: grid; gap: 6px; font-size: 12px; color: #444; }
+.p-file input { font-size: 13px; }
+#add-form select { border: 1px solid var(--line); border-radius: 0; padding: 11px 12px; font: inherit; font-size: 16px; background: #fff; }
+.list .row { position: relative; }
+.p-x { position: absolute; right: 0; top: 50%; transform: translateY(-50%); border: 0; background: #fff; color: #8c8c8c; font: inherit; font-size: 10px; padding: 2px 6px; cursor: pointer; opacity: 0; }
+.row:hover .p-x, .touch .p-x { opacity: 1; }
+.row.on .p-x { background: #000; color: #fff; }
+.u-list { margin: 30px var(--gutter) 0; max-width: 760px; }
+.u-row { display: grid; grid-template-columns: 2fr 1.4fr 1fr; gap: 12px; padding: 10px 0; border-top: 1px solid var(--line); font-size: 13px; }
+.u-row:hover { background: #000; color: #fff; padding-left: 10px; padding-right: 10px; margin: 0 -10px; }
+.profile-page .p-head { margin-left: var(--gutter); }
+.s-tabs { font-size: 13px; margin: 0 0 16px; }
+.s-tabs .on { text-decoration: none; font-weight: 500; color: #000; }
+.auth-form textarea { font: inherit; resize: vertical; }

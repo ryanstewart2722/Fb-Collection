@@ -214,6 +214,7 @@ function renderList() {
         ${s.rows.map((r, i) => `<div class="row link${i > 0 && groupKey(r) !== groupKey(s.rows[i - 1]) ? " divide" : ""}" data-i="${i}">${spans(s.cols.map((c) => c[1](r)))}</div>`).join("")}
       </div></div>
       ${moreButton(s, si)}
+      <a class="add-new submit-row" href="submit.html?type=${esc(s.type)}">+ Submit</a>
     </section>`).join("");
 
   app.querySelectorAll(".list").forEach((list) => {
@@ -244,6 +245,7 @@ function renderGrid() {
         <div class="bar"></div>
       </div>
       ${moreButton(s, si)}
+      <a class="add-new submit-row" href="submit.html?type=${esc(s.type)}">+ Submit</a>
     </section>`;
   }).join("");
 

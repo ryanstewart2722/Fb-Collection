@@ -503,9 +503,111 @@ document.querySelectorAll(".ad-tabs button").forEach((b) => b.addEventListener("
   editing = null; photo = null; list.search = ""; list.brand = ""; list.photo = "";
   document.querySelectorAll(".ad-tabs button").forEach((x) => x.classList.toggle("active", x === b));
   setStatus("");
+  if (tab === "review") return renderReview().catch(fail("Couldn't load the review list"));
   await loadList().catch(fail("Couldn't load"));
   renderList();
 }));
+
+/* ---------- Review: what people uploaded, waiting for you ---------- */
+// Photos people upload sit in a private folder. Nothing is public until you approve it here.
+let reviewItems = [];
+async function renderReview() {
+  app.innerHTML = `<p class="me-count">Loading…</p>`;
+  const [ci, sub] = await Promise.all([
+    sb.from("collection_items").select("*,profiles(username)").in("status", ["pending", "flagged"]).order("created_at"),
+    sb.from("submissions").select("*,profiles(username)").in("status", ["pending", "flagged"]).order("created_at"),
+  ]);
+  if (ci.error) throw ci.error;
+  if (sub.error) throw sub.error;
+  reviewItems = [...ci.data.map((r) => ({ kind: "item", r })), ...sub.data.map((r) => ({ kind: "sub", r }))];
+  const paths = reviewItems.map((x) => x.r.image_path).filter((p) => p && !/^https?:/.test(p));
+  const urls = {};
+  if (paths.length) (await sb.storage.from("uploads").createSignedUrls(paths, 3600)).data?.forEach((u) => (urls[u.path] = u.signedUrl));
+  reviewItems.forEach((x) => (x.url = /^https?:/.test(x.r.image_path || "") ? x.r.image_path : urls[x.r.image_path] || ""));
+  setReviewBadge(reviewItems.length);
+  app.innerHTML = `<p class="me-count">${reviewItems.length} waiting for review</p><div class="me-review">` + (reviewItems.map((x, i) => {
+    const r = x.r, who = r.profiles?.username || "someone";
+    const f = x.kind === "item" ? { section: r.section, name: r.name, ...r.details } : { section: r.section, ...r.fields };
+    return `<div class="me-rv" data-i="${i}">
+      <div class="me-rv-img">${x.url ? `<img src="${esc(x.url)}" alt="">` : `<span>No photo</span>`}</div>
+      <div class="me-rv-info">
+        <b>${esc(f.name || "(no name)")}</b> <em>${x.kind === "item" ? "collection · " + esc(r.section) : "museum submission · " + esc(r.section)}</em>
+        <span>by <a href="/u/${esc(who)}" target="_blank" rel="noopener">${esc(who)}</a></span>
+        <span>${Object.entries(f).filter(([k, v]) => v && !["name", "section"].includes(k)).map(([k, v]) => `${esc(k)}: ${esc(v)}`).join(" · ")}</span>
+        <div class="me-rv-act"><button class="ad-btn ad-btn-dark" data-act="rv-ok">${x.kind === "sub" ? "Add to museum" : "Approve"}</button> <button class="ad-btn me-danger" data-act="rv-no">Reject</button></div>
+      </div></div>`;
+  }).join("") || `<p class="me-empty">Nothing waiting.</p>`) + `</div>`;
+}
+function setReviewBadge(n) { const b = $("#review-n"); if (b) { b.textContent = n; b.hidden = !n; } }
+
+async function publishPhoto(path) {
+  if (!path || /^https?:/.test(path)) return path;
+  const { data: blob, error } = await sb.storage.from("uploads").download(path);
+  if (error) throw error;
+  const up = await sb.storage.from("user-photos").upload(path, blob, { contentType: blob.type, cacheControl: "31536000", upsert: true });
+  if (up.error) throw up.error;
+  return sb.storage.from("user-photos").getPublicUrl(path).data.publicUrl;
+}
+async function findOrMakeBrand(name) {
+  name = name.trim();
+  const have = (await sb.from("brands").select("id,name")).data || [];
+  const hit = have.find((b) => b.name.toLowerCase() === name.toLowerCase());
+  if (hit) return hit.id;
+  return (await insertWithSlug("brands", { name }, name)).id;
+}
+async function reviewAct(card, ok) {
+  const x = reviewItems[card.dataset.i], r = x.r;
+  card.querySelectorAll("button").forEach((b) => (b.disabled = true));
+  try {
+    if (x.kind === "item") {
+      if (ok) {
+        const image_path = await publishPhoto(r.image_path);
+        const { data, error } = await sb.from("collection_items").update({ status: "approved", image_path }).eq("id", r.id).select("id");
+        if (error || !data.length) throw error || { message: "not allowed" };
+      } else {
+        const { data, error } = await sb.from("collection_items").update({ status: "removed" }).eq("id", r.id).select("id");
+        if (error || !data.length) throw error || { message: "not allowed" };
+        if (r.image_path && !/^https?:/.test(r.image_path)) await sb.storage.from("uploads").remove([r.image_path]).catch(() => {});
+      }
+    } else if (ok) {
+      const f = r.fields, table = r.section;
+      const row = { brand_id: await findOrMakeBrand(f.brand || "Unknown"), name: f.name, color: f.color || null, image_path: await publishPhoto(r.image_path) };
+      if (table === "decks") { row.size = f.size || null; row.molds = f.mold ? f.mold.split(",").map((m) => m.trim()).filter(Boolean) : []; row.shape = f.shape || null; row.attributes = { source: "Museum submission", submitted_by: r.profiles?.username || null }; }
+      if (table === "trucks") row.size = f.size || null;
+      if (table === "wheels") { row.material = f.material || null; row.duro = f.duro || null; }
+      const made = await insertWithSlug(table, row, `${f.name} ${f.color || ""} ${f.brand || ""}`);
+      const { error } = await sb.from("submissions").update({ status: "approved", review_note: "Added as " + made.slug }).eq("id", r.id);
+      if (error) throw error;
+    } else {
+      const { error } = await sb.from("submissions").update({ status: "rejected" }).eq("id", r.id);
+      if (error) throw error;
+      if (r.image_path) await sb.storage.from("uploads").remove([r.image_path]).catch(() => {});
+    }
+    card.remove();
+    reviewItems[card.dataset.i] = null;
+    const left = reviewItems.filter(Boolean).length;
+    setReviewBadge(left);
+    $(".me-count").textContent = `${left} waiting for review`;
+    setStatus(ok ? (x.kind === "sub" ? "Added to the museum. Find it in the editor to fill in more details." : "Approved. It's visible now.") : "Rejected.");
+  } catch (err) {
+    card.querySelectorAll("button").forEach((b) => (b.disabled = false));
+    setStatus("Couldn't do that: " + friendly(err), true);
+  }
+}
+app.addEventListener("click", (e) => {
+  const a = e.target.closest("[data-act]")?.dataset.act;
+  if (a === "rv-ok" || a === "rv-no") reviewAct(e.target.closest(".me-rv"), a === "rv-ok");
+});
+// Show how many are waiting as soon as the editor opens.
+(async () => {
+  const { data: { session } } = await sb.auth.getSession();
+  if (!session) return;
+  const [a, b] = await Promise.all([
+    sb.from("collection_items").select("id", { count: "exact", head: true }).in("status", ["pending", "flagged"]),
+    sb.from("submissions").select("id", { count: "exact", head: true }).in("status", ["pending", "flagged"]),
+  ]);
+  setReviewBadge((a.count || 0) + (b.count || 0));
+})();
 
 window.addEventListener("beforeunload", (e) => { if (editing && (formDirty || photo)) e.preventDefault(); });
 

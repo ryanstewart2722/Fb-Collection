@@ -69,9 +69,20 @@ function headHtml() {
 function ownerBar() {
   const p = state.profile;
   return `<div class="p-owner">
+    <button class="auth-link" data-act="add">+ Add a board</button> ·
     <button class="auth-link" data-act="edit">Edit name and bio</button> ·
     <button class="auth-link" data-act="private">${p.is_private ? "Make my collection public" : "Make my collection private"}</button> ·
     <button class="auth-link" data-act="signout">Sign out</button>
+    <form id="add-form" class="auth-form p-edit" hidden>
+      <select id="ad-section" aria-label="What is it?"><option value="decks">Deck</option><option value="setups">Complete setup</option><option value="trucks">Trucks</option><option value="wheels">Wheels</option></select>
+      <input id="ad-name" type="text" placeholder="Name (required)" maxlength="120" required>
+      <input id="ad-brand" type="text" placeholder="Brand" maxlength="60">
+      <input id="ad-size" type="text" placeholder="Size, e.g. 32mm" maxlength="30">
+      <input id="ad-color" type="text" placeholder="Color" maxlength="40">
+      <label class="p-file">Photo of yours <input id="ad-file" type="file" accept="image/jpeg,image/png,image/webp,image/*"></label>
+      <p class="auth-note">Photos are reviewed before other people can see them. Use a photo of your own board.</p>
+      <button class="auth-btn" type="submit" id="ad-btn">Add</button>
+    </form>
     <form id="edit-form" class="auth-form p-edit" hidden>
       <input id="ed-name" type="text" placeholder="Display name" maxlength="60" value="${esc(p.display_name || "")}">
       <textarea id="ed-bio" placeholder="A short bio (optional)" maxlength="300" rows="3">${esc(p.bio || "")}</textarea>
@@ -87,7 +98,7 @@ function renderList() {
     <h2>${esc(s.title)}</h2>
     <div class="list-wrap"><div class="list" data-s="${s.id}" style="--cols:473fr 355fr 237fr 335fr">
       <div class="row head">${spans(COLS.map((c) => c[0]))}</div>
-      ${s.items.map((i, n) => `<div class="row" data-id="${esc(i.id)}">${spans(COLS.map((c) => c[1](i)))}${i.status !== "approved" ? `<em class="p-pending">${esc(i.status)}</em>` : ""}</div>`).join("")}
+      ${s.items.map((i, n) => `<div class="row" data-id="${esc(i.id)}">${spans(COLS.map((c) => c[1](i)))}${i.status !== "approved" ? `<em class="p-pending">${esc(i.status === "pending" ? "waiting for review" : i.status)}</em>` : ""}${state.owner ? `<button class="p-x" data-act="remove" data-id="${esc(i.id)}" title="Remove">Remove</button>` : ""}</div>`).join("")}
     </div></div></section>`).join("");
 }
 function renderGrid() {
@@ -151,6 +162,16 @@ app.addEventListener("click", async (e) => {
   const msg = $("#owner-msg");
   if (act === "signout") { await sb.auth.signOut(); location.href = "/"; }
   if (act === "edit") { const f = $("#edit-form"); f.hidden = !f.hidden; }
+  if (act === "add") { const f = $("#add-form"); f.hidden = !f.hidden; if (!f.hidden) $("#ad-name").focus(); }
+  if (act === "remove") {
+    const id = e.target.closest("[data-id]").dataset.id, it = state.items.find((i) => i.id === id);
+    if (!it || !confirm(`Remove “${it.name}” from your collection?`)) return;
+    const { error } = await sb.from("collection_items").delete().eq("id", id);
+    if (error) return (msg.textContent = "Couldn't remove it. " + error.message);
+    if (it.image_path && !/^https?:/.test(it.image_path)) sb.storage.from("uploads").remove([it.image_path]).catch(() => {});
+    state.items = state.items.filter((i) => i.id !== id); paint();
+    $("#owner-msg").textContent = "Removed.";
+  }
   if (act === "private") {
     const is_private = !state.profile.is_private;
     const { data, error } = await sb.from("profiles").update({ is_private }).eq("id", state.profile.id).select("is_private");
@@ -160,6 +181,35 @@ app.addEventListener("click", async (e) => {
   }
 });
 app.addEventListener("submit", async (e) => {
+  if (e.target.id === "add-form") {
+    e.preventDefault();
+    const btn = $("#ad-btn"), msg = $("#owner-msg");
+    const section = $("#ad-section").value, name = $("#ad-name").value.trim();
+    if (!name) return;
+    btn.disabled = true; msg.textContent = "Adding…";
+    try {
+      let image_path = null;
+      const file = $("#ad-file").files[0];
+      if (file) {
+        const p = await window.momsPreparePhoto(file, section);
+        image_path = `${state.profile.id}/${crypto.randomUUID()}.${p.ext}`;
+        const up = await sb.storage.from("uploads").upload(image_path, p.blob, { contentType: p.type, cacheControl: "3600" });
+        if (up.error) throw up.error;
+      }
+      const details = Object.fromEntries([["brand", $("#ad-brand").value], ["size", $("#ad-size").value], ["color", $("#ad-color").value]].map(([k, v]) => [k, v.trim()]).filter(([, v]) => v));
+      const position = state.items.reduce((m, i) => Math.max(m, i.position || 0), 0) + 1;
+      const { data, error } = await sb.from("collection_items").insert({ section, name, details, image_path, position }).select().single();
+      if (error) { if (image_path) sb.storage.from("uploads").remove([image_path]).catch(() => {}); throw error; }
+      data.url = await photoUrl(data);
+      state.items.push(data); paint();
+      $("#owner-msg").textContent = image_path ? "Added. Your photo shows to other people once it's been reviewed." : "Added.";
+      $("#add-form").hidden = false; $("#add-form").reset();
+    } catch (err) {
+      msg.textContent = "Couldn't add that. " + (err.message || err);
+    }
+    btn.disabled = false;
+    return;
+  }
   if (e.target.id !== "edit-form") return;
   e.preventDefault();
   const display_name = $("#ed-name").value.trim() || null, bio = $("#ed-bio").value.trim() || null;

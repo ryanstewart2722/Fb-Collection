@@ -373,3 +373,5 @@ html { scrollbar-color: #000 #fff; scrollbar-width: thin; }
   }
   .museum.list-view main#app { padding-top: 14px; }
 }
+.submit-row { margin-top: 18px; border-top: 1px solid var(--line); }
+.grid-section .submit-row { margin-top: 60px; }

@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Submit · MoMS</title>
+  <link rel="icon" type="image/png" href="favicon.png">
+  <link rel="icon" href="favicon.ico" sizes="any">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
+  <link rel="stylesheet" href="style.css?v=cebfced1">
+  <link rel="stylesheet" href="profile.css?v=77bb72ea">
+</head>
+<body>
+  <header class="topbar">
+    <span></span>
+    <a class="title" href="/" aria-label="The Museum of Mini Skateboards"><span class="t-full">The Museum of Mini Skateboards</span><span class="t-short">MoMS</span></a>
+    <a class="insta" href="/signin.html">Sign in</a>
+  </header>
+
+  <main class="auth" id="sub-main">
+    <h1>Submit to the museum</h1>
+    <p class="auth-note">Know a deck, truck or wheel that isn't in the museum? Send it in with a photo. Everything is reviewed before it goes up.</p>
+
+    <section id="s-need" hidden>
+      <p class="auth-note">You need to be signed in to submit, so we can follow up if needed.</p>
+      <p><a class="auth-btn" style="display:inline-block" href="/signin.html?next=submit.html">Sign in</a></p>
+    </section>
+
+    <section id="s-form" hidden>
+      <nav class="s-tabs" id="s-tabs"><button class="auth-link on" data-t="decks">Deck</button> / <button class="auth-link" data-t="trucks">Truck</button> / <button class="auth-link" data-t="wheels">Wheel</button></nav>
+      <form id="f-sub" class="auth-form"></form>
+      <p id="s-msg" class="auth-note" aria-live="polite"></p>
+    </section>
+
+    <section id="s-done" hidden>
+      <h1>Thank you</h1>
+      <p class="auth-note">Your submission is in. We'll look at it soon, and it goes into the museum once it's approved.</p>
+      <p class="auth-alt"><button class="auth-link" id="s-again">Submit another</button> · <a class="auth-link" href="/">Back to the museum</a></p>
+    </section>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+  <script src="moms-config.js?v=e1dbbd27"></script>
+  <script src="photo.js?v=5d76c1be"></script>
+  <script src="submit.js?v=8f983a29"></script>
+  <script src="site.js?v=031509db"></script>
+</body>
+</html>
