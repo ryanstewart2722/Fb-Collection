@@ -120,7 +120,6 @@ function renderListEdit() {
       ${s.items.map((i, n) => `<div class="el-row${n > 0 && brandOf(s.id, i) !== brandOf(s.id, s.items[n - 1]) ? " divide" : ""}" data-id="${esc(i.id)}">${elThumb(i)}${elInputs(s.id, i)}<button class="el-x" data-act="remove" data-id="${esc(i.id)}" title="Remove">×</button></div>`).join("")}
       ${state.draft === s.id ? `<div class="el-row el-new" data-section="${s.id}">${elThumb(null)}${elInputs(s.id, null)}<button class="ed-btn el-save" data-act="savenew">Add</button></div>` : ""}
       <button class="ed-btn el-add" data-act="newrow" data-section="${s.id}">+ Add to My ${esc(s.title)}</button>
-      ${state.edit && s.id === "setups" ? `<p class="el-tip">Tip: tap the photo square in a row to add a picture. For the cleanest cut-out, shoot the board from straight above on a plain, contrasting background (dark board on a light surface, light board on a dark one).</p>` : ""}
     </div></div></section>`).join("");
 }
 function renderEdit() {
@@ -153,7 +152,8 @@ function paintItems() {
     return;
   }
   const editing = state.edit && state.owner;
-  box.innerHTML = view === "list" ? (editing ? renderListEdit() : renderList()) : editing ? renderEdit() : renderGrid();
+  const TIP = `<p class="el-tip">Photo tip: shoot from straight above on a clean, contrasting background in good light. The background is removed for you.</p>`;
+  box.innerHTML = view === "list" ? (editing ? TIP + renderListEdit() : renderList()) : editing ? TIP + renderEdit() : renderGrid();
   if (editing && state.draft) { const n = box.querySelector(".el-new .el-in"); if (n) n.focus({ preventScroll: false }); }
   const find = (id) => state.items.find((i) => i.id === id);
   if (view === "list") {

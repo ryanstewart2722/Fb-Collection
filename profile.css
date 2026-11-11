@@ -117,5 +117,4 @@
   .el-new .el-save { grid-column: 1 / -1; background: #000; color: #fff; }
   .el-add { margin-top: 14px; }
 }
-.el-tip { font-size: 11px; line-height: 1.4; color: #8c8c8c; margin: 10px 0 0; max-width: 52em; }
-@media (max-width: 760px) { .el-tip { position: sticky; left: 0; width: calc(100vw - 2 * var(--gutter)); } }
+.el-tip { font-size: 10px; line-height: 1.4; color: #9a9a9a; margin: 0 0 6px; }
