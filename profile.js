@@ -120,6 +120,7 @@ function renderListEdit() {
       ${s.items.map((i, n) => `<div class="el-row${n > 0 && brandOf(s.id, i) !== brandOf(s.id, s.items[n - 1]) ? " divide" : ""}" data-id="${esc(i.id)}">${elThumb(i)}${elInputs(s.id, i)}<button class="el-x" data-act="remove" data-id="${esc(i.id)}" title="Remove">×</button></div>`).join("")}
       ${state.draft === s.id ? `<div class="el-row el-new" data-section="${s.id}">${elThumb(null)}${elInputs(s.id, null)}<button class="ed-btn el-save" data-act="savenew">Add</button></div>` : ""}
       <button class="ed-btn el-add" data-act="newrow" data-section="${s.id}">+ Add to My ${esc(s.title)}</button>
+      ${state.edit && s.id === "setups" ? `<p class="el-tip">Tip: tap the photo square in a row to add a picture. For the cleanest cut-out, shoot the board from straight above on a plain, contrasting background (dark board on a light surface, light board on a dark one).</p>` : ""}
     </div></div></section>`).join("");
 }
 function renderEdit() {
@@ -299,7 +300,7 @@ async function tryInsert(row) {
   if (!name) return;
   const note = await canonRow(row, state.profile.id === "sample");
   if (state.profile.id === "sample") return (msg.textContent = "This is a preview. Nothing is saved here." + note);
-  msg.textContent = "Adding… (cutting out the background can take a few seconds)";
+  msg.textContent = "Adding… (cutting out the background takes a few seconds; the first photo also loads the cut-out tool, about 44 MB, once)";
   try {
     let image_path = null;
     const file = row.querySelector(".ed-file").files[0];
@@ -357,7 +358,7 @@ app.addEventListener("change", async (e) => {
   if (state.profile.id === "sample") return (msg.textContent = "This is a preview. Nothing is saved here.");
   const it = state.items.find((i) => i.id === e.target.closest("[data-id]").dataset.id);
   if (!it) return;
-  msg.textContent = "Uploading… (cutting out the background can take a few seconds)";
+  msg.textContent = "Uploading… (cutting out the background takes a few seconds; the first photo also loads the cut-out tool, about 44 MB, once)";
   try {
     const p = await window.momsPreparePhoto(file, it.section);
     const path = `${state.profile.id}/${crypto.randomUUID()}.${p.ext}`;

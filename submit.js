@@ -16,7 +16,7 @@ function paintForm() {
     kind === "textarea" ? `<textarea name="${k}" placeholder="${label}" rows="3" maxlength="500"></textarea>`
       : `<input name="${k}" type="text" placeholder="${label}${req ? " (required)" : ""}" maxlength="${k === "source" ? 300 : 120}" ${req ? "required" : ""}>`).join("") +
     `<label class="p-file">Photo (required) <input name="photo" type="file" accept="image/jpeg,image/png,image/webp,image/*" required></label>
-     <p class="auth-note">A clear photo of the top of the board on a plain background works best.</p>
+     <p class="auth-note">Best results: shoot the board from straight above on a plain, contrasting background (a dark board on a light surface, a light board on a dark one). The background is cut out automatically.</p>
      <button class="auth-btn" type="submit" id="s-btn">Submit</button>`;
 }
 document.addEventListener("click", (e) => { const b = e.target.closest("[data-t]"); if (b) { e.preventDefault(); type = b.dataset.t; paintForm(); $("#s-msg").textContent = ""; } });

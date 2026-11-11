@@ -2,7 +2,64 @@
 //  1. Already transparent (a cut-out): trimmed and sized like the museum's.
 //  2. Shot on a plain backdrop (white sheet, floor, grey card): the backdrop is removed automatically, then trimmed and sized.
 //  3. Anything busier: kept as an ordinary photo, just shrunk so it loads fast.
-// Busy photos (a board on a table, floor or cloth): a small cut-out model that runs in the browser, only when needed.
+// ---- mask tools (work on 0/1 maps at a modest working size) ----
+function edtSq(fg, w, h) {   // squared distance from every pixel to the nearest foreground pixel
+  const INF = 1e12, n = w * h, g = new Float64Array(n), m = Math.max(w, h);
+  for (let i = 0; i < n; i++) g[i] = fg[i] ? 0 : INF;
+  const f = new Float64Array(m), d = new Float64Array(m), v = new Int32Array(m), z = new Float64Array(m + 1);
+  const pass = (len) => {
+    let k = 0; v[0] = 0; z[0] = -INF; z[1] = INF;
+    for (let q = 1; q < len; q++) {
+      let s = ((f[q] + q * q) - (f[v[k]] + v[k] * v[k])) / (2 * q - 2 * v[k]);
+      while (s <= z[k]) { k--; s = ((f[q] + q * q) - (f[v[k]] + v[k] * v[k])) / (2 * q - 2 * v[k]); }
+      k++; v[k] = q; z[k] = s; z[k + 1] = INF;
+    }
+    k = 0;
+    for (let q = 0; q < len; q++) { while (z[k + 1] < q) k++; d[q] = (q - v[k]) * (q - v[k]) + f[v[k]]; }
+  };
+  for (let x = 0; x < w; x++) { for (let y = 0; y < h; y++) f[y] = g[y * w + x]; pass(h); for (let y = 0; y < h; y++) g[y * w + x] = d[y]; }
+  for (let y = 0; y < h; y++) { for (let x = 0; x < w; x++) f[x] = g[y * w + x]; pass(w); for (let x = 0; x < w; x++) g[y * w + x] = d[x]; }
+  return g;
+}
+function morph(m, w, h, r, kind) {   // disk-shaped dilate / erode / close / open, padded so the picture's edge is not treated as board
+  const p = Math.ceil(r) + 2, W = w + 2 * p, H = h + 2 * p, a = new Uint8Array(W * H);
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) a[(y + p) * W + x + p] = m[y * w + x];
+  const dil = (src) => { const D = edtSq(src, W, H), o = new Uint8Array(W * H); for (let i = 0; i < o.length; i++) o[i] = D[i] <= r * r ? 1 : 0; return o; };
+  const ero = (src) => { const inv = new Uint8Array(W * H); for (let i = 0; i < inv.length; i++) inv[i] = src[i] ? 0 : 1; const D = edtSq(inv, W, H), o = new Uint8Array(W * H); for (let i = 0; i < o.length; i++) o[i] = D[i] > r * r ? 1 : 0; return o; };
+  const res = kind === "close" ? ero(dil(a)) : kind === "open" ? dil(ero(a)) : kind === "dilate" ? dil(a) : ero(a);
+  const out = new Uint8Array(w * h);
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) out[y * w + x] = res[(y + p) * W + x + p];
+  return out;
+}
+function mainObject(b, w, h) {   // biggest piece (and any piece at least a quarter its size), holes filled
+  const n = w * h, lab = new Int32Array(n), sizes = [0], st = new Int32Array(n);
+  for (let i = 0; i < n; i++) {
+    if (!b[i] || lab[i]) continue;
+    const id = sizes.length; let c = 0, sp = 0; st[sp++] = i; lab[i] = id;
+    while (sp) {
+      const k = st[--sp]; c++; const x = k % w;
+      if (x > 0 && b[k - 1] && !lab[k - 1]) { lab[k - 1] = id; st[sp++] = k - 1; }
+      if (x < w - 1 && b[k + 1] && !lab[k + 1]) { lab[k + 1] = id; st[sp++] = k + 1; }
+      if (k >= w && b[k - w] && !lab[k - w]) { lab[k - w] = id; st[sp++] = k - w; }
+      if (k < n - w && b[k + w] && !lab[k + w]) { lab[k + w] = id; st[sp++] = k + w; }
+    }
+    sizes.push(c);
+  }
+  const big = Math.max(0, ...sizes), keep = new Uint8Array(n);
+  for (let i = 0; i < n; i++) keep[i] = lab[i] && sizes[lab[i]] >= big * 0.25 ? 1 : 0;
+  const out = new Uint8Array(n); let sp = 0;   // holes: whatever the outside cannot reach belongs to the board
+  const seed = (k) => { if (!keep[k] && !out[k]) { out[k] = 1; st[sp++] = k; } };
+  for (let x = 0; x < w; x++) { seed(x); seed((h - 1) * w + x); }
+  for (let y = 0; y < h; y++) { seed(y * w); seed(y * w + w - 1); }
+  while (sp) {
+    const k = st[--sp], x = k % w;
+    if (x > 0) seed(k - 1); if (x < w - 1) seed(k + 1); if (k >= w) seed(k - w); if (k < n - w) seed(k + w);
+  }
+  for (let i = 0; i < n; i++) keep[i] = out[i] ? 0 : 1;
+  return keep;
+}
+
+// Busy photos (a board on a table, floor or cloth): a cut-out model that runs in the browser, only when needed.
 const ORT_BASE = "https://cdn.jsdelivr.net/npm/onnxruntime-web@1.17.3/dist/";
 let ortSession = null;
 function loadOrt() {
@@ -13,52 +70,64 @@ function loadOrt() {
     document.head.appendChild(s);
   });
 }
+async function loadModel(ort) {
+  if (ortSession) return ortSession;
+  for (const url of ["/models/u2net_int8.onnx", "/models/u2netp.onnx"]) {   // the better model first; the small one if the phone cannot hold it
+    try { ortSession = await ort.InferenceSession.create(url, { executionProviders: ["wasm"] }); return ortSession; } catch (e) { console.warn("cut-out model failed:", url, e); }
+  }
+  throw new Error("no cut-out model");
+}
 async function mlCut(bmp, w, h, d) {
   const ort = await loadOrt();
   ort.env.wasm.wasmPaths = ORT_BASE; ort.env.wasm.numThreads = 1;
-  ortSession ||= await ort.InferenceSession.create("/models/u2netp.onnx", { executionProviders: ["wasm"] });
+  const sess = await loadModel(ort);
   const N = 320, sc = document.createElement("canvas"); sc.width = sc.height = N;
   const sx = sc.getContext("2d", { willReadFrequently: true }); sx.drawImage(bmp, 0, 0, N, N);
   const px = sx.getImageData(0, 0, N, N).data, inp = new Float32Array(3 * N * N);
+  let mx = 1; for (let i = 0; i < N * N; i++) for (let c = 0; c < 3; c++) if (px[i * 4 + c] > mx) mx = px[i * 4 + c];
   const mean = [0.485, 0.456, 0.406], std = [0.229, 0.224, 0.225];
-  for (let i = 0; i < N * N; i++) for (let c = 0; c < 3; c++) inp[c * N * N + i] = (px[i * 4 + c] / 255 - mean[c]) / std[c];
-  const out = await ortSession.run({ [ortSession.inputNames[0]]: new ort.Tensor("float32", inp, [1, 3, N, N]) });
-  const m = out[ortSession.outputNames[0]].data;
+  for (let i = 0; i < N * N; i++) for (let c = 0; c < 3; c++) inp[c * N * N + i] = (px[i * 4 + c] / mx - mean[c]) / std[c];
+  const out = await sess.run({ [sess.inputNames[0]]: new ort.Tensor("float32", inp, [1, 3, N, N]) });
+  const m = out[sess.outputNames[0]].data;
   let lo = Infinity, hi = -Infinity;
   for (let i = 0; i < m.length; i++) { if (m[i] < lo) lo = m[i]; if (m[i] > hi) hi = m[i]; }
-  const mask = new Float32Array(N * N);
-  for (let i = 0; i < mask.length; i++) mask[i] = (m[i] - lo) / (hi - lo || 1);
-  // keep the biggest blob (and any blob at least a quarter its size, e.g. a second board); drop speckles
-  const lab = new Int32Array(N * N), sizes = [0];
-  for (let i = 0; i < N * N; i++) {
-    if (mask[i] <= 0.5 || lab[i]) continue;
-    const id = sizes.length; let n = 0; const st = [i]; lab[i] = id;
-    while (st.length) { const k = st.pop(); n++; const x = k % N, y = (k / N) | 0;
-      for (const j of [x > 0 ? k - 1 : -1, x < N - 1 ? k + 1 : -1, y > 0 ? k - N : -1, y < N - 1 ? k + N : -1]) if (j >= 0 && !lab[j] && mask[j] > 0.5) { lab[j] = id; st.push(j); } }
-    sizes.push(n);
-  }
-  const big = Math.max(0, ...sizes);
-  const frac = sizes.reduce((a, n) => a + (n >= big * 0.25 ? n : 0), 0) / (N * N);
-  if (!big || frac < 0.04 || frac > 0.85) return false;   // nothing clear to cut out: keep the photo as it is
-  // fill holes inside the board (the model sometimes leaves gaps in busy graphics)
-  const keepM = new Uint8Array(N * N), reach = new Uint8Array(N * N), q2 = [];
-  for (let i = 0; i < N * N; i++) keepM[i] = lab[i] && sizes[lab[i]] >= big * 0.25 ? 1 : 0;
-  for (let i = 0; i < N; i++) for (const k of [i, (N - 1) * N + i, i * N, i * N + N - 1]) if (!keepM[k] && !reach[k]) { reach[k] = 1; q2.push(k); }
-  while (q2.length) {
-    const k = q2.pop(), x = k % N;
-    for (const j of [x > 0 ? k - 1 : -1, x < N - 1 ? k + 1 : -1, k >= N ? k - N : -1, k < N * N - N ? k + N : -1]) if (j >= 0 && !keepM[j] && !reach[j]) { reach[j] = 1; q2.push(j); }
-  }
+  // the model's soft map, up to a working size for the outline work
+  const k = Math.min(1, 800 / Math.max(w, h)), pw = Math.max(8, Math.round(w * k)), ph = Math.max(8, Math.round(h * k));
   const mc = document.createElement("canvas"); mc.width = mc.height = N;
-  const mx = mc.getContext("2d"), md = mx.createImageData(N, N);
-  for (let i = 0; i < N * N; i++) md.data[i * 4 + 3] = keepM[i] ? Math.round(255 * ss(0.2, 0.6, mask[i])) : (reach[i] ? 0 : 255);
-  mx.putImageData(md, 0, 0);
+  const mctx = mc.getContext("2d"), md = mctx.createImageData(N, N);
+  for (let i = 0; i < N * N; i++) md.data[i * 4 + 3] = Math.round(255 * (m[i] - lo) / (hi - lo || 1));
+  mctx.putImageData(md, 0, 0);
+  const pc = document.createElement("canvas"); pc.width = pw; pc.height = ph;
+  const pctx = pc.getContext("2d", { willReadFrequently: true }); pctx.imageSmoothingQuality = "high"; pctx.drawImage(mc, 0, 0, pw, ph);
+  const pd = pctx.getImageData(0, 0, pw, ph).data, bin = new Uint8Array(pw * ph);
+  for (let i = 0; i < bin.length; i++) bin[i] = pd[i * 4 + 3] > 127 ? 1 : 0;
+  let keep = mainObject(bin, pw, ph);
+  let y0 = ph, y1 = -1, area = 0;
+  for (let y = 0; y < ph; y++) for (let x = 0; x < pw; x++) if (keep[y * pw + x]) { area++; if (y < y0) y0 = y; if (y > y1) y1 = y; }
+  if (!area || area / (pw * ph) < 0.04 || area / (pw * ph) > 0.85) return false;   // nothing clear to cut out: keep the photo as it is
+  const oh = y1 - y0 + 1;   // the object's height sets the size of every fix below
+  keep = mainObject(morph(keep, pw, ph, Math.max(2, oh * 0.015), "close"), pw, ph);   // fill small notches
+  // the nose: a dark nose on a dark backdrop is often missed. Round off any bite out of the top third.
+  const cut = y0 + Math.round(oh * 0.30), top = new Uint8Array(pw * ph);
+  for (let y = y0; y < cut; y++) for (let x = 0; x < pw; x++) top[y * pw + x] = keep[y * pw + x];
+  const topClosed = morph(top, pw, ph, Math.max(3, oh * 0.11), "close");
+  for (let i = 0; i < keep.length; i++) if (topClosed[i]) keep[i] = 1;
+  // a thin bulge of backdrop beside the wheels at the bottom: trim it (wheels are far wider and stay)
+  const opened = morph(keep, pw, ph, Math.max(2, oh * 0.026), "open"), low = y1 - Math.round(oh * 0.35);
+  for (let y = Math.max(0, low); y < ph; y++) for (let x = 0; x < pw; x++) keep[y * pw + x] = opened[y * pw + x];
+  keep = mainObject(keep, pw, ph);
+  // smooth the contour in proportion to the object, then a narrow ramp for a crisp anti-aliased edge
+  const sigma = Math.max(1.5, oh * 0.009), rb = Math.max(1, Math.round((Math.sqrt(4 * sigma * sigma + 1) - 1) / 2));
+  const f = new Float32Array(pw * ph); for (let i = 0; i < f.length; i++) f[i] = keep[i];
+  const S = boxBlur(boxBlur(boxBlur(f, pw, ph, rb), pw, ph, rb), pw, ph, rb);
+  const ac = document.createElement("canvas"); ac.width = pw; ac.height = ph;
+  const actx = ac.getContext("2d"), ad = actx.createImageData(pw, ph);
+  for (let i = 0; i < S.length; i++) ad.data[i * 4 + 3] = Math.round(255 * ss(0.50, 0.59, S[i]));
+  actx.putImageData(ad, 0, 0);
   const fc = document.createElement("canvas"); fc.width = w; fc.height = h;
-  const fx = fc.getContext("2d", { willReadFrequently: true }); fx.imageSmoothingQuality = "high"; fx.drawImage(mc, 0, 0, w, h);
-  const fd = fx.getImageData(0, 0, w, h).data, n = w * h, p = new Float32Array(n);
-  for (let i = 0; i < n; i++) p[i] = fd[i * 4 + 3] / 255;
-  // snap the soft, low-resolution outline to the real edges in the photo
-  const r = Math.max(4, Math.round(Math.min(w, h) / 150));
-  finishAlpha(d, guided(lumaOf(d, n), p, w, h, r, 0.004), n, w, h);
+  const fx = fc.getContext("2d", { willReadFrequently: true }); fx.imageSmoothingQuality = "high"; fx.drawImage(ac, 0, 0, w, h);
+  const fd = fx.getImageData(0, 0, w, h).data;
+  for (let i = 0; i < w * h; i++) d[i * 4 + 3] = fd[i * 4 + 3];
   return true;
 }
 
@@ -159,8 +228,8 @@ function solidSilhouette(A, W, H) {
   const f = new Float32Array(n);
   for (let i = 0; i < n; i++) f[i] = out[i] ? 0 : 1;
   // smooth the contour (about 4-5px), then a narrow ramp for an anti-aliased edge, shaved by a hair to lose any backdrop rim
-  const S = boxBlur(boxBlur(boxBlur(f, W, H, 4), W, H, 4), W, H, 4), q = new Float32Array(n);
-  for (let i = 0; i < n; i++) q[i] = ss(0.46, 0.60, S[i]);
+  const S = boxBlur(boxBlur(boxBlur(f, W, H, 2), W, H, 2), W, H, 2), q = new Float32Array(n);
+  for (let i = 0; i < n; i++) q[i] = ss(0.48, 0.56, S[i]);
   return q;
 }
 
