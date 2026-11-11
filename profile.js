@@ -11,11 +11,11 @@ const spans = (list) => list.map((c) => `<span>${esc(c)}</span>`).join("");
 
 // Same sections and columns as the museum owner's own collection. Each field is [key, header, placeholder].
 const SCHEMA = {
-  setups:    { title: "Setups",    fields: [["name", "Deck & Manufacturer", "Deck & Manufacturer"], ["trucks", "Trucks", "Trucks"], ["wheels", "Wheels", "Wheels"]] },
-  decks:     { title: "Decks",     fields: [["name", "Deck name/color", "Deck name/color"], ["maker", "Manufacturer", "Manufacturer"], ["mold", "Mold", "Mold"], ["size", "Size", "Size"]] },
-  obstacles: { title: "Obstacles", fields: [["name", "Name", "Name"], ["maker", "Manufacturer", "Manufacturer"], ["material", "Material", "Material"]] },
-  wheels:    { title: "Wheels",    fields: [["name", "Wheel/manufacturer", "Wheel/manufacturer"], ["color", "Color", "Color"], ["material", "Material", "Material"], ["duro", "Duro", "Duro"]] },
-  trucks:    { title: "Trucks",    fields: [["name", "Name", "Name"], ["size", "Size", "Size"], ["color", "Color", "Color"]] },
+  setups:    { title: "Setups",    fields: [["name", "Deck & Manufacturer", "Dr. M's Research Institute 32mm* Mystery R2 Blue/Tan (f)"], ["trucks", "Trucks", "Joycult x Independent 32mm Silver"], ["wheels", "Wheels", "Joycult Classic 3.0 Street Tan"]] },
+  decks:     { title: "Decks",     fields: [["name", "Deck name/color", "Thinker, Black/Blue"], ["maker", "Manufacturer", "CATFISHBBQ"], ["mold", "Mold", "Freshwater"], ["size", "Size", "32mm"]] },
+  obstacles: { title: "Obstacles", fields: [["name", "Name", "Podium"], ["maker", "Manufacturer", "Yarnbody"], ["material", "Material", "Wood/Granite"]] },
+  wheels:    { title: "Wheels",    fields: [["name", "Wheel/manufacturer", "Sunpower Wheels, Satori"], ["color", "Color", "White"], ["material", "Material", "Urethane"], ["duro", "Duro", "70d"]] },
+  trucks:    { title: "Trucks",    fields: [["name", "Name", "Joycult x Independent Stage 11 Polished Trucks"], ["size", "Size", "32mm"], ["color", "Color", "Silver"]] },
 };
 const ORDER = ["setups", "decks", "obstacles", "wheels", "trucks"];
 const TALL = new Set(["decks", "setups"]);
