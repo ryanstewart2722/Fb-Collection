@@ -56,7 +56,27 @@ function bindItem(el, activate) {
   el.addEventListener("click", (e) => { e.stopPropagation(); el.classList.contains("on") ? clearActive() : activate(el); });
 }
 
+// High-quality re-cuts are made a few minutes after an upload (see scripts/recut_worker.py) and listed in /user-cuts/index.json.
+let RECUTS = {};
+async function loadRecuts() { try { const r = await fetch("/user-cuts/index.json", { cache: "no-cache" }); if (r.ok) RECUTS = await r.json(); } catch { /* none yet */ } }
+// Uploads the cut-out and, for the later high-quality re-cut, a cropped copy of the original photo.
+async function uploadPhoto(file, section) {
+  const p = await window.momsPreparePhoto(file, section), uid = state.profile.id, id = crypto.randomUUID();
+  const image_path = `${uid}/${id}.${p.ext}`;
+  const up = await sb.storage.from("uploads").upload(image_path, p.blob, { contentType: p.type, cacheControl: "3600" });
+  if (up.error) throw up.error;
+  let source_path = null;
+  if (p.source) {
+    const sp = `${uid}/${id}-src.jpg`, u2 = await sb.storage.from("uploads").upload(sp, p.source, { contentType: "image/jpeg", cacheControl: "3600" });
+    if (!u2.error) source_path = sp;
+  } else if (!p.cut) source_path = image_path;   // the browser could not cut it out: let the stronger tool try the photo itself
+  return { image_path, source_path };
+}
+const stored = (p) => p && !/^https?:/.test(p);
+function dropFiles(...paths) { const list = [...new Set(paths.filter(stored))]; if (list.length) sb.storage.from("uploads").remove(list).catch(() => {}); }
 async function photoUrl(item) {
+  const rc = RECUTS[item.id];
+  if (rc && item.source_path && rc.src === item.source_path) return "/" + rc.file;
   const p = item.image_path;
   if (!p) return "";
   if (/^https?:/.test(p)) return p;
@@ -228,7 +248,7 @@ app.addEventListener("click", async (e) => {
     if (!it || !confirm(`Remove “${it.name}” from your collection?`)) return;
     const { error } = await sb.from("collection_items").delete().eq("id", id);
     if (error) return (msg.textContent = "Couldn't remove it. " + error.message);
-    if (it.image_path && !/^https?:/.test(it.image_path)) sb.storage.from("uploads").remove([it.image_path]).catch(() => {});
+    dropFiles(it.image_path, it.source_path);
     state.items = state.items.filter((i) => i.id !== id); paint();
     $("#owner-msg").textContent = "Removed.";
   }
@@ -302,21 +322,16 @@ async function tryInsert(row) {
   if (state.profile.id === "sample") return (msg.textContent = "This is a preview. Nothing is saved here." + note);
   msg.textContent = "Adding… (cutting out the background takes a few seconds; the first photo also loads the cut-out tool, about 44 MB, once)";
   try {
-    let image_path = null;
+    let image_path = null, source_path = null;
     const file = row.querySelector(".ed-file").files[0];
-    if (file) {
-      const p = await window.momsPreparePhoto(file, section);
-      image_path = `${state.profile.id}/${crypto.randomUUID()}.${p.ext}`;
-      const up = await sb.storage.from("uploads").upload(image_path, p.blob, { contentType: p.type, cacheControl: "3600" });
-      if (up.error) throw up.error;
-    }
+    if (file) ({ image_path, source_path } = await uploadPhoto(file, section));
     const details = Object.fromEntries([...row.querySelectorAll(".el-in")].filter((el) => el.dataset.k !== "name").map((el) => [el.dataset.k, el.value.trim()]).filter(([, v]) => v));
     const position = state.items.reduce((m, i) => Math.max(m, i.position || 0), 0) + 1;
-    const { data, error } = await sb.from("collection_items").insert({ section, name, details, image_path, position }).select().single();
-    if (error) { if (image_path) sb.storage.from("uploads").remove([image_path]).catch(() => {}); throw error; }
+    const { data, error } = await sb.from("collection_items").insert({ section, name, details, image_path, source_path, position }).select().single();
+    if (error) { dropFiles(image_path, source_path); throw error; }
     data.url = await photoUrl(data);
     state.items.push(data); state.draft = null; paint();
-    $("#owner-msg").textContent = "Added." + note;
+    $("#owner-msg").textContent = "Added." + (source_path ? " A cleaner cut-out replaces the photo in a few minutes." : "") + note;
   } catch (err) { msg.textContent = "Couldn't add that. " + (err.message || err); }
 }
 async function saveRow(row) {
@@ -360,15 +375,12 @@ app.addEventListener("change", async (e) => {
   if (!it) return;
   msg.textContent = "Uploading… (cutting out the background takes a few seconds; the first photo also loads the cut-out tool, about 44 MB, once)";
   try {
-    const p = await window.momsPreparePhoto(file, it.section);
-    const path = `${state.profile.id}/${crypto.randomUUID()}.${p.ext}`;
-    const up = await sb.storage.from("uploads").upload(path, p.blob, { contentType: p.type, cacheControl: "3600" });
-    if (up.error) throw up.error;
-    const { data, error } = await sb.from("collection_items").update({ image_path: path }).eq("id", it.id).select();
-    if (error || !data?.length) { sb.storage.from("uploads").remove([path]).catch(() => {}); throw error || new Error("not saved"); }
-    if (it.image_path && !/^https?:/.test(it.image_path)) sb.storage.from("uploads").remove([it.image_path]).catch(() => {});
+    const nu = await uploadPhoto(file, it.section);
+    const { data, error } = await sb.from("collection_items").update({ image_path: nu.image_path, source_path: nu.source_path }).eq("id", it.id).select();
+    if (error || !data?.length) { dropFiles(nu.image_path, nu.source_path); throw error || new Error("not saved"); }
+    dropFiles(it.image_path, it.source_path);
     Object.assign(it, data[0]); it.url = await photoUrl(it);
-    paint(); $("#owner-msg").textContent = "Photo saved.";
+    paint(); $("#owner-msg").textContent = "Photo saved." + (nu.source_path ? " A cleaner cut-out replaces it in a few minutes." : "");
   } catch (err) { msg.textContent = "Couldn't save that photo. " + (err.message || err); }
 });
 app.addEventListener("change", (e) => { if (e.target.id === "ad-section") $("#ad-fields").innerHTML = fieldsHtml(e.target.value); });
@@ -436,6 +448,7 @@ async function load() {
   const owner = session?.user.id === profile.id;
   const { data: items } = await sb.from("collection_items").select("*").eq("user_id", profile.id).order("section").order("position").order("created_at");
   const rows = items || [];
+  await loadRecuts();
   await Promise.all(rows.map(async (i) => (i.url = await photoUrl(i))));
   state = { profile, items: rows, owner };
   paint();

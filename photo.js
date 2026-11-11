@@ -267,7 +267,8 @@ window.momsPreparePhoto = async function (file, section) {
   let edgeClear = 0, edgeN = 0;
   for (let i = 0; i < w; i += 3) { edgeN += 2; if (d[at(i, 0) + 3] < 250) edgeClear++; if (d[at(i, h - 1) + 3] < 250) edgeClear++; }
   for (let j = 0; j < h; j += 3) { edgeN += 2; if (d[at(0, j) + 3] < 250) edgeClear++; if (d[at(w - 1, j) + 3] < 250) edgeClear++; }
-  if (edgeClear > edgeN * 0.3) cut = true;
+  let preCut = false;   // the person supplied a ready-made cut-out
+  if (edgeClear > edgeN * 0.3) { cut = true; preCut = true; }
 
   // 2. plain backdrop? flood in from the edges over colours close to the corner colour
   if (!cut) {
@@ -339,7 +340,19 @@ window.momsPreparePhoto = async function (file, section) {
     const shape = solidSilhouette(rough, W, H), od = o.getImageData(0, 0, W, H);
     for (let i = 0; i < shape.length; i++) od.data[i * 4 + 3] = Math.round(255 * shape[i]);
     o.putImageData(od, 0, 0);
-    return { blob: await new Promise((r) => out.toBlob(r, "image/png")), ext: "png", type: "image/png", cut: true };
+    // A cropped copy of the original (the board plus a margin, not the whole room): a stronger cut-out is made from it later.
+    let source = null;
+    if (!preCut) {
+      const mx2 = box.w * sx * 0.25, my2 = box.h * sy * 0.25;   // generous margin, in case the quick cut-out missed an end of the board
+      const qx = Math.max(0, box.x * sx - mx2), qy = Math.max(0, box.y * sy - my2);
+      const qw = Math.min(bmp.width - qx, box.w * sx + 2 * mx2), qh = Math.min(bmp.height - qy, box.h * sy + 2 * my2);
+      const ks = Math.min(1, 2000 / Math.max(qw, qh)), sc2 = document.createElement("canvas");
+      sc2.width = Math.max(1, Math.round(qw * ks)); sc2.height = Math.max(1, Math.round(qh * ks));
+      const s2 = sc2.getContext("2d"); s2.imageSmoothingQuality = "high"; s2.fillStyle = "#fff"; s2.fillRect(0, 0, sc2.width, sc2.height);
+      s2.drawImage(bmp, qx, qy, qw, qh, 0, 0, sc2.width, sc2.height);
+      source = await new Promise((r) => sc2.toBlob(r, "image/jpeg", 0.9));
+    }
+    return { blob: await new Promise((r) => out.toBlob(r, "image/png")), ext: "png", type: "image/png", cut: true, source };
   }
   out.width = w; out.height = h; o.fillStyle = "#fff"; o.fillRect(0, 0, w, h); o.drawImage(bmp, 0, 0, w, h);
   return { blob: await new Promise((r) => out.toBlob(r, "image/jpeg", 0.86)), ext: "jpg", type: "image/jpeg", cut: false };

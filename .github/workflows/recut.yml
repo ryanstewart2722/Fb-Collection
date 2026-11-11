@@ -1,0 +1,62 @@
+# When someone adds a photo to their collection, the browser makes a quick cut-out so it shows right away.
+# Every few minutes this job re-cuts new photos with a much stronger model and publishes the cleaner version
+# (see scripts/recut_worker.py). Free on a public repository. It only reads what any visitor can see.
+name: Re-cut collection photos
+
+on:
+  schedule:
+    - cron: "*/10 * * * *" # about every 10 minutes (GitHub may run it a little late)
+  workflow_dispatch: # lets you run it by hand from the Actions tab
+
+permissions:
+  contents: write
+  pages: write
+
+concurrency:
+  group: recut
+  cancel-in-progress: false
+
+jobs:
+  recut:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          sparse-checkout: |
+            scripts
+            user-cuts
+      - name: Anything to do?
+        id: plan
+        run: python3 scripts/recut_worker.py plan
+      - if: steps.plan.outputs.cut == 'yes'
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - if: steps.plan.outputs.cut == 'yes'
+        name: Keep the cut-out model between runs
+        uses: actions/cache@v4
+        with:
+          path: ~/.u2net
+          key: birefnet-general-lite-v1
+      - if: steps.plan.outputs.cut == 'yes'
+        name: Install the cut-out tools
+        run: pip install --quiet "rembg==2.0.61" onnxruntime pillow scipy numpy
+      - if: steps.plan.outputs.work == 'yes'
+        name: Re-cut
+        run: python3 scripts/recut_worker.py run
+      - if: steps.plan.outputs.work == 'yes'
+        name: Publish
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          git config user.name "moms-recut"
+          git config user.email "moms-recut@users.noreply.github.com"
+          git add user-cuts
+          if git diff --cached --quiet; then echo "nothing changed"; exit 0; fi
+          git commit -qm "Re-cut collection photos"
+          git pull --rebase -q origin main
+          git push -q origin HEAD:main
+          # a push from this job does not start the site build by itself, so ask for one
+          gh api -X POST "repos/${{ github.repository }}/pages/builds" >/dev/null && echo "site build requested"
