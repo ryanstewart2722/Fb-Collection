@@ -219,6 +219,16 @@ window.momsPreparePhoto = async function (file, section) {
         }
         keepMainPieces(d, w, h);
         smoothAlpha(d, w, h);
+        // Double-check with the model. If the two outlines disagree a lot, the flat-backdrop method probably chopped
+        // part of the board (dark or similar-coloured areas) or kept background (shadows, streaks): trust the model.
+        try {
+          const probe = new Uint8ClampedArray(d);
+          if (await mlCut(bmp, w, h, probe)) {
+            let inter = 0, uni = 0;
+            for (let i = 0; i < w * h; i++) { const f = d[i * 4 + 3] > 127, m = probe[i * 4 + 3] > 127; if (f && m) inter++; if (f || m) uni++; }
+            if (uni && inter / uni < 0.9) d.set(probe);
+          }
+        } catch (e) { console.warn("cross-check skipped:", e); }
         cut = true;
       } else d.set(copy);   // not a clean backdrop: undo
     }
