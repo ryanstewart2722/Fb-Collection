@@ -126,6 +126,29 @@ function keepMainPieces(d, w, h) {
   for (let i = 0; i < w * h; i++) if (d[i * 4 + 3] && (!lab[i] || sizes[lab[i]] < big * 0.25)) d[i * 4 + 3] = 0;
 }
 
+// Final pass on the finished frame: smooth the outline, shave a hair off it (drops the backdrop's dark/light rim),
+// and re-colour the edge pixels from the board's own nearby colours so no backdrop colour is left on the edge.
+function cleanEdges(ctx, W, H) {
+  const img = ctx.getImageData(0, 0, W, H), d = img.data, n = W * H;
+  const A = new Float32Array(n), I = new Float32Array(n);
+  for (let i = 0; i < n; i++) A[i] = d[i * 4 + 3] / 255;
+  const S = boxBlur(boxBlur(A, W, H, 3), W, H, 3);   // outline smoothing (about 3px)
+  const Q = new Float32Array(n);
+  for (let i = 0; i < n; i++) Q[i] = ss(0.5, 0.86, S[i]);   // slight shrink + anti-aliased edge
+  // "inside" = solid and at least ~3px from the edge
+  const bin = new Float32Array(n);
+  for (let i = 0; i < n; i++) bin[i] = A[i] > 0.97 ? 1 : 0;
+  const inner = boxBlur(bin, W, H, 3);
+  for (let i = 0; i < n; i++) I[i] = inner[i] > 0.995 ? 1 : 0;
+  const ch = [0, 1, 2].map((c) => { const p = new Float32Array(n); for (let i = 0; i < n; i++) p[i] = I[i] ? d[i * 4 + c] : 0; return boxBlur(p, W, H, 7); });
+  const wgt = boxBlur(I, W, H, 7);
+  for (let i = 0; i < n; i++) {
+    if (!I[i] && Q[i] > 0 && wgt[i] > 0.01) { d[i * 4] = Math.round(ch[0][i] / wgt[i]); d[i * 4 + 1] = Math.round(ch[1][i] / wgt[i]); d[i * 4 + 2] = Math.round(ch[2][i] / wgt[i]); }
+    d[i * 4 + 3] = Math.round(255 * Q[i]);
+  }
+  ctx.putImageData(img, 0, 0);
+}
+
 window.momsPreparePhoto = async function (file, section) {
   if (file.size > 25 * 1024 * 1024) throw new Error("That photo is too big (25 MB max).");
   let bmp;
@@ -213,6 +236,7 @@ window.momsPreparePhoto = async function (file, section) {
     } else {
       o.drawImage(c, box.x, box.y, box.w, box.h, (W - box.w * k) / 2, (H - box.h * k) / 2, box.w * k, box.h * k);
     }
+    cleanEdges(o, W, H);
     return { blob: await new Promise((r) => out.toBlob(r, "image/png")), ext: "png", type: "image/png", cut: true };
   }
   out.width = w; out.height = h; o.fillStyle = "#fff"; o.fillRect(0, 0, w, h); o.drawImage(bmp, 0, 0, w, h);
