@@ -17,6 +17,7 @@ ROOT = pathlib.Path(__file__).resolve().parent.parent
 OUT = ROOT / "user-cuts"
 INDEX = OUT / "index.json"
 LIMIT = int(os.environ.get("RECUT_LIMIT", "40"))          # photos per run
+VERSION = 2                                               # bump to re-cut everything again (2: boards are straightened)
 cfg = (ROOT / "moms-config.js").read_text()
 URL = re.search(r'url:\s*"([^"]+)"', cfg).group(1)
 KEY = re.search(r'key:\s*"([^"]+)"', cfg).group(1)       # the public key: only what any visitor may read
@@ -49,9 +50,24 @@ def load_index():
 def plan():
     items = {i["id"]: i for i in visible_items()}
     index = load_index()
-    todo = [i for i in items.values() if index.get(i["id"], {}).get("src") != i["source_path"]]
+    todo = [i for i in items.values() if index.get(i["id"], {}).get("src") != i["source_path"] or index[i["id"]].get("v") != VERSION]
     stale = [k for k, v in index.items() if k not in items or v.get("src") != items[k]["source_path"]]
     return items, index, todo, stale
+
+
+def tilt(keep):
+    """Degrees the object's long axis leans from upright (+ = top leans left, like a backslash). 0 for round objects."""
+    import numpy as np
+    ys, xs = np.nonzero(keep[::2, ::2])
+    if len(xs) < 50:
+        return 0.0
+    cov = np.cov(np.vstack([xs - xs.mean(), ys - ys.mean()]))
+    w, v = np.linalg.eigh(cov)
+    if w[1] < w[0] * 1.8:                                            # not clearly longer one way: leave it alone
+        return 0.0
+    vx, vy = v[:, 1]
+    a = float(np.degrees(np.arctan2(vx, vy)))
+    return a - 180 if a > 90 else a + 180 if a < -90 else a          # the smaller turn, so the nose stays the way it was shot
 
 
 def cut(data, section, sess):
@@ -79,6 +95,11 @@ def cut(data, section, sess):
     alpha = Image.fromarray((alpha_w * 255).astype("uint8")).resize(im.size, Image.BICUBIC)
     c = im.convert("RGBA"); c.putalpha(alpha)
     c = c.crop(alpha.getbbox())                                      # trim to the board itself...
+    if section in ("decks", "setups"):                               # ...stand it upright if it was photographed at an angle...
+        ang = tilt(keep)
+        if abs(ang) > 2.5:
+            c = c.rotate(-ang, resample=Image.BICUBIC, expand=True)
+            c = c.crop(c.getchannel("A").getbbox())
     tall = section in ("decks", "setups") and c.height > c.width * 1.4
     W, H, fill = (530, 1200, 0.96) if tall else (800, 800, 0.9)
     k = min(W / c.width, H / c.height) * fill
@@ -100,11 +121,14 @@ def run():
         from rembg import new_session
         sess = new_session("birefnet-general-lite", providers=["CPUExecutionProvider"])
         for it in todo[:LIMIT]:
-            entry = {"src": it["source_path"]}
+            entry = {"src": it["source_path"], "v": VERSION}
             try:
                 img = cut(fetch_source(it["source_path"]), it["section"], sess)
                 if img is not None:
-                    name = f"user-cuts/{it['id']}-{hashlib.sha1(it['source_path'].encode()).hexdigest()[:8]}.webp"
+                    name = f"user-cuts/{it['id']}-{hashlib.sha1(it['source_path'].encode()).hexdigest()[:8]}-v{VERSION}.webp"
+                    old = index.get(it["id"], {}).get("file")
+                    if old and old != name and (ROOT / old).is_file():
+                        (ROOT / old).unlink()
                     img.save(ROOT / name, "WEBP", quality=92, method=6)
                     entry["file"] = name
                     done += 1
