@@ -95,3 +95,10 @@
 .u-table .row:not(.head) { border-top: 1px solid var(--line); }
 .u-table .row.head + .row { border-top: 0; }
 .u-table .row:last-child { border-bottom: 1px solid var(--line); }
+
+/* status messages show at the top of the screen, where they can be seen while editing */
+#owner-msg:not(:empty) { position: fixed; left: var(--gutter); right: var(--gutter); top: calc(var(--bar-h) + 10px); z-index: 60; background: #000; color: #fff; padding: 10px 14px; margin: 0; font-size: 12px; }
+.el-new .el-in { border-color: var(--line); }
+.el-new .el-save { margin-left: 4px; align-self: center; }
+.el-new { grid-template-columns: 40px var(--cols) 56px; }
+@media (max-width: 760px) { .el-new { grid-template-columns: 40px 1fr 56px; } }

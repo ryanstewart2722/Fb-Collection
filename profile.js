@@ -136,7 +136,7 @@ function renderListEdit() {
     <div class="list-wrap"><div class="list el-list${s.items.length || state.draft === s.id ? "" : " is-empty"}" data-s="${s.id}" style="--cols:${colsFor(SCHEMA[s.id].fields.length)}">
       <div class="el-row el-head"><span></span>${SCHEMA[s.id].fields.map((f) => `<span class="el-h">${esc(f[1])}</span>`).join("")}<span></span></div>
       ${s.items.map((i, n) => `<div class="el-row${n > 0 && brandOf(s.id, i) !== brandOf(s.id, s.items[n - 1]) ? " divide" : ""}" data-id="${esc(i.id)}">${elThumb(i)}${elInputs(s.id, i)}<button class="el-x" data-act="remove" data-id="${esc(i.id)}" title="Remove">×</button></div>`).join("")}
-      ${state.draft === s.id ? `<div class="el-row el-new" data-section="${s.id}">${elThumb(null)}${elInputs(s.id, null)}<span></span></div>` : ""}
+      ${state.draft === s.id ? `<div class="el-row el-new" data-section="${s.id}">${elThumb(null)}${elInputs(s.id, null)}<button class="ed-btn el-save" data-act="savenew">Add</button></div>` : ""}
       <button class="ed-btn el-add" data-act="newrow" data-section="${s.id}">+ Add to My ${esc(s.title)}</button>
     </div></div></section>`).join("");
 }
@@ -213,7 +213,8 @@ app.addEventListener("click", async (e) => {
   const act = e.target.closest("[data-act]")?.dataset.act;
   if (!act || !state?.owner) return;
   const msg = $("#owner-msg");
-  if (state.profile.id === "sample" && !["add", "newrow", "edit", "editimg"].includes(act)) return (msg.textContent = "This is a preview. Nothing is saved here.");
+  if (state.profile.id === "sample" && !["add", "newrow", "edit", "editimg", "savenew"].includes(act)) return (msg.textContent = "This is a preview. Nothing is saved here.");
+  if (act === "savenew") { tryInsert(e.target.closest(".el-new")); return; }
   if (act === "editimg") { state.edit = !state.edit; paint(); return; }
   if (act === "signout") { await sb.auth.signOut(); location.href = "/"; }
   if (act === "edit") { const f = $("#edit-form"); f.hidden = !f.hidden; }
@@ -251,7 +252,7 @@ async function tryInsert(row) {
   const name = row.querySelector('[data-k="name"]').value.trim();
   if (!name) return;
   if (state.profile.id === "sample") return (msg.textContent = "This is a preview. Nothing is saved here.");
-  msg.textContent = "Adding…";
+  msg.textContent = "Adding… (cutting out the background can take a few seconds)";
   try {
     let image_path = null;
     const file = row.querySelector(".ed-file").files[0];
@@ -284,20 +285,30 @@ async function saveRow(row) {
   const url = it.url; Object.assign(it, data[0]); it.url = url;
   msg.textContent = "Saved.";
 }
+app.addEventListener("keydown", (e) => {
+  if (e.key !== "Enter" || !e.target.classList.contains("el-in")) return;
+  const row = e.target.closest(".el-new");
+  if (row) { e.preventDefault(); tryInsert(row); } else e.target.blur();
+});
 app.addEventListener("change", (e) => {
   if (!e.target.classList.contains("el-in")) return;
   const row = e.target.closest(".el-row");
-  row.classList.contains("el-new") ? tryInsert(row) : saveRow(row);
+  if (row.classList.contains("el-new")) return;   // a new row is saved with its Add button (or Enter)
+  saveRow(row);
 });
+new MutationObserver(() => {
+  const el = $("#owner-msg"); if (!el || !el.textContent) return;
+  clearTimeout(window.__msgT); window.__msgT = setTimeout(() => { const e2 = $("#owner-msg"); if (e2 && !/…/.test(e2.textContent)) e2.textContent = ""; }, 7000);
+}).observe(app, { subtree: true, childList: true, characterData: true });
 app.addEventListener("change", async (e) => {
   if (!e.target.classList.contains("ed-file") || !state?.owner) return;
   const msg = $("#owner-msg"), file = e.target.files[0];
   if (!file) return;
-  if (e.target.closest(".el-new")) { e.target.closest(".el-thumb").firstChild.textContent = "✓"; return tryInsert(e.target.closest(".el-new")); }
+  if (e.target.closest(".el-new")) { e.target.closest(".el-thumb").firstChild.textContent = "✓"; msg.textContent = "Photo attached. Fill in the rest, then press Add."; return; }
   if (state.profile.id === "sample") return (msg.textContent = "This is a preview. Nothing is saved here.");
   const it = state.items.find((i) => i.id === e.target.closest("[data-id]").dataset.id);
   if (!it) return;
-  msg.textContent = "Uploading…";
+  msg.textContent = "Uploading… (cutting out the background can take a few seconds)";
   try {
     const p = await window.momsPreparePhoto(file, it.section);
     const path = `${state.profile.id}/${crypto.randomUUID()}.${p.ext}`;
