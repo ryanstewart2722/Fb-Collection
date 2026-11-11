@@ -51,6 +51,25 @@ async function mlCut(bmp, w, h, d) {
   return true;
 }
 
+// After a cut-out: keep the main object (and any piece at least a quarter its size) and clear stray fragments.
+function keepMainPieces(d, w, h) {
+  const lab = new Int32Array(w * h), sizes = [0], stack = new Int32Array(w * h);
+  for (let i = 0; i < w * h; i++) {
+    if (d[i * 4 + 3] < 40 || lab[i]) continue;
+    const id = sizes.length; let n = 0, sp = 0; stack[sp++] = i; lab[i] = id;
+    while (sp) {
+      const k = stack[--sp]; n++; const x = k % w;
+      if (x > 0 && !lab[k - 1] && d[(k - 1) * 4 + 3] >= 40) { lab[k - 1] = id; stack[sp++] = k - 1; }
+      if (x < w - 1 && !lab[k + 1] && d[(k + 1) * 4 + 3] >= 40) { lab[k + 1] = id; stack[sp++] = k + 1; }
+      if (k >= w && !lab[k - w] && d[(k - w) * 4 + 3] >= 40) { lab[k - w] = id; stack[sp++] = k - w; }
+      if (k < w * h - w && !lab[k + w] && d[(k + w) * 4 + 3] >= 40) { lab[k + w] = id; stack[sp++] = k + w; }
+    }
+    sizes.push(n);
+  }
+  const big = Math.max(0, ...sizes);
+  for (let i = 0; i < w * h; i++) if (d[i * 4 + 3] && (!lab[i] || sizes[lab[i]] < big * 0.25)) d[i * 4 + 3] = 0;
+}
+
 window.momsPreparePhoto = async function (file, section) {
   if (file.size > 25 * 1024 * 1024) throw new Error("That photo is too big (25 MB max).");
   let bmp;
@@ -104,6 +123,7 @@ window.momsPreparePhoto = async function (file, section) {
           const k = y * w + i;
           if (!seen[k] && (seen[k - 1] || seen[k + 1] || seen[k - w] || seen[k + w])) d[k * 4 + 3] = Math.min(d[k * 4 + 3], 150);
         }
+        keepMainPieces(d, w, h);
         cut = true;
       } else d.set(copy);   // not a clean backdrop: undo
     }
