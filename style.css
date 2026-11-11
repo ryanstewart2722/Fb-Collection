@@ -375,3 +375,9 @@ html { scrollbar-color: #000 #fff; scrollbar-width: thin; }
 }
 .submit-row { margin-top: 18px; border-top: 1px solid var(--line); }
 .grid-section .submit-row { margin-top: 60px; }
+
+/* footer sits at the bottom of the window even on short pages */
+body { min-height: 100vh; min-height: 100dvh; display: flex; flex-direction: column; }
+body > * { flex-shrink: 0; }
+body > .site-footer { margin-top: auto; }
+body > main.auth { width: 100%; box-sizing: border-box; }
