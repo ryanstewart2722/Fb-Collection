@@ -370,7 +370,7 @@ async function load() {
 
   // The owner's own collection (r) is the full collection page.
   if (username === "r") {
-    const html = await (await fetch("/collection.html")).text();
+    const html = await (await fetch("/collection.html", { cache: "no-cache" })).text();
     // moms-config.js is already loaded here; loading it again would redeclare its constants.
     document.open(); document.write(html.replace(/<script src="moms-config\.js[^>]*><\/script>\s*/, "").replace("<head>", '<head><base href="/">')); document.close();
     return;
