@@ -174,6 +174,7 @@ app.addEventListener("click", async (e) => {
   const act = e.target.closest("[data-act]")?.dataset.act;
   if (!act || !state?.owner) return;
   const msg = $("#owner-msg");
+  if (state.profile.id === "sample" && !["add", "edit"].includes(act)) return (msg.textContent = "This is a preview. Nothing is saved here.");
   if (act === "signout") { await sb.auth.signOut(); location.href = "/"; }
   if (act === "edit") { const f = $("#edit-form"); f.hidden = !f.hidden; }
   if (act === "add") { const f = $("#add-form"); f.hidden = !f.hidden; if (!f.hidden) $("#ad-name").focus(); }
@@ -199,6 +200,7 @@ app.addEventListener("submit", async (e) => {
   if (e.target.id === "add-form") {
     e.preventDefault();
     const btn = $("#ad-btn"), msg = $("#owner-msg");
+    if (state.profile.id === "sample") return (msg.textContent = "This is a preview. Nothing is saved here.");
     const section = $("#ad-section").value, name = $("#ad-name").value.trim();
     if (!name) return;
     btn.disabled = true; msg.textContent = "Adding…";
@@ -227,6 +229,7 @@ app.addEventListener("submit", async (e) => {
   }
   if (e.target.id !== "edit-form") return;
   e.preventDefault();
+  if (state.profile.id === "sample") return ($("#owner-msg").textContent = "This is a preview. Nothing is saved here.");
   const display_name = $("#ed-name").value.trim() || null, bio = $("#ed-bio").value.trim() || null;
   const { data, error } = await sb.from("profiles").update({ display_name, bio }).eq("id", state.profile.id).select("display_name,bio");
   if (error || !data?.length) return ($("#owner-msg").textContent = "Couldn't save. " + (error?.message || ""));
@@ -244,7 +247,7 @@ async function load() {
   if (!raw) return notFound("");
   if (raw === "example" || raw === "r2") {   // r2: preview link (too short for a real username)
     history.replaceState(null, "", "/u/" + raw + location.hash);
-    state = { profile: SAMPLE.profile, items: SAMPLE.items.map((i) => ({ ...i, url: i.image_path })), owner: false };
+    state = { profile: SAMPLE.profile, items: SAMPLE.items.map((i) => ({ ...i, url: i.image_path })), owner: raw === "r2" };   // r2 previews the owner view; nothing is saved
     return paint();
   }
   const username = await rpc("resolve_username", { u: raw });   // ryan, riso... lead to r
