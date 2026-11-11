@@ -240,8 +240,8 @@ async function rpc(fn, args) {
 async function load() {
   const raw = (new URLSearchParams(location.search).get("u") || "").toLowerCase().replace(/[^a-z0-9_]/g, "");
   if (!raw) return notFound("");
-  if (raw === "example") {
-    history.replaceState(null, "", "/u/example" + location.hash);
+  if (raw === "example" || raw === "r2") {   // r2: preview link (too short for a real username)
+    history.replaceState(null, "", "/u/" + raw + location.hash);
     state = { profile: SAMPLE.profile, items: SAMPLE.items.map((i) => ({ ...i, url: i.image_path })), owner: false };
     return paint();
   }
