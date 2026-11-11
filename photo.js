@@ -40,15 +40,71 @@ async function mlCut(bmp, w, h, d) {
   const big = Math.max(0, ...sizes);
   const frac = sizes.reduce((a, n) => a + (n >= big * 0.25 ? n : 0), 0) / (N * N);
   if (!big || frac < 0.04 || frac > 0.85) return false;   // nothing clear to cut out: keep the photo as it is
+  // fill holes inside the board (the model sometimes leaves gaps in busy graphics)
+  const keepM = new Uint8Array(N * N), reach = new Uint8Array(N * N), q2 = [];
+  for (let i = 0; i < N * N; i++) keepM[i] = lab[i] && sizes[lab[i]] >= big * 0.25 ? 1 : 0;
+  for (let i = 0; i < N; i++) for (const k of [i, (N - 1) * N + i, i * N, i * N + N - 1]) if (!keepM[k] && !reach[k]) { reach[k] = 1; q2.push(k); }
+  while (q2.length) {
+    const k = q2.pop(), x = k % N;
+    for (const j of [x > 0 ? k - 1 : -1, x < N - 1 ? k + 1 : -1, k >= N ? k - N : -1, k < N * N - N ? k + N : -1]) if (j >= 0 && !keepM[j] && !reach[j]) { reach[j] = 1; q2.push(j); }
+  }
   const mc = document.createElement("canvas"); mc.width = mc.height = N;
   const mx = mc.getContext("2d"), md = mx.createImageData(N, N);
-  for (let i = 0; i < N * N; i++) { const keep = lab[i] && sizes[lab[i]] >= big * 0.25; const a = keep ? 1 : Math.max(0, mask[i] - 0.5) * 2 * (keep ? 1 : 0); md.data[i * 4 + 3] = keep ? Math.round(255 * Math.min(1, Math.max(0, (mask[i] - 0.3) / 0.4))) : 0; }
+  for (let i = 0; i < N * N; i++) md.data[i * 4 + 3] = keepM[i] ? Math.round(255 * ss(0.2, 0.6, mask[i])) : (reach[i] ? 0 : 255);
   mx.putImageData(md, 0, 0);
   const fc = document.createElement("canvas"); fc.width = w; fc.height = h;
   const fx = fc.getContext("2d", { willReadFrequently: true }); fx.imageSmoothingQuality = "high"; fx.drawImage(mc, 0, 0, w, h);
-  const fd = fx.getImageData(0, 0, w, h).data;
-  for (let i = 0; i < w * h; i++) d[i * 4 + 3] = fd[i * 4 + 3];
+  const fd = fx.getImageData(0, 0, w, h).data, n = w * h, p = new Float32Array(n);
+  for (let i = 0; i < n; i++) p[i] = fd[i * 4 + 3] / 255;
+  // snap the soft, low-resolution outline to the real edges in the photo
+  const r = Math.max(4, Math.round(Math.min(w, h) / 150));
+  finishAlpha(d, guided(lumaOf(d, n), p, w, h, r, 0.004), n, w, h);
   return true;
+}
+
+// ---- edge smoothing ----
+const ss = (a, b, x) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
+function boxBlur(src, w, h, r) {
+  const out = new Float32Array(w * h), tmp = new Float32Array(w * h), n = 2 * r + 1;
+  for (let y = 0; y < h; y++) {
+    const row = y * w; let sum = 0;
+    for (let x = -r; x <= r; x++) sum += src[row + Math.min(w - 1, Math.max(0, x))];
+    for (let x = 0; x < w; x++) { tmp[row + x] = sum / n; sum += src[row + Math.min(w - 1, x + r + 1)] - src[row + Math.max(0, x - r)]; }
+  }
+  for (let x = 0; x < w; x++) {
+    let sum = 0;
+    for (let y = -r; y <= r; y++) sum += tmp[Math.min(h - 1, Math.max(0, y)) * w + x];
+    for (let y = 0; y < h; y++) { out[y * w + x] = sum / n; sum += tmp[Math.min(h - 1, y + r + 1) * w + x] - tmp[Math.max(0, y - r) * w + x]; }
+  }
+  return out;
+}
+// guided filter: makes the mask's outline follow the real edges in the photo
+function guided(I, p, w, h, r, eps) {
+  const n = w * h, mI = boxBlur(I, w, h, r), mp = boxBlur(p, w, h, r);
+  const Ip = new Float32Array(n), II = new Float32Array(n);
+  for (let i = 0; i < n; i++) { Ip[i] = I[i] * p[i]; II[i] = I[i] * I[i]; }
+  const mIp = boxBlur(Ip, w, h, r), mII = boxBlur(II, w, h, r), a = new Float32Array(n), b = new Float32Array(n);
+  for (let i = 0; i < n; i++) { const cov = mIp[i] - mI[i] * mp[i], v = mII[i] - mI[i] * mI[i]; a[i] = cov / (v + eps); b[i] = mp[i] - a[i] * mI[i]; }
+  const ma = boxBlur(a, w, h, r), mb = boxBlur(b, w, h, r), q = new Float32Array(n);
+  for (let i = 0; i < n; i++) q[i] = ma[i] * I[i] + mb[i];
+  return q;
+}
+function lumaOf(d, n) { const I = new Float32Array(n); for (let i = 0; i < n; i++) I[i] = (0.299 * d[i * 4] + 0.587 * d[i * 4 + 1] + 0.114 * d[i * 4 + 2]) / 255; return I; }
+// final clean-up: slight shrink (drops the backdrop's colour fringe), then a 1px blur so the outline is anti-aliased, not stair-stepped
+function finishAlpha(d, q, n, w, h) {
+  const a = new Float32Array(n);
+  for (let i = 0; i < n; i++) a[i] = ss(0.42, 0.82, q[i]);
+  const f = boxBlur(a, w, h, 1);
+  for (let i = 0; i < n; i++) d[i * 4 + 3] = Math.round(255 * f[i]);
+}
+// the flat-backdrop method leaves a jagged edge: smooth it the same way
+function smoothAlpha(d, w, h) {
+  const n = w * h, p = new Float32Array(n);
+  for (let i = 0; i < n; i++) p[i] = d[i * 4 + 3] / 255;
+  const b = boxBlur(boxBlur(p, w, h, 2), w, h, 2);
+  const q = new Float32Array(n);
+  for (let i = 0; i < n; i++) q[i] = ss(0.25, 0.75, b[i]);
+  finishAlpha(d, q, n, w, h);
 }
 
 // After a cut-out: keep the main object (and any piece at least a quarter its size) and clear stray fragments.
@@ -124,6 +180,7 @@ window.momsPreparePhoto = async function (file, section) {
           if (!seen[k] && (seen[k - 1] || seen[k + 1] || seen[k - w] || seen[k + w])) d[k * 4 + 3] = Math.min(d[k * 4 + 3], 150);
         }
         keepMainPieces(d, w, h);
+        smoothAlpha(d, w, h);
         cut = true;
       } else d.set(copy);   // not a clean backdrop: undo
     }
