@@ -123,7 +123,7 @@ function renderList() {
     <h2>${esc(s.title)}</h2>
     <div class="list-wrap"><div class="list${s.items.length ? "" : " is-empty"}" data-s="${s.id}" style="--cols:${colsFor(SCHEMA[s.id].fields.length)}">
       <div class="row head">${spans(SCHEMA[s.id].fields.map((f) => f[1]))}</div>
-      ${s.items.map((i, n) => `<div class="row${n > 0 && brandOf(s.id, i) !== brandOf(s.id, s.items[n - 1]) ? " divide" : ""}" data-id="${esc(i.id)}">${spans(rowCells(s.id, i))}${i.status !== "approved" ? `<em class="p-pending">${esc(i.status === "pending" ? "waiting for review" : i.status)}</em>` : ""}</div>`).join("")}
+      ${s.items.map((i, n) => `<div class="row${n > 0 && brandOf(s.id, i) !== brandOf(s.id, s.items[n - 1]) ? " divide" : ""}" data-id="${esc(i.id)}">${spans(rowCells(s.id, i))}</div>`).join("")}
       ${state.owner ? `<a class="add-new" href="#" data-act="add" data-section="${s.id}">+ Add new</a>` : ""}
     </div></div></section>`).join("");
 }
@@ -147,7 +147,7 @@ function renderEdit() {
     <h2>${esc(s.title)}</h2>
     <div class="ed-grid">${s.items.map((i) => `<div class="ed-card" data-id="${esc(i.id)}">
       <div class="ed-img">${i.url ? `<img src="${esc(i.url)}" alt="">` : "No photo"}</div>
-      <div class="ed-name">${esc(i.name)}${i.status !== "approved" ? ` <em class="p-pending">${esc(i.status === "pending" ? "waiting for review" : i.status)}</em>` : ""}</div>
+      <div class="ed-name">${esc(i.name)}</div>
       <div class="ed-btns">
         <label class="ed-btn">${i.url ? "Replace" : "Add photo"}<input class="ed-file" type="file" accept="image/*"></label>
         <button class="ed-btn" data-act="remove" data-id="${esc(i.id)}">Remove</button>
