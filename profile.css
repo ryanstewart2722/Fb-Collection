@@ -99,19 +99,21 @@
 /* editable list: same layout as desktop on a phone, just fitted: thumbnail | columns | x, text wraps instead of being cut off */
 .el-f { display: contents; }
 .el-in { display: block; width: 100%; box-sizing: border-box; margin: 0; font: inherit; font-size: 11.5px; line-height: 1.3; padding: 7px 8px; border: 1px solid transparent; background: transparent; border-radius: 0; min-width: 0; }
-textarea.el-in { resize: none; overflow: hidden; }
 .el-in:hover { border-color: var(--line); }
 .el-in:focus { outline: 0; border-color: #000; background: #fff; }
 @media (max-width: 760px) {
-  .el-row { grid-template-columns: 30px minmax(0, 1.6fr) minmax(0, 1fr) minmax(0, 1fr) 22px; align-items: start; padding: 5px 0; min-height: 0; gap: 0; }
-  .el-n4 .el-row { grid-template-columns: 30px minmax(0, 1fr) minmax(0, 1.45fr) minmax(0, 1.1fr) minmax(0, .75fr) 22px; }
+  /* full-size text (16px) so the phone never zooms in on a box, one line per box: the table scrolls sideways instead of squeezing */
+  .el-list { min-width: 660px; }
+  .el-row { grid-template-columns: 34px 250px 170px 170px 30px; align-items: center; padding: 4px 0; min-height: 0; gap: 0; }
+  .el-n4 .el-row { grid-template-columns: 34px 200px 170px 130px 90px 30px; }
   .el-head { display: grid; padding: 0 0 10px; }
-  .el-head .el-h { font-size: 6px; padding: 0 3px; letter-spacing: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .el-thumb { width: 26px; height: 40px; }
-  .el-in { font-size: 12px; line-height: 1.3; padding: 9px 3px; margin: 0; border-color: #ececec; min-height: 42px; overflow-wrap: break-word; word-break: normal; }
-  .el-x { width: 22px; height: 42px; font-size: 20px; }
-  .el-new, .el-n3 .el-new { grid-template-columns: 30px minmax(0, 1.6fr) minmax(0, 1fr) minmax(0, 1fr); }
-  .el-n4 .el-new { grid-template-columns: 30px minmax(0, 1fr) minmax(0, 1.45fr) minmax(0, 1.1fr) minmax(0, .75fr); }
-  .el-new .el-save { grid-column: 1 / -1; width: 100%; min-height: 44px; margin: 10px 0 0; font-size: 15px; background: #000; color: #fff; }
-  .el-add { width: 100%; min-height: 44px; margin-top: 14px; font-size: 15px; }
+  .el-thumb { width: 28px; height: 40px; }
+  .el-in { font-size: 16px; padding: 10px 8px; min-height: 44px; border-color: #ececec; }
+  .el-x { width: 30px; height: 44px; font-size: 22px; }
+  .el-new, .el-n3 .el-new { grid-template-columns: 34px 250px 170px 170px; }
+  .el-n4 .el-new { grid-template-columns: 34px 200px 170px 130px 90px; }
+  /* the Add buttons stay in view while the table is scrolled sideways */
+  .el-new .el-save, .el-add { position: sticky; left: 0; width: calc(100vw - 2 * var(--gutter)); min-height: 46px; margin: 12px 0 0; font-size: 15px; }
+  .el-new .el-save { grid-column: 1 / -1; background: #000; color: #fff; }
+  .el-add { margin-top: 14px; }
 }

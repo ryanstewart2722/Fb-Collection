@@ -107,35 +107,12 @@ function renderList() {
       ${state.owner ? `<a class="add-new" href="#" data-act="add" data-section="${s.id}">+ Add new</a>` : ""}
     </div></div></section>`).join("");
 }
-// Typing suggestions: real brands, sizes, molds and colors already in the museum (most common first). Anything else can still be typed.
-const SUGGEST_KIND = { maker: "brand", tmaker: "brand", wmaker: "brand", size: "dsize", tsize: "tsize", mold: "mold", color: "color", tcolor: "color", wcolor: "color", material: "material" };
-let suggestReady = null;
-function loadSuggestions() {
-  return (suggestReady ||= (async () => {
-    const top = (arr) => { const c = new Map(); arr.forEach((v) => { v = String(v ?? "").trim(); if (v && v.length <= 40) c.set(v, (c.get(v) || 0) + 1); }); return [...c].sort((a, b) => b[1] - a[1]).map((x) => x[0]).slice(0, 150); };
-    const get = async (t, cols) => { const { data } = await sb.from(t).select(cols).limit(3000); return data || []; };
-    const [brands, decks, trucks, wheels] = await Promise.all([get("brands", "name"), get("decks", "molds,size,color"), get("trucks", "size,color"), get("wheels", "color,material")]);
-    const lists = {
-      brand: brands.map((b) => b.name).filter(Boolean).sort((a, b) => a.localeCompare(b)),
-      dsize: top(decks.map((d) => d.size)), tsize: top(trucks.map((t) => t.size)), mold: top(decks.flatMap((d) => d.molds || [])),
-      color: top([...decks, ...trucks, ...wheels].map((x) => x.color)), material: top(wheels.map((w) => w.material)),
-    };
-    const box = document.createElement("div"); box.hidden = true;
-    box.innerHTML = Object.entries(lists).map(([k, vals]) => `<datalist id="dl-${k}">${vals.map((v) => `<option value="${esc(v)}">`).join("")}</datalist>`).join("");
-    document.body.appendChild(box);
-  })().catch(() => {}));
-}
 function elThumb(i) { return `<label class="el-thumb">${i && i.url ? `<img src="${esc(i.url)}" alt="">` : "+"}<input class="ed-file" type="file" accept="image/*"></label>`; }
 function elInputs(sec, i) {
-  return `<span class="el-fields">${SCHEMA[sec].fields.map(([k, h, ph]) => {
-    const v = esc(i ? val(i, k) : ""), max = k === "name" ? 120 : 60, common = `class="el-in" data-k="${k}" placeholder="${esc(ph)}" maxlength="${max}" aria-label="${esc(h)}"`;
-    return SUGGEST_KIND[k] && !matchMedia("(max-width: 760px)").matches   // phones: boxes wrap instead of offering suggestions
-      ? `<input ${common} type="text" list="dl-${SUGGEST_KIND[k]}" autocomplete="off" value="${v}">`
-      : `<textarea ${common} rows="1" spellcheck="false">${v}</textarea>`;   // wraps, so long names stay readable on a phone
-  }).join("")}</span>`;
+  return `<span class="el-fields">${SCHEMA[sec].fields.map(([k, h, ph]) =>
+    `<input class="el-in" data-k="${k}" type="text" autocomplete="off" value="${esc(i ? val(i, k) : "")}" placeholder="${esc(ph)}" maxlength="${k === "name" ? 120 : 60}" aria-label="${esc(h)}">`).join("")}</span>`;
 }
 function renderListEdit() {
-  loadSuggestions();
   return sections().map((s) => `<section class="list-section">
     <h2>${esc(s.title)}</h2>
     <div class="list-wrap"><div class="list el-list el-n${SCHEMA[s.id].fields.length}${s.items.length || state.draft === s.id ? "" : " is-empty"}" data-s="${s.id}" style="--cols:${colsFor(SCHEMA[s.id].fields.length)}">
@@ -203,10 +180,6 @@ function paintItems() {
 window.addEventListener("hashchange", () => { view = location.hash === "#list" ? "list" : "image"; if (state) paint(); });
 
 /* ---------- page ---------- */
-function growBoxes(root) {
-  (root || document).querySelectorAll("textarea.el-in").forEach((t) => { t.style.height = "auto"; t.style.height = t.scrollHeight + "px"; });
-}
-document.addEventListener("input", (e) => { if (e.target.matches && e.target.matches("textarea.el-in")) growBoxes(e.target.parentNode); });
 function syncEditHeader() {
   const t = document.querySelector(".insta"), editing = !!(state && state.owner && state.edit);
   document.body.classList.toggle("editing", editing);
@@ -223,7 +196,6 @@ function paint() {
   app.innerHTML = `<div id="items"></div>` + headHtml();   // the link and owner links sit at the bottom of the page
   paintItems();
   syncEditHeader();
-  requestAnimationFrame(() => growBoxes(document));
 }
 function notFound(name) {
   app.innerHTML = `<section class="p-head"><h1>No one here</h1><p class="p-bio">There's no collection at <b>/u/${esc(name)}</b>. <a href="/signin.html">Sign in</a> to make yours.</p></section>`;
