@@ -6,7 +6,7 @@
   footer.className = "site-footer";
   footer.innerHTML =
     '<img class="fb-logo" src="/footer-logo.png" alt="MoMS" width="783" height="735">' +
-    '<p class="fb-credit">Designed, curated and developed by <a href="/u/r">Ryan Stewart</a> view his collection <a href="/collection.html">here</a></p>' +
+    '<p class="fb-credit">Designed, curated and developed by <a href="/u/r">Ryan Stewart</a> view his collection <a href="/u/r">here</a></p>' +
     '<nav class="fb-links" aria-label="Site">' +
       '<div><a href="/">Museum</a><a href="/submit.html">Submit New</a><a href="/users.html">Users</a></div>' +
       '<div><a href="/account.html">My Account</a><a href="/signin.html" data-me>My Collection</a><a href="/privacy.html">Privacy</a><a href="mailto:contact@museumofminiskateboards.org">Contact</a></div>' +
@@ -28,19 +28,5 @@
       var u = rows[0] && rows[0].username; if (!u) return;
       if (top) { top.href = "/u/" + u; top.textContent = "My Collection"; }
       footer.querySelectorAll("[data-me]").forEach(function (a) { a.href = "/u/" + u; });
-      // The owner's own page is the full collection page: give it the same slug, Edit and Sign out as everyone else's.
-      if (u === "r" && /^\/u\/r\/?$/.test(location.pathname)) {
-        var main = document.querySelector("main#app"); if (!main) return;
-        var bar = document.createElement("section"); bar.className = "owner-foot";
-        bar.innerHTML = '<p class="owner-slug">museumofminiskateboards.org/u/r</p>' +
-          '<p class="owner-links"><a href="/admin.html">Edit</a> · <a href="/museum-admin.html">Museum editor</a> · <button type="button" id="owner-out">Sign out</button></p>';
-        main.insertAdjacentElement("afterend", bar);
-        document.getElementById("owner-out").addEventListener("click", function () {
-          var tok = s && s.access_token;
-          var done = function () { try { localStorage.removeItem("sb-alfsnqpxmptvuvakyzcl-auth-token"); } catch (e) {} location.href = "/"; };
-          if (!tok || typeof MOMS === "undefined") return done();
-          fetch(MOMS.url + "/auth/v1/logout", { method: "POST", headers: { apikey: MOMS.key, Authorization: "Bearer " + tok } }).then(done, done);
-        });
-      }
     }).catch(function () {});
 })();

@@ -380,14 +380,6 @@ async function load() {
   if (!username) return notFound(raw);
   history.replaceState(null, "", "/u/" + username + location.hash);   // show the real address
 
-  // The owner's own collection (r) is the full collection page.
-  if (username === "r") {
-    const html = await (await fetch("/collection.html", { cache: "no-cache" })).text();
-    // moms-config.js is already loaded here; loading it again would redeclare its constants.
-    document.open(); document.write(html.replace(/<script src="moms-config\.js[^>]*><\/script>\s*/, "").replace("<head>", '<head><base href="/">')); document.close();
-    return;
-  }
-
   const { data: profile } = await sb.from("profiles").select("id,username,display_name,bio,is_private").eq("username", username).maybeSingle();
   if (!profile) return notFound(raw);
   const { data: { session } } = await sb.auth.getSession();
