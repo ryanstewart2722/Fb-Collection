@@ -367,7 +367,7 @@ html { scrollbar-color: #000 #fff; scrollbar-width: thin; }
 
 /* phones, list view: the photo of the tapped board sits at the very top, right under the header, as large as fits */
 @media (max-width: 760px) {
-  .museum.list-view .preview {
+  .list-view .preview {
     top: calc(var(--bar-h) + 10px); transform: translateX(-50%);
     max-height: calc(100vh - var(--bar-h) - 24px); max-height: calc(100dvh - var(--bar-h) - 24px);
   }
