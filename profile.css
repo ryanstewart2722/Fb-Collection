@@ -78,3 +78,4 @@
 }
 .profile-page .p-head { margin: 60px 0 50px; }
 #items { margin-top: 30px; }
+.list.is-empty .row.head, .list.is-empty .el-head { border-bottom-color: var(--line); }
