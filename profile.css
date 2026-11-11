@@ -102,3 +102,8 @@
 .el-new .el-save { margin-left: 4px; align-self: center; }
 .el-new { grid-template-columns: 40px var(--cols) 56px; }
 @media (max-width: 760px) { .el-new { grid-template-columns: 40px 1fr 56px; } }
+
+/* owners: an Edit button that stays on screen, so it is easy to find on a long page or a phone */
+.edit-fab { position: fixed; right: 16px; bottom: 16px; z-index: 40; border: 1px solid #000; background: #000; color: #fff; font: inherit; font-size: 13px; padding: 11px 18px; border-radius: 0; cursor: pointer; }
+.edit-fab:hover { background: #fff; color: #000; }
+.profile-page .add-new { color: #555; }
