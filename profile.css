@@ -72,7 +72,8 @@
 .el-list { display: block; }
 @media (max-width: 760px) {
   .el-row { grid-template-columns: 40px 1fr 24px; padding: 6px 0; }
-  .el-fields { display: grid; gap: 2px; }
+  .el-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 2px 6px; }
+  .el-fields .el-in:first-child { grid-column: 1 / -1; }
   .el-head { display: none; }
   .el-in { margin-right: 0; width: 100%; box-sizing: border-box; }
 }
