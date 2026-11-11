@@ -83,3 +83,12 @@
 .auth-google { width: 100%; margin: 0 0 4px; background: #fff; color: #000; }
 .auth-google:hover { background: #000; color: #fff; }
 .auth-or { margin: 10px 0 6px; color: #777; }
+
+/* Users page */
+.users-page .list-section { margin-top: 10px; }
+.users-page { padding-bottom: 80px; }
+.u-table .row { text-decoration: none; color: inherit; }
+.u-table .row:not(.head):hover { background: #000; color: #fff; }
+.u-table .row:not(.head):hover span:first-child { padding-left: 14px; }
+.u-tag { font-style: normal; color: #8c8c8c; padding-left: 8px; }
+.u-table .row:hover .u-tag { color: #bbb; }

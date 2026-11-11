@@ -1,4 +1,9 @@
 // All content (text, items, order, photos) lives in content.json, which the editor (admin.html) saves.
+// On /u/r this page is loaded under a base address, which would turn "#image" / "#list" links into links to the museum home. Switch views in place instead.
+document.addEventListener("click", (e) => {
+  const a = e.target.closest('a[href^="#"]');
+  if (a) { e.preventDefault(); location.hash = a.getAttribute("href"); }
+});
 const app = document.getElementById("app");
 const preview = document.querySelector(".preview");
 // Mouse devices get hover effects; touch devices get tap-to-show instead.
