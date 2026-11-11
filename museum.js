@@ -317,6 +317,7 @@ narrow.addEventListener("change", () => render());
 function render() {
   scrubEl = null;
   document.body.classList.remove("scrub");
+  document.body.classList.toggle("list-view", view === "list");
   clearActive();
   document.querySelectorAll("[data-view]").forEach((a) => a.classList.toggle("active", a.dataset.view === view));
   document.querySelectorAll("[data-sort]").forEach((a) => a.classList.toggle("active", a.dataset.sort === sort));

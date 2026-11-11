@@ -372,7 +372,11 @@ window.addEventListener("beforeunload", (e) => { if (dirty) e.preventDefault(); 
 /* ---------- Sign in ---------- */
 async function start(t) {
   token = t;
-  await gh(""); // checks the token can see the repo
+  // Only the site owner's account may edit: the key must belong to that GitHub account and reach the repo.
+  const who = await fetch("https://api.github.com/user", { headers: { Authorization: `Bearer ${t}`, Accept: "application/vnd.github+json" }, cache: "no-store" });
+  if (!who.ok) throw new Error("wrong password");
+  if ((await who.json()).login.toLowerCase() !== REPO.owner.toLowerCase()) throw new Error("wrong password");
+  await gh(""); // checks the key can see the repo
   await loadContent();
   $("#login").hidden = true;
   $("#editor").hidden = false;
@@ -400,7 +404,7 @@ $("#login-form").addEventListener("submit", async (e) => {
     await start(t);
     localStorage.setItem(TOKEN_KEY, t);
   } catch (ex) {
-    err.textContent = "That token didn't work (" + ex.message + "). Check it has access to Fb-Collection with Contents: Read and write.";
+    err.textContent = "That isn't the admin password.";
     err.hidden = false;
   }
 });

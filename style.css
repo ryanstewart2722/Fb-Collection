@@ -352,3 +352,24 @@ body.has-refine.rf-open { --tab-edge: calc(var(--rf-w) + 12px); }
   .fb-board { width: 64px; }
   .fb-credit { grid-column: 1 / -1; grid-row: 3; text-align: right; white-space: normal; max-width: 260px; justify-self: end; }
 }
+
+/* black scrollbar */
+html { scrollbar-color: #000 #fff; scrollbar-width: thin; }
+::-webkit-scrollbar { width: 10px; height: 10px; background: #fff; }
+::-webkit-scrollbar-track { background: #fff; }
+::-webkit-scrollbar-thumb { background: #000; border-radius: 0; border: 2px solid #fff; }
+::-webkit-scrollbar-corner { background: #fff; }
+.rf-body { scrollbar-color: #000 transparent; }
+
+/* the footer runs the full width of the screen even though the museum pages keep a margin for the Refine tab */
+.has-refine .site-footer { margin-right: calc(-1 * var(--rf-shift, 0px)); }
+.has-refine.rf-open .site-footer { margin-right: 0; }
+
+/* phones, list view: the photo of the tapped board sits at the very top, right under the header, as large as fits */
+@media (max-width: 760px) {
+  .museum.list-view .preview {
+    top: calc(var(--bar-h) + 10px); transform: translateX(-50%);
+    max-height: calc(100vh - var(--bar-h) - 24px); max-height: calc(100dvh - var(--bar-h) - 24px);
+  }
+  .museum.list-view main#app { padding-top: 14px; }
+}
