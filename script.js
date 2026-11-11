@@ -12,7 +12,15 @@ const canHover = matchMedia("(hover: hover)").matches;
 let CONTENT = null;
 
 // "Add new" rows only show for you: the collection editor keeps its sign-in in this browser.
-const canEdit = (() => { try { return !!localStorage.getItem("fb-editor-token"); } catch { return false; } })();
+// Shown when the editor is signed in on this browser, or when you are signed in to the owner account.
+const OWNER_ID = "03f6314a-a918-4446-9b71-b6972bea3ba4";
+const canEdit = (() => {
+  try {
+    if (localStorage.getItem("fb-editor-token")) return true;
+    const t = JSON.parse(localStorage.getItem("sb-alfsnqpxmptvuvakyzcl-auth-token") || "null");
+    return !!t && t.user && t.user.id === OWNER_ID;
+  } catch { return false; }
+})();
 
 const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
 // Rows saved with nothing filled in (no text, no photo) are skipped.
