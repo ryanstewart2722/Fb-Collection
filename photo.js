@@ -110,8 +110,20 @@ async function mlCut(bmp, w, h, d) {
   // the nose: a dark nose on a dark backdrop is often missed. Round off any bite out of the top third.
   const cut = y0 + Math.round(oh * 0.30), top = new Uint8Array(pw * ph);
   for (let y = y0; y < cut; y++) for (let x = 0; x < pw; x++) top[y * pw + x] = keep[y * pw + x];
-  const topClosed = morph(top, pw, ph, Math.max(3, oh * 0.11), "close");
-  for (let i = 0; i < keep.length; i++) if (topClosed[i]) keep[i] = 1;
+  const pts = [];   // convex hull of the top third (the nose of a deck is convex): fills any bite without inventing corners
+  for (let y = y0; y < cut; y++) for (let x = 0; x < pw; x++) if (top[y * pw + x] && (x === 0 || !top[y * pw + x - 1] || x === pw - 1 || !top[y * pw + x + 1] || y === y0 || y === cut - 1 || !top[(y - 1) * pw + x] || !top[(y + 1) * pw + x])) pts.push([x, y]);
+  pts.sort((p, q) => p[0] - q[0] || p[1] - q[1]);
+  const cr = (o, a, b) => (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0]), lowH = [], upH = [];
+  for (const p of pts) { while (lowH.length > 1 && cr(lowH[lowH.length - 2], lowH[lowH.length - 1], p) <= 0) lowH.pop(); lowH.push(p); }
+  for (let i = pts.length - 1; i >= 0; i--) { const p = pts[i]; while (upH.length > 1 && cr(upH[upH.length - 2], upH[upH.length - 1], p) <= 0) upH.pop(); upH.push(p); }
+  const hull = lowH.slice(0, -1).concat(upH.slice(0, -1));
+  if (hull.length > 2) {
+    const hc = document.createElement("canvas"); hc.width = pw; hc.height = ph;
+    const hx = hc.getContext("2d", { willReadFrequently: true }); hx.fillStyle = "#000"; hx.beginPath();
+    hull.forEach((p, i) => (i ? hx.lineTo(p[0] + 0.5, p[1] + 0.5) : hx.moveTo(p[0] + 0.5, p[1] + 0.5))); hx.closePath(); hx.fill();
+    const hd = hx.getImageData(0, 0, pw, ph).data;
+    for (let i = 0; i < keep.length; i++) if (hd[i * 4 + 3] > 127) keep[i] = 1;
+  }
   // a thin bulge of backdrop beside the wheels at the bottom: trim it (wheels are far wider and stay)
   const opened = morph(keep, pw, ph, Math.max(2, oh * 0.026), "open"), low = y1 - Math.round(oh * 0.35);
   for (let y = Math.max(0, low); y < ph; y++) for (let x = 0; x < pw; x++) keep[y * pw + x] = opened[y * pw + x];
