@@ -83,6 +83,7 @@ function fieldsHtml(sec) {
 function ownerBar() {
   const p = state.profile;
   return `<div class="p-owner">
+    ${view === "image" && state.items.length ? `<button class="auth-link" data-act="editimg">${state.edit ? "Done editing" : "Edit"}</button> · ` : ""}
     <button class="auth-link" data-act="edit">Edit name and bio</button> ·
     <button class="auth-link" data-act="private">${p.is_private ? "Make my collection public" : "Make my collection private"}</button> ·
     <button class="auth-link" data-act="signout">Sign out</button>
@@ -112,6 +113,17 @@ function renderList() {
       ${state.owner ? `<a class="add-new" href="#" data-act="add" data-section="${s.id}">+ Add new</a>` : ""}
     </div></div></section>`).join("");
 }
+function renderEdit() {
+  return sections().filter((s) => s.items.length).map((s) => `<section class="grid-section">
+    <h2>${esc(s.title)}</h2>
+    <div class="ed-grid">${s.items.map((i) => `<div class="ed-card" data-id="${esc(i.id)}">
+      <div class="ed-img">${i.url ? `<img src="${esc(i.url)}" alt="">` : "No photo"}</div>
+      <div class="ed-name">${esc(i.name)}${i.status !== "approved" ? ` <em class="p-pending">${esc(i.status === "pending" ? "waiting for review" : i.status)}</em>` : ""}</div>
+      <div class="ed-btns">
+        <label class="ed-btn">${i.url ? "Replace" : "Add photo"}<input class="ed-file" type="file" accept="image/*"></label>
+        <button class="ed-btn" data-act="remove" data-id="${esc(i.id)}">Remove</button>
+      </div></div>`).join("")}</div></section>`).join("");
+}
 function renderGrid() {
   return sections().filter((s) => s.items.some((i) => i.url)).map((s) => `<section class="grid-section">
     <h2>${esc(s.title)}</h2>
@@ -130,7 +142,7 @@ function paintItems() {
     box.innerHTML = `<p class="p-empty">${state.owner ? "You haven't added anything yet." : "Nothing here yet."}</p>`;
     return;
   }
-  box.innerHTML = view === "list" ? renderList() : renderGrid();
+  box.innerHTML = view === "list" ? renderList() : state.edit && state.owner ? renderEdit() : renderGrid();
   const find = (id) => state.items.find((i) => i.id === id);
   if (view === "list") {
     box.querySelectorAll(".row:not(.head)").forEach((row) => {
@@ -154,7 +166,7 @@ function paintItems() {
     });
   }
 }
-window.addEventListener("hashchange", () => { view = location.hash === "#list" ? "list" : "image"; if (state) paintItems(); });
+window.addEventListener("hashchange", () => { view = location.hash === "#list" ? "list" : "image"; if (state) paint(); });
 
 /* ---------- page ---------- */
 function paint() {
@@ -172,7 +184,8 @@ app.addEventListener("click", async (e) => {
   const act = e.target.closest("[data-act]")?.dataset.act;
   if (!act || !state?.owner) return;
   const msg = $("#owner-msg");
-  if (state.profile.id === "sample" && !["add", "edit"].includes(act)) return (msg.textContent = "This is a preview. Nothing is saved here.");
+  if (state.profile.id === "sample" && !["add", "edit", "editimg"].includes(act)) return (msg.textContent = "This is a preview. Nothing is saved here.");
+  if (act === "editimg") { state.edit = !state.edit; paint(); return; }
   if (act === "signout") { await sb.auth.signOut(); location.href = "/"; }
   if (act === "edit") { const f = $("#edit-form"); f.hidden = !f.hidden; }
   if (act === "add") {
@@ -197,6 +210,26 @@ app.addEventListener("click", async (e) => {
     state.profile.is_private = is_private; paint();
     $("#owner-msg").textContent = is_private ? "Your collection is now private. Only you can see it." : "Your collection is now public.";
   }
+});
+app.addEventListener("change", async (e) => {
+  if (!e.target.classList.contains("ed-file") || !state?.owner) return;
+  const msg = $("#owner-msg"), file = e.target.files[0];
+  if (!file) return;
+  if (state.profile.id === "sample") return (msg.textContent = "This is a preview. Nothing is saved here.");
+  const it = state.items.find((i) => i.id === e.target.closest("[data-id]").dataset.id);
+  if (!it) return;
+  msg.textContent = "Uploading…";
+  try {
+    const p = await window.momsPreparePhoto(file, it.section);
+    const path = `${state.profile.id}/${crypto.randomUUID()}.${p.ext}`;
+    const up = await sb.storage.from("uploads").upload(path, p.blob, { contentType: p.type, cacheControl: "3600" });
+    if (up.error) throw up.error;
+    const { data, error } = await sb.from("collection_items").update({ image_path: path }).eq("id", it.id).select();
+    if (error || !data?.length) { sb.storage.from("uploads").remove([path]).catch(() => {}); throw error || new Error("not saved"); }
+    if (it.image_path && !/^https?:/.test(it.image_path)) sb.storage.from("uploads").remove([it.image_path]).catch(() => {});
+    Object.assign(it, data[0]); it.url = await photoUrl(it);
+    paint(); $("#owner-msg").textContent = "Photo saved. Other people see it once it's been reviewed.";
+  } catch (err) { msg.textContent = "Couldn't save that photo. " + (err.message || err); }
 });
 app.addEventListener("change", (e) => { if (e.target.id === "ad-section") $("#ad-fields").innerHTML = fieldsHtml(e.target.value); });
 app.addEventListener("submit", async (e) => {
