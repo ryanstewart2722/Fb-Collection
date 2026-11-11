@@ -137,7 +137,7 @@ function renderListEdit() {
     <h2>${esc(s.title)}</h2>
     <div class="list-wrap"><div class="list el-list el-n${SCHEMA[s.id].fields.length}${s.items.length || state.draft === s.id ? "" : " is-empty"}" data-s="${s.id}" style="--cols:${colsFor(SCHEMA[s.id].fields.length)}">
       <div class="el-row el-head"><span></span>${SCHEMA[s.id].fields.map((f) => `<span class="el-h">${esc(f[1])}</span>`).join("")}<span></span></div>
-      ${s.items.map((i, n) => `<div class="el-row${n > 0 && brandOf(s.id, i) !== brandOf(s.id, s.items[n - 1]) ? " divide" : ""}" data-id="${esc(i.id)}">${elThumb(i)}${elInputs(s.id, i)}<button class="el-x" data-act="remove" data-id="${esc(i.id)}" title="Remove">×</button></div>`).join("")}
+      ${s.items.map((i, n) => `<div class="el-row${n > 0 && brandOf(s.id, i) !== brandOf(s.id, s.items[n - 1]) ? " divide" : ""}" data-id="${esc(i.id)}">${elThumb(i)}${elInputs(s.id, i)}<span class="el-acts"><button class="el-mv" data-act="up" title="Move up">↑</button><button class="el-mv" data-act="down" title="Move down">↓</button><button class="el-x" data-act="remove" data-id="${esc(i.id)}" title="Remove">×</button></span></div>`).join("")}
       ${state.draft === s.id ? `<div class="el-row el-new" data-section="${s.id}">${elThumb(null)}${elInputs(s.id, null)}<button class="ed-btn el-save" data-act="savenew">Add</button></div>` : ""}
       <button class="ed-btn el-add" data-act="newrow" data-section="${s.id}">+ Add to My ${esc(s.title)}</button>
     </div></div></section>`).join("");
@@ -242,6 +242,20 @@ app.addEventListener("click", async (e) => {
     const f = $("#add-form"), sec = e.target.closest("[data-act]").dataset.section;
     if (sec) { $("#ad-section").value = sec; $("#ad-fields").innerHTML = fieldsHtml(sec); }
     f.hidden = false; window.scrollTo({ top: 0, behavior: "smooth" }); $("#ad-name").focus({ preventScroll: true });
+  }
+  if (act === "up" || act === "down") {   // reorder within a section
+    const it = state.items.find((i) => i.id === e.target.closest(".el-row").dataset.id);
+    if (!it) return;
+    const sec = state.items.filter((i) => i.section === it.section), a = sec.indexOf(it), b = a + (act === "up" ? -1 : 1);
+    if (b < 0 || b >= sec.length) return;
+    [sec[a], sec[b]] = [sec[b], sec[a]];
+    const changed = [];
+    sec.forEach((x, n) => { if (x.position !== n + 1) { x.position = n + 1; changed.push(x); } });
+    state.items.sort((x, y) => ORDER.indexOf(x.section) - ORDER.indexOf(y.section) || (x.position || 0) - (y.position || 0));
+    paint();
+    const res = await Promise.all(changed.map((x) => sb.from("collection_items").update({ position: x.position }).eq("id", x.id)));
+    $("#owner-msg").textContent = res.some((r) => r.error) ? "Couldn't save the new order. Refresh and try again." : "Order saved.";
+    return;
   }
   if (act === "remove") {
     const id = e.target.closest("[data-id]").dataset.id, it = state.items.find((i) => i.id === id);

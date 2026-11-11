@@ -56,7 +56,7 @@
 
 /* editable list (owner) */
 .el-list { min-width: 0; }
-.el-row { display: grid; grid-template-columns: 40px var(--cols) 24px; align-items: center; gap: 0; min-height: 49px; }
+.el-row { display: grid; grid-template-columns: 40px var(--cols) 72px; align-items: center; gap: 0; min-height: 49px; }
 .el-fields { display: contents; }
 .el-head { min-height: 0; padding-bottom: 14px; border-bottom: 1px solid #000; font-family: "Areal Mono", ui-monospace, monospace; font-size: 7.5px; text-transform: uppercase; letter-spacing: 0.02em; align-items: end; }
 .el-row.divide { border-top: 1px solid var(--line); }
@@ -104,8 +104,8 @@
 @media (max-width: 760px) {
   /* full-size text (16px) so the phone never zooms in on a box, one line per box: the table scrolls sideways instead of squeezing */
   .el-list { min-width: 660px; }
-  .el-row { grid-template-columns: 34px 250px 170px 170px 30px; align-items: center; padding: 4px 0; min-height: 0; gap: 0; }
-  .el-n4 .el-row { grid-template-columns: 34px 200px 170px 130px 90px 30px; }
+  .el-row { grid-template-columns: 34px 250px 170px 170px 104px; align-items: center; padding: 4px 0; min-height: 0; gap: 0; }
+  .el-n4 .el-row { grid-template-columns: 34px 200px 170px 130px 90px 104px; }
   .el-head { display: grid; padding: 0 0 10px; }
   .el-thumb { width: 28px; height: 40px; }
   .el-in { font-size: 16px; padding: 10px 8px; min-height: 44px; border-color: #ececec; }
@@ -118,3 +118,9 @@
   .el-add { margin-top: 14px; }
 }
 .el-tip { font-size: 10px; line-height: 1.4; color: #9a9a9a; margin: 0 0 6px; }
+
+/* editor: move up / move down / remove */
+.el-acts { display: flex; justify-content: flex-end; align-items: center; gap: 2px; }
+.el-mv { border: 0; background: none; font: inherit; font-size: 12px; color: #8c8c8c; cursor: pointer; padding: 2px 5px; }
+.el-mv:hover { color: #000; }
+@media (max-width: 760px) { .el-mv { width: 32px; height: 44px; font-size: 18px; padding: 0; } .el-list { min-width: 740px; } }
