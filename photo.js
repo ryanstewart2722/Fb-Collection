@@ -130,7 +130,7 @@ window.momsPreparePhoto = async function (file, section) {
   if (file.size > 25 * 1024 * 1024) throw new Error("That photo is too big (25 MB max).");
   let bmp;
   try { bmp = await createImageBitmap(file); } catch { throw new Error("Couldn't read that photo. Try a JPG or PNG."); }
-  const k0 = Math.min(1, 1600 / Math.max(bmp.width, bmp.height));
+  const k0 = Math.min(1, 2000 / Math.max(bmp.width, bmp.height));   // working copy for finding the outline
   const w = Math.round(bmp.width * k0), h = Math.round(bmp.height * k0);
   const c = document.createElement("canvas"); c.width = w; c.height = h;
   const x = c.getContext("2d", { willReadFrequently: true }); x.drawImage(bmp, 0, 0, w, h);
@@ -197,7 +197,22 @@ window.momsPreparePhoto = async function (file, section) {
     out.width = W; out.height = H;
     const k = Math.min(W / box.w, H / box.h) * fill;
     o.imageSmoothingQuality = "high";
-    o.drawImage(c, box.x, box.y, box.w, box.h, (W - box.w * k) / 2, (H - box.h * k) / 2, box.w * k, box.h * k);
+    o.imageSmoothingQuality = "high";
+    // The outline was worked out on a smaller copy. Cut the board from the ORIGINAL photo at full size,
+    // and only shrink it at the very end, straight into the frame.
+    const sx = bmp.width / w, sy = bmp.height / h;
+    const rx = Math.max(0, Math.floor(box.x * sx)), ry = Math.max(0, Math.floor(box.y * sy));
+    const rw = Math.min(bmp.width - rx, Math.ceil(box.w * sx)), rh = Math.min(bmp.height - ry, Math.ceil(box.h * sy));
+    if (rw > 0 && rh > 0 && rw * rh <= 20e6) {
+      const A = document.createElement("canvas"); A.width = rw; A.height = rh;
+      const ax = A.getContext("2d"); ax.imageSmoothingQuality = "high";
+      ax.drawImage(bmp, rx, ry, rw, rh, 0, 0, rw, rh);
+      ax.globalCompositeOperation = "destination-in";
+      ax.drawImage(c, box.x, box.y, box.w, box.h, 0, 0, rw, rh);   // the cut-out's outline, stretched to full size
+      o.drawImage(A, 0, 0, rw, rh, (W - box.w * k) / 2, (H - box.h * k) / 2, box.w * k, box.h * k);
+    } else {
+      o.drawImage(c, box.x, box.y, box.w, box.h, (W - box.w * k) / 2, (H - box.h * k) / 2, box.w * k, box.h * k);
+    }
     return { blob: await new Promise((r) => out.toBlob(r, "image/png")), ext: "png", type: "image/png", cut: true };
   }
   out.width = w; out.height = h; o.fillStyle = "#fff"; o.fillRect(0, 0, w, h); o.drawImage(bmp, 0, 0, w, h);
