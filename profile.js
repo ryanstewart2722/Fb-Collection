@@ -11,7 +11,7 @@ const spans = (list) => list.map((c) => `<span>${esc(c)}</span>`).join("");
 
 // Same sections and columns as the museum owner's own collection. Each field is [key, header, placeholder].
 const SCHEMA = {
-  setups:    { title: "Setups",    fields: [["name", "Deck & Manufacturer", "Deck & manufacturer (required)"], ["trucks", "Trucks", "Trucks"], ["wheels", "Wheels", "Wheels"]] },
+  setups:    { title: "Setups",    fields: [["name", "Deck name", "Deck name (required)"], ["maker", "Manufacturer", "Manufacturer"], ["size", "Size", "Size, e.g. 32mm"], ["mold", "Mold", "Mold"], ["color", "Color", "Color"], ["tmaker", "Trucks manufacturer", "Trucks manufacturer"], ["tsize", "Trucks size", "Trucks size"], ["tcolor", "Trucks color", "Trucks color"], ["wmaker", "Wheels manufacturer", "Wheels manufacturer"], ["wsize", "Wheels size", "Wheels size"], ["wcolor", "Wheels color", "Wheels color"]] },
   decks:     { title: "Decks",     fields: [["name", "Name", "Name (required)"], ["maker", "Manufacturer", "Manufacturer"], ["size", "Size", "Size, e.g. 32mm"], ["mold", "Mold", "Mold"], ["color", "Color", "Color"]] },
   obstacles: { title: "Obstacles", fields: [["name", "Name", "Name (required)"], ["maker", "Manufacturer", "Manufacturer"], ["material", "Material", "Material"]] },
   wheels:    { title: "Wheels",    fields: [["name", "Name", "Name (required)"], ["maker", "Manufacturer", "Manufacturer"], ["size", "Size", "Size, e.g. 8mm"], ["color", "Color", "Color"]] },
@@ -35,7 +35,7 @@ const SAMPLE = {
     ["decks", "Drop 82, Dr.M’s airbrushed - 1082 (f)", "Dr. M's Research Institute", "32mm", "Multicolor", "drm-1082"], ["decks", "Frame", "CATFISHBBQ", "34mm", "Red", "cfbbq-ig330"],
     ["decks", "Washi Spring", "CATFISHBBQ", "32mm", "Green", "cfbbq-1869"], ["decks", "Wish", "CATFISHBBQ", "32mm", "Natural/Blue", "cfbbq-2"],
     ["setups", "Daily skate", "", "32mm", "", "cfbbq-1830"], ["setups", "Display shelf", "", "34mm", "", "cfbbq-1860"],
-  ].map(([section, name, brand, size, color, f], n) => ({ id: "s" + n, section, name, details: { maker: brand, size, color, ...(section === "setups" ? { trucks: "Independent 32mm", wheels: "Classic 3.0" } : { mold: color ? "Freshwater" : "" }) }, image_path: D(f), status: "approved" })),
+  ].map(([section, name, brand, size, color, f], n) => ({ id: "s" + n, section, name, details: { maker: brand, size, color, ...(section === "setups" ? { mold: "Freshwater", tmaker: "Independent", tsize: "32mm", tcolor: "Silver", wmaker: "Joycult", wsize: "8mm", wcolor: "Tan" } : { mold: color ? "Freshwater" : "" }) }, image_path: D(f), status: "approved" })),
 };
 
 let view = location.hash === "#list" ? "list" : "image";
