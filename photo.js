@@ -245,6 +245,23 @@ function solidSilhouette(A, W, H) {
   return q;
 }
 
+// How far (degrees) the object's long axis leans from upright; + means the top leans left, like a backslash. 0 for round objects.
+function tiltOf(d, w, h) {
+  let n = 0, mx = 0, my = 0;
+  for (let y = 0; y < h; y += 3) for (let x = 0; x < w; x += 3) if (d[(y * w + x) * 4 + 3] > 127) { n++; mx += x; my += y; }
+  if (n < 50) return 0;
+  mx /= n; my /= n;
+  let sxx = 0, syy = 0, sxy = 0;
+  for (let y = 0; y < h; y += 3) for (let x = 0; x < w; x += 3) if (d[(y * w + x) * 4 + 3] > 127) { const a = x - mx, b = y - my; sxx += a * a; syy += b * b; sxy += a * b; }
+  const tr = sxx + syy, det = sxx * syy - sxy * sxy, disc = Math.sqrt(Math.max(0, tr * tr / 4 - det)), l1 = tr / 2 + disc, l2 = tr / 2 - disc;
+  if (l1 < l2 * 1.8) return 0;   // not clearly longer one way: leave it alone
+  let vx = sxy, vy = l1 - sxx;   // the long axis
+  if (Math.abs(vx) + Math.abs(vy) < 1e-9) { vx = l1 - syy; vy = sxy; }
+  let a = Math.atan2(vx, vy) * 180 / Math.PI;
+  if (a > 90) a -= 180; else if (a < -90) a += 180;   // the smaller turn, so the nose stays the way it was shot
+  return a;
+}
+
 window.momsPreparePhoto = async function (file, section) {
   if (file.size > 25 * 1024 * 1024) throw new Error("That photo is too big (25 MB max).");
   let bmp;
@@ -323,35 +340,56 @@ window.momsPreparePhoto = async function (file, section) {
   if (cut && box) {
     x.putImageData(img, 0, 0);
     const tall = section === "decks" || section === "setups";
-    const [W, H, fill] = tall && box.h > box.w * 1.4 ? [530, 1200, 0.96] : [800, 800, 0.9];
-    out.width = W; out.height = H;
-    const k = Math.min(W / box.w, H / box.h) * fill;
-    // The outline was worked out on a smaller copy. The board's pixels come straight from the ORIGINAL photo at full
-    // size and are only shrunk at the very end, into the frame; the outline becomes a solid clipping shape.
-    const dx = (W - box.w * k) / 2, dy = (H - box.h * k) / 2, dw = box.w * k, dh = box.h * k;
-    const sx = bmp.width / w, sy = bmp.height / h;
-    o.imageSmoothingQuality = "high";
-    o.drawImage(bmp, Math.max(0, box.x * sx), Math.max(0, box.y * sy), Math.min(bmp.width, box.w * sx), Math.min(bmp.height, box.h * sy), dx, dy, dw, dh);
-    const mk = document.createElement("canvas"); mk.width = W; mk.height = H;
-    const mx = mk.getContext("2d", { willReadFrequently: true }); mx.imageSmoothingQuality = "high";
-    mx.drawImage(c, box.x, box.y, box.w, box.h, dx, dy, dw, dh);   // the rough cut-out, stretched into the frame
-    const md = mx.getImageData(0, 0, W, H).data, rough = new Float32Array(W * H);
-    for (let i = 0; i < rough.length; i++) rough[i] = md[i * 4 + 3] / 255;
-    const shape = solidSilhouette(rough, W, H), od = o.getImageData(0, 0, W, H);
-    for (let i = 0; i < shape.length; i++) od.data[i * 4 + 3] = Math.round(255 * shape[i]);
-    o.putImageData(od, 0, 0);
     // A cropped copy of the original (the board plus a margin, not the whole room): a stronger cut-out is made from it later.
     let source = null;
     if (!preCut) {
-      const mx2 = box.w * sx * 0.25, my2 = box.h * sy * 0.25;   // generous margin, in case the quick cut-out missed an end of the board
-      const qx = Math.max(0, box.x * sx - mx2), qy = Math.max(0, box.y * sy - my2);
-      const qw = Math.min(bmp.width - qx, box.w * sx + 2 * mx2), qh = Math.min(bmp.height - qy, box.h * sy + 2 * my2);
+      const ox = bmp.width / w, oy = bmp.height / h;
+      const mx2 = box.w * ox * 0.25, my2 = box.h * oy * 0.25;   // generous margin, in case the quick cut-out missed an end of the board
+      const qx = Math.max(0, box.x * ox - mx2), qy = Math.max(0, box.y * oy - my2);
+      const qw = Math.min(bmp.width - qx, box.w * ox + 2 * mx2), qh = Math.min(bmp.height - qy, box.h * oy + 2 * my2);
       const ks = Math.min(1, 2000 / Math.max(qw, qh)), sc2 = document.createElement("canvas");
       sc2.width = Math.max(1, Math.round(qw * ks)); sc2.height = Math.max(1, Math.round(qh * ks));
       const s2 = sc2.getContext("2d"); s2.imageSmoothingQuality = "high"; s2.fillStyle = "#fff"; s2.fillRect(0, 0, sc2.width, sc2.height);
       s2.drawImage(bmp, qx, qy, qw, qh, 0, 0, sc2.width, sc2.height);
       source = await new Promise((r) => sc2.toBlob(r, "image/jpeg", 0.9));
     }
+    // Stand the board upright if it was photographed at an angle (decks and setups only).
+    let P = bmp, PW = bmp.width, PH = bmp.height, M = c, MW = w, MH = h, B = box;
+    const ang = tall ? tiltOf(d, w, h) : 0;
+    if (Math.abs(ang) > 2.5) {
+      const rad = ang * Math.PI / 180, cs = Math.abs(Math.cos(rad)), sn = Math.abs(Math.sin(rad));
+      const turn = (src, sw, sh, dw2, dh2) => {   // src drawn at dw2 x dh2, rotated clockwise by ang
+        const nw = Math.ceil(dw2 * cs + dh2 * sn), nh = Math.ceil(dw2 * sn + dh2 * cs), cv = document.createElement("canvas");
+        cv.width = nw; cv.height = nh;
+        const g = cv.getContext("2d", { willReadFrequently: true }); g.imageSmoothingQuality = "high";
+        g.translate(nw / 2, nh / 2); g.rotate(rad); g.drawImage(src, 0, 0, sw, sh, -dw2 / 2, -dh2 / 2, dw2, dh2);
+        return cv;
+      };
+      const kp = Math.min(1, 2600 / Math.max(bmp.width, bmp.height));   // the picture, kept large
+      P = turn(bmp, bmp.width, bmp.height, Math.round(bmp.width * kp), Math.round(bmp.height * kp)); PW = P.width; PH = P.height;
+      M = turn(c, w, h, w, h); MW = M.width; MH = M.height;
+      const ra = M.getContext("2d").getImageData(0, 0, MW, MH).data;
+      let x0 = MW, y0 = MH, x1 = -1, y1 = -1;
+      for (let yy = 0; yy < MH; yy += 2) for (let xx = 0; xx < MW; xx += 2) if (ra[(yy * MW + xx) * 4 + 3] > 24) { if (xx < x0) x0 = xx; if (xx > x1) x1 = xx; if (yy < y0) y0 = yy; if (yy > y1) y1 = yy; }
+      if (x1 >= 0) B = { x: x0, y: y0, w: x1 - x0 + 2, h: y1 - y0 + 2 };
+    }
+    const [W, H, fill] = tall && B.h > B.w * 1.4 ? [530, 1200, 0.96] : [800, 800, 0.9];
+    out.width = W; out.height = H;
+    const k = Math.min(W / B.w, H / B.h) * fill;
+    // The outline was worked out on a smaller copy. The board's pixels come straight from the ORIGINAL photo at full
+    // size and are only shrunk at the very end, into the frame; the outline becomes a solid clipping shape.
+    const dx = (W - B.w * k) / 2, dy = (H - B.h * k) / 2, dw = B.w * k, dh = B.h * k;
+    const sx = PW / MW, sy = PH / MH;
+    o.imageSmoothingQuality = "high";
+    o.drawImage(P, Math.max(0, B.x * sx), Math.max(0, B.y * sy), Math.min(PW, B.w * sx), Math.min(PH, B.h * sy), dx, dy, dw, dh);
+    const mk = document.createElement("canvas"); mk.width = W; mk.height = H;
+    const mx = mk.getContext("2d", { willReadFrequently: true }); mx.imageSmoothingQuality = "high";
+    mx.drawImage(M, B.x, B.y, B.w, B.h, dx, dy, dw, dh);   // the rough cut-out, stretched into the frame
+    const md = mx.getImageData(0, 0, W, H).data, rough = new Float32Array(W * H);
+    for (let i = 0; i < rough.length; i++) rough[i] = md[i * 4 + 3] / 255;
+    const shape = solidSilhouette(rough, W, H), od = o.getImageData(0, 0, W, H);
+    for (let i = 0; i < shape.length; i++) od.data[i * 4 + 3] = Math.round(255 * shape[i]);
+    o.putImageData(od, 0, 0);
     return { blob: await new Promise((r) => out.toBlob(r, "image/png")), ext: "png", type: "image/png", cut: true, source };
   }
   out.width = w; out.height = h; o.fillStyle = "#fff"; o.fillRect(0, 0, w, h); o.drawImage(bmp, 0, 0, w, h);
