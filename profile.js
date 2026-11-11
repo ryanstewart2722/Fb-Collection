@@ -106,11 +106,30 @@ function renderList() {
       ${state.owner ? `<a class="add-new" href="#" data-act="add" data-section="${s.id}">+ Add new</a>` : ""}
     </div></div></section>`).join("");
 }
+// Typing suggestions: real brands, sizes, molds and colors already in the museum (most common first). Anything else can still be typed.
+const SUGGEST_KIND = { maker: "brand", tmaker: "brand", wmaker: "brand", size: "dsize", tsize: "tsize", mold: "mold", color: "color", tcolor: "color", wcolor: "color", material: "material" };
+let suggestReady = null;
+function loadSuggestions() {
+  return (suggestReady ||= (async () => {
+    const top = (arr) => { const c = new Map(); arr.forEach((v) => { v = String(v ?? "").trim(); if (v && v.length <= 40) c.set(v, (c.get(v) || 0) + 1); }); return [...c].sort((a, b) => b[1] - a[1]).map((x) => x[0]).slice(0, 150); };
+    const get = async (t, cols) => { const { data } = await sb.from(t).select(cols).limit(3000); return data || []; };
+    const [brands, decks, trucks, wheels] = await Promise.all([get("brands", "name"), get("decks", "mold_code,size,color"), get("trucks", "size,color"), get("wheels", "color,material")]);
+    const lists = {
+      brand: brands.map((b) => b.name).filter(Boolean).sort((a, b) => a.localeCompare(b)),
+      dsize: top(decks.map((d) => d.size)), tsize: top(trucks.map((t) => t.size)), mold: top(decks.map((d) => d.mold_code)),
+      color: top([...decks, ...trucks, ...wheels].map((x) => x.color)), material: top(wheels.map((w) => w.material)),
+    };
+    const box = document.createElement("div"); box.hidden = true;
+    box.innerHTML = Object.entries(lists).map(([k, vals]) => `<datalist id="dl-${k}">${vals.map((v) => `<option value="${esc(v)}">`).join("")}</datalist>`).join("");
+    document.body.appendChild(box);
+  })().catch(() => {}));
+}
 function elThumb(i) { return `<label class="el-thumb">${i && i.url ? `<img src="${esc(i.url)}" alt="">` : "+"}<input class="ed-file" type="file" accept="image/*"></label>`; }
 function elInputs(sec, i) {
-  return `<span class="el-fields">${SCHEMA[sec].fields.map(([k, , ph]) => `<input class="el-in" data-k="${k}" type="text" value="${esc(i ? val(i, k) : "")}" placeholder="${esc(ph.replace(" (required)", ""))}" maxlength="${k === "name" ? 120 : 60}">`).join("")}</span>`;
+  return `<span class="el-fields">${SCHEMA[sec].fields.map(([k, , ph]) => `<input class="el-in" data-k="${k}" type="text"${SUGGEST_KIND[k] ? ` list="dl-${SUGGEST_KIND[k]}" autocomplete="off"` : ""} value="${esc(i ? val(i, k) : "")}" placeholder="${esc(ph.replace(" (required)", ""))}" maxlength="${k === "name" ? 120 : 60}">`).join("")}</span>`;
 }
 function renderListEdit() {
+  loadSuggestions();
   return sections().map((s) => `<section class="list-section">
     <h2>${esc(s.title)}</h2>
     <div class="list-wrap"><div class="list el-list" data-s="${s.id}" style="--cols:${colsFor(SCHEMA[s.id].fields.length)}">
