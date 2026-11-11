@@ -72,11 +72,8 @@ function sections() {
 /* ---------- header block ---------- */
 function headHtml() {
   const { profile, owner } = state;
-  const name = profile.display_name || profile.username;
   return `<section class="p-head">
-    <h1>${esc(name)}</h1>
     <p class="p-user">museumofminiskateboards.org/u/${esc(profile.username)}${profile.is_private ? ` · <b>Private</b>` : ""}</p>
-    ${profile.bio ? `<p class="p-bio">${esc(profile.bio)}</p>` : ""}
     ${owner ? ownerBar() : ""}
   </section>`;
 }

@@ -37,9 +37,11 @@
 .u-list { margin: 30px var(--gutter) 0; max-width: 760px; }
 .u-row { display: grid; grid-template-columns: 2fr 1.4fr 1fr; gap: 12px; padding: 10px 0; border-top: 1px solid var(--line); font-size: 13px; }
 .u-row:hover { background: #000; color: #fff; padding-left: 10px; padding-right: 10px; margin: 0 -10px; }
-.profile-page .p-head { margin-left: var(--gutter); }
+.profile-page .p-head { margin-left: 0; }
 .s-tabs { font-size: 13px; margin: 0 0 16px; }
 .s-tabs .on { text-decoration: none; font-weight: 500; color: #000; }
 .auth-form textarea { font: inherit; resize: vertical; }
 #ad-fields { display: contents; }
 .auth-form[hidden], .p-edit[hidden] { display: none; }
+.profile-page .p-head { margin: 22px 0 0; }
+.p-user { margin: 0 0 18px; }
