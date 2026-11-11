@@ -381,3 +381,11 @@ body { min-height: 100vh; min-height: 100dvh; display: flex; flex-direction: col
 body > * { flex-shrink: 0; }
 body > .site-footer { margin-top: auto; }
 body > main.auth { width: 100%; box-sizing: border-box; }
+
+/* phones, collection image view: the info bar shows all of the text, wrapping like the list rows */
+@media (max-width: 760px) {
+  .bar { display: flex; height: auto; min-height: 32px; padding: 8px 0; align-items: flex-start; font-size: 10.5px; line-height: 1.3; }
+  .bar span { flex: 1 1 0; white-space: normal; overflow: visible; text-overflow: clip; overflow-wrap: anywhere; padding-right: 10px; }
+  .bar span:first-child { flex-grow: 1.5; }
+  .bar span:last-child { padding-right: 10px; }
+}
