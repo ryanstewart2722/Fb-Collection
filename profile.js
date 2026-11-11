@@ -29,7 +29,7 @@ const rowCells = (sec, i) => SCHEMA[sec].fields.map(([k]) => val(i, k));
 // A built-in sample so you can see what a page looks like before anyone has signed up.
 const D = (f) => `https://museumofminiskateboards.org/Images/museum/decks/${f}.png`;
 const SAMPLE = {
-  profile: { id: "sample", username: "example", display_name: "Sample Collector", bio: "This is a sample page. Real pages look just like it, with each person's own boards and their own photos.", is_private: false },
+  profile: { id: "sample", username: "example", display_name: "Sample Collector", bio: "", is_private: false },
   items: [
     ["decks", "Her Majesty", "CATFISHBBQ", "34mm", "Multicolor", "cfbbq-1737"], ["decks", "Artshow Street99", "CATFISHBBQ", "34mm", "Blue", "cfbbq-1829"],
     ["decks", "Drop 82, Dr.M’s airbrushed - 1082 (f)", "Dr. M's Research Institute", "32mm", "Multicolor", "drm-1082"], ["decks", "Frame", "CATFISHBBQ", "34mm", "Red", "cfbbq-ig330"],
