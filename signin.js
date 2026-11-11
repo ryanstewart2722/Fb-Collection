@@ -42,6 +42,13 @@ $("#f-email").addEventListener("submit", async (e) => {
   show("sent");
 });
 
+/* ---------- Google ---------- */
+$("#google").addEventListener("click", async () => {
+  say("#e-email", "");
+  const { error } = await sb.auth.signInWithOAuth({ provider: "google", options: { redirectTo: here() } });
+  if (error) say("#e-email", "Couldn't start Google sign-in. " + error.message);
+});
+
 /* ---------- emailed code (works on any device) ---------- */
 $("#f-code").addEventListener("submit", async (e) => {
   e.preventDefault();
