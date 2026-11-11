@@ -389,3 +389,9 @@ body > main.auth { width: 100%; box-sizing: border-box; }
   .bar span:first-child { flex-grow: 1.5; }
   .bar span:last-child { padding-right: 10px; }
 }
+
+/* owner's own page: slug and links, same look as the other collection pages */
+.owner-foot { margin: 60px var(--gutter) 50px; }
+.owner-slug { font-size: 11.5px; color: #777; margin: 0 0 18px; }
+.owner-links { font-size: 12px; margin: 0; }
+.owner-links a, .owner-links button { color: inherit; text-decoration: underline; text-underline-offset: 2px; background: none; border: 0; padding: 0; font: inherit; cursor: pointer; }
