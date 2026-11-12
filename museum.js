@@ -151,7 +151,7 @@ function applyGifScale(src) {
   // the preview is centred with a CSS transform, which the enlargement would also multiply; cancel that part out
   const m = new DOMMatrix(cs.transform === "none" ? "" : cs.transform);
   Object.assign(preview.style, { transformOrigin: `50% ${(g.t * 100).toFixed(2)}%`,
-    translate: `${(m.e * (1 - k)).toFixed(1)}px ${(-g.t * boxH + m.f * (1 - k)).toFixed(1)}px`, scale: k.toFixed(3) });
+    translate: `${(m.e * (1 - k)).toFixed(1)}px ${(-g.t * boxH + m.f * (1 - k) + m.f * (deckH - boxH) / boxH).toFixed(1)}px`, scale: k.toFixed(3) });
 }
 function measureGif(src, done) {   // finds how tall the board is inside a GIF (1 = fills it) and remembers the enlargement
   if (!/\.gif($|\?)/i.test(src) || gifAsked.has(src)) return;
