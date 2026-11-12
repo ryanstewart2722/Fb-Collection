@@ -187,6 +187,7 @@ h2 {
 /* ---------- Board page ---------- */
 .board { display: grid; grid-template-columns: 1fr 70px 1.45fr; min-height: calc(100vh - 90px); padding: 0 var(--gutter); }
 .board-img { display: flex; align-items: center; justify-content: center; padding: 40px 0; }
+.board-img img.gif { height: min(950px, 78vh); width: auto; }   /* GIFs are not resized on upload, so size them like the other deck photos */
 .board-img img { max-height: min(950px, 78vh); max-width: 100%; }
 /* with a second photo: the title, specs, Close and Previous/Next stay put while the photos scroll */
 .board-img:has(img.second) { flex-direction: column; justify-content: flex-start; gap: 60px; }
