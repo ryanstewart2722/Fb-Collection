@@ -36,6 +36,7 @@ let brands = [];
 let tab = "decks";
 let list = { rows: [], total: 0, search: "", brand: "", photo: "" };
 let editing = null;   // row being edited ({} for a new one), or null when showing the list
+let photo2 = null, target = 1, drop2 = false;   // second photo (shown below the first on the board page)
 let photo = null;     // new photo waiting to upload: { blob, ext, preview }
 let formDirty = false;
 let view = (() => { try { return localStorage.getItem("me-view") === "images" ? "images" : "list"; } catch { return "list"; } })();
@@ -156,6 +157,11 @@ function renderForm() {
         <div class="me-photo-box">${img ? `<img src="${esc(img)}" alt="">` : `<span>No photo yet</span>`}</div>
         <button class="ad-btn" data-act="photo">${img ? "Replace photo" : "Add photo"}</button>
         ${img ? `<button class="ad-btn" data-act="rotate" title="Turn the photo upside down">Rotate 180°</button>` : ""}
+        <div class="me-photo2">
+          ${(photo2?.preview || (!drop2 && r.image_path_2)) ? `<div class="me-photo-box"><img src="${esc(photo2?.preview || r.image_path_2)}" alt=""></div>` : ""}
+          <button class="ad-btn" data-act="photo2">${(photo2?.preview || (!drop2 && r.image_path_2)) ? "Replace second photo" : "+ Add a second photo"}</button>
+          ${(photo2 || (!drop2 && r.image_path_2)) ? `<button class="ad-btn" data-act="rm-photo2">Remove second photo</button>` : ""}
+        </div>
         <small>Transparent PNGs are kept exactly as they are, just sized to match. Photos on a plain backdrop (white, grey, any single colour) have the backdrop removed.</small>
       </div>`}
       <div class="me-fields">${t.fields.map((f) => fieldHtml(f, r)).join("")}</div>
@@ -237,6 +243,23 @@ async function save() {
       saved.image_path = url;
     }
 
+    if (photo2) {
+      setStatus("Uploading second photo…");
+      const path = `${tab}/${saved.slug}-2-${Date.now().toString(36)}.${photo2.ext}`;
+      const { error: upErr } = await sb.storage.from(BUCKET).upload(path, photo2.blob, { contentType: photo2.blob.type, cacheControl: "31536000" });
+      if (upErr) throw upErr;
+      const url = sb.storage.from(BUCKET).getPublicUrl(path).data.publicUrl;
+      const { error } = await sb.from(tab).update({ image_path_2: url }).eq("id", saved.id);
+      if (error) throw error;
+      await removeOurPhoto(editing.image_path_2);
+      saved.image_path_2 = url;
+    } else if (drop2 && editing.image_path_2) {
+      const { error } = await sb.from(tab).update({ image_path_2: null }).eq("id", saved.id);
+      if (error) throw error;
+      await removeOurPhoto(editing.image_path_2);
+      saved.image_path_2 = null;
+    }
+    drop2 = false; photo2 = null;
     if (tab === "brands") await loadBrands();
     photo = null;
     editing = saved;
@@ -436,6 +459,11 @@ fileInput.addEventListener("change", async () => {
   if (!file) return;
   setStatus("Preparing photo…");
   try {
+    if (target === 2) {
+      photo2 = await preparePhoto(file); drop2 = false; formDirty = true;
+      renderForm2();
+      return setStatus(`Second photo ready (${Math.round(photo2.blob.size / 1024)} KB). Save to upload it.`);
+    }
     photo = await preparePhoto(file);
     const box = app.querySelector(".me-photo-box");
     box.innerHTML = `<img src="${photo.preview}" alt="">`;
@@ -448,8 +476,16 @@ fileInput.addEventListener("change", async () => {
 });
 
 /* ---------- Events ---------- */
+function renderForm2() {   // redraw the form without losing what was typed
+  const y = window.scrollY;
+  const prev = {}; app.querySelectorAll("[data-f]").forEach((el) => (prev[el.dataset.f] = el.value));
+  renderForm();
+  app.querySelectorAll("[data-f]").forEach((el) => { if (el.dataset.f in prev) el.value = prev[el.dataset.f]; });
+  formDirty = true; window.scrollTo(0, y);
+}
+
 function leaveForm() {
-  return !editing || !(formDirty || photo) || confirm("Leave without saving your changes?");
+  return !editing || !(formDirty || photo || photo2) || confirm("Leave without saving your changes?");
 }
 
 app.addEventListener("input", (e) => {
@@ -468,11 +504,11 @@ app.addEventListener("click", async (e) => {
   if (card) {
     const a = e.target.closest("[data-act]")?.dataset.act;
     if (a === "rotate-card") return rotateCard(card);
-    if (a === "open") { editing = { ...list.rows[card.dataset.i] }; photo = null; return renderForm(); }
+    if (a === "open") { editing = { ...list.rows[card.dataset.i] }; photo = null; photo2 = null; drop2 = false; return renderForm(); }
   }
   const item = e.target.closest(".me-item");
   if (item) {
-    editing = { ...list.rows[item.dataset.i] };
+    editing = { ...list.rows[item.dataset.i] }; photo = null; photo2 = null; drop2 = false;
     photo = null;
     return renderForm();
   }
@@ -482,8 +518,8 @@ app.addEventListener("click", async (e) => {
     try { localStorage.setItem("me-view", view); } catch {}
     await loadList().catch(fail("Couldn't load")); return renderList();
   }
-  if (act === "new") { editing = {}; photo = null; renderForm(); }
-  if (act === "back" && leaveForm()) { editing = null; photo = null; setStatus(""); await loadList().catch(fail("Couldn't load")); renderList(); }
+  if (act === "new") { editing = {}; photo = null; photo2 = null; drop2 = false; renderForm(); }
+  if (act === "back" && leaveForm()) { editing = null; photo = null; photo2 = null; drop2 = false; setStatus(""); await loadList().catch(fail("Couldn't load")); renderList(); }
   if (act === "all") {
     setStatus("Loading everything…");
     try { let before = -1; while (list.rows.length < list.total && list.rows.length !== before) { before = list.rows.length; await loadList(false); } setStatus(""); }
@@ -491,7 +527,9 @@ app.addEventListener("click", async (e) => {
     renderList();
   }
   if (act === "more") { await loadList(false).catch(fail("Couldn't load")); renderList(); }
-  if (act === "photo") { fileInput.value = ""; fileInput.click(); }
+  if (act === "photo") { target = 1; fileInput.value = ""; fileInput.click(); }
+  if (act === "photo2") { target = 2; fileInput.value = ""; fileInput.click(); }
+  if (act === "rm-photo2") { photo2 = null; drop2 = true; renderForm2(); }
   if (act === "rotate") rotatePhoto();
   if (act === "save") save();
   if (act === "delete") del();

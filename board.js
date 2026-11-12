@@ -72,7 +72,7 @@ async function load() {
   document.title = `${title} · The Museum of Mini Skateboards`;
 
   root.innerHTML = `
-    <div class="board-img">${photo ? `<img src="${esc(photo)}" alt="${esc(title)}">` : ""}</div>
+    <div class="board-img">${photo ? `<img src="${esc(photo)}" alt="${esc(title)}">` : ""}${r.image_path_2 ? `<img class="second" src="${esc(r.image_path_2)}" alt="${esc(title)} (2)">` : ""}</div>
     <a class="board-close" href="${esc(backHref)}">Close</a>
     ${prev ? `<a class="board-nav prev" href="${esc(link(prev))}">Previous</a><a class="board-nav next" href="${esc(link(next))}">Next</a>` : ""}
     <div class="board-info">

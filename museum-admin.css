@@ -77,3 +77,5 @@
 .me-rv-info em { color: #777; font-style: normal; font-size: 11px; }
 .me-rv-info span { color: #555; }
 .me-rv-act { margin-top: 10px; display: flex; gap: 8px; }
+.me-photo2 { display: grid; gap: 8px; }
+.me-photo2 .me-photo-box { height: 240px; }
