@@ -316,7 +316,8 @@ function friendly(err) {
 const PHOTO_SIZE = { decks: [529, 1200], trucks: [800, 800], wheels: [800, 800] };
 
 async function preparePhoto(file) {
-  if (file.type === "image/gif") return { blob: file, ext: "gif", preview: URL.createObjectURL(file) };   // GIFs are kept as they are so they keep playing
+  const head = new TextDecoder("latin1").decode(await file.slice(0, 6).arrayBuffer());
+  if (file.type === "image/gif" || /\.gif$/i.test(file.name) || head.startsWith("GIF8")) return { blob: file.type === "image/gif" ? file : new Blob([file], { type: "image/gif" }), ext: "gif", preview: URL.createObjectURL(file) };   // GIFs are kept as they are so they keep playing
   const bitmap = await createImageBitmap(file);
   // Work at a moderate size so cleanup is quick even for big phone photos.
   const s0 = Math.min(1, 1600 / Math.max(bitmap.width, bitmap.height));
