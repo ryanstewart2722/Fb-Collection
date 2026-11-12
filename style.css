@@ -135,7 +135,7 @@ h2 {
 /* mobile image view: the info bar sits on the screen (like the desktop bar over the big photo) and follows your scrolling */
 .scrub .preview.show { pointer-events: auto; cursor: pointer; }
 .scrub .bar {
-  position: fixed; left: 0; right: 0; top: 32%; transform: translateY(-50%);
+  position: fixed; left: 0; right: 0; top: calc(var(--bar-h) + 112px); transform: translateY(-50%);   /* same spot as the active row in list view */
   height: auto; min-height: 36px; padding: 9px 16px;
   display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 14px;
   font-size: 12px; line-height: 1.25;

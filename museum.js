@@ -350,7 +350,7 @@ let scrubEl = null;
 function scrubUpdate() {
   scrubPending = false;
   if (view !== "image" || !isMobile() || !scrubGrids.length || document.body.classList.contains("rf-open")) return;
-  const focus = innerHeight * 0.32;
+  const focus = (parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--bar-h")) || 43) + 112;   // where the black bar sits (same spot as list view)
   for (const g of scrubGrids) {
     const rect = g.grid.getBoundingClientRect();
     if (focus < rect.top || focus > rect.bottom || !g.els.length) continue;
