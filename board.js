@@ -86,6 +86,7 @@ async function load() {
       </div>
     </div>`;
 
+  if (matchMedia("(max-width: 760px)").matches) more = more.slice(0, 6);   // phones: six suggestions
   root.querySelector(".board-more").innerHTML = more.map((m) =>
     `<a href="board.html?type=${type}&slug=${encodeURIComponent(m.slug)}" title="${esc(m.name)}"><img src="${esc(m.image_path)}" alt="${esc(m.name)}" loading="lazy"></a>`).join("");
 }
