@@ -8,7 +8,7 @@
     '<img class="fb-logo" src="/footer-logo.png" alt="MoMS" width="783" height="735">' +
     '<p class="fb-credit">Designed, curated and developed by <a href="https://ryanforprez.org" target="_blank" rel="noopener">Ryan Stewart</a> view his collection <a href="/u/r">here</a></p>' +
     '<nav class="fb-links" aria-label="Site">' +
-      '<div><a href="/">Museum</a><a href="/submit.html">Submit New</a><a href="/users.html">Users</a><a href="https://www.instagram.com/museum.of.mini.skateboards/" target="_blank" rel="noopener">Instagram</a></div>' +
+      '<div><a href="/">Museum</a><a href="/submit.html">Submit</a><a href="/users.html">Users</a><a href="https://www.instagram.com/museum.of.mini.skateboards/" target="_blank" rel="noopener">Instagram</a></div>' +
       '<div><a href="/account.html">My Account</a><a href="/signin.html" data-me>My Collection</a><a href="/privacy.html">Privacy</a><a href="mailto:contact@museumofminiskateboards.org">Contact</a></div>' +
     '</nav>' +
     '<div class="fb-boards" aria-hidden="true">' + ANGLES.map(function (a) { return '<span style="--r:' + a + 'deg">' + BOARD + '</span>'; }).join("") + '</div>' +
