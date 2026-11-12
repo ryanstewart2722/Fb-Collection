@@ -692,6 +692,13 @@ async function reviewAct(card, ok) {
       step = "marking the submission approved";
       const { error } = await sb.from("submissions").update({ status: "approved", review_note: "Added as " + made.slug }).eq("id", r.id);
       if (error) throw error;
+      // straight into the editor for the new board, so the rest can be filled in
+      reviewItems[card.dataset.i] = null;
+      setReviewBadge(reviewItems.filter(Boolean).length);
+      tab = table; editing = made; photo = null; photo2 = null; drop2 = false;
+      document.querySelectorAll(".ad-tabs button").forEach((b) => b.classList.toggle("active", b.dataset.tab === table));
+      renderForm();
+      return setStatus("Added to the museum. Fill in the rest and press Save changes.");
     } else {
       const { error } = await sb.from("submissions").update({ status: "rejected" }).eq("id", r.id);
       if (error) throw error;
