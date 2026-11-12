@@ -140,6 +140,11 @@ function normalizeSquare(img) {
 // A GIF is kept at its original size, so its board may fill only part of the frame. Scale it so the board is as tall as the others.
 const gifScale = new Map();
 const gifAsked = new Set();
+// Enlarge a GIF so its board is as tall as the other decks, keeping the board's top edge where an ordinary deck photo's top edge would be.
+function applyGifScale(src) {
+  const g = gifScale.get(src);
+  Object.assign(preview.style, g ? { transformOrigin: `50% ${(g.t * 100).toFixed(2)}%`, translate: `0 ${(-g.t * 100).toFixed(2)}%`, scale: g.s } : { transformOrigin: "", translate: "", scale: "" });
+}
 function measureGif(src, done) {   // finds how tall the board is inside a GIF (1 = fills it) and remembers the enlargement
   if (!/\.gif($|\?)/i.test(src) || gifAsked.has(src)) return;
   gifAsked.add(src);
@@ -152,7 +157,7 @@ function measureGif(src, done) {   // finds how tall the board is inside a GIF (
       let top = c.height, bot = -1;
       for (let y = 0; y < c.height; y++) for (let i = y * c.width * 4 + 3, e = i + c.width * 4; i < e; i += 4) if (d[i] > 40) { top = Math.min(top, y); bot = y; break; }
       const f = (bot - top + 1) / c.height;
-      if (bot >= 0 && f > 0.2 && f < 0.98) { gifScale.set(src, 1 / f); if (preview.src === src) preview.style.scale = 1 / f; }
+      if (bot >= 0 && f > 0.2 && f < 0.98) { gifScale.set(src, { s: 1 / f, t: top / c.height }); if (preview.src === src) applyGifScale(src); }
     } catch (e) { /* no pixel access: leave it as is */ }
     done && done();
   };
@@ -192,7 +197,7 @@ function showPreview(src) {
   if (!src) return hidePreview();
   preview.src = src;
   measureGif(src);
-  preview.style.scale = gifScale.get(src) || "";   // the big preview gets the same GIF correction as the grid
+  applyGifScale(src);   // the big preview gets the same GIF correction as the grid
   preview.classList.add("show");
 }
 function hidePreview() { preview.classList.remove("show"); }
