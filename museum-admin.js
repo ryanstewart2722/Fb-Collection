@@ -598,6 +598,7 @@ async function findOrMakeBrand(name) {
 async function reviewAct(card, ok) {
   const x = reviewItems[card.dataset.i], r = x.r;
   card.querySelectorAll("button").forEach((b) => (b.disabled = true));
+  let step = "starting";
   try {
     if (x.kind === "item") {
       if (ok) {
@@ -611,11 +612,16 @@ async function reviewAct(card, ok) {
       }
     } else if (ok) {
       const f = r.fields, table = r.section;
-      const row = { brand_id: await findOrMakeBrand(f.brand || "Unknown"), name: f.name, color: f.color || null, image_path: await publishPhoto(r.image_path) };
+      step = "finding or making the brand";
+      const brand_id = await findOrMakeBrand(f.brand || "Unknown");
+      step = "copying the photo";
+      const row = { brand_id, name: f.name, color: f.color || null, image_path: await publishPhoto(r.image_path) };
       if (table === "decks") { row.size = f.size || null; row.molds = f.mold ? f.mold.split(",").map((m) => m.trim()).filter(Boolean) : []; row.shape = f.shape || null; row.attributes = { source: "Museum submission", submitted_by: r.profiles?.username || null }; }
       if (table === "trucks") row.size = f.size || null;
       if (table === "wheels") { row.material = f.material || null; row.duro = f.duro || null; }
+      step = `adding it to ${table}`;
       const made = await insertWithSlug(table, row, `${f.name} ${f.color || ""} ${f.brand || ""}`);
+      step = "marking the submission approved";
       const { error } = await sb.from("submissions").update({ status: "approved", review_note: "Added as " + made.slug }).eq("id", r.id);
       if (error) throw error;
     } else {
@@ -631,7 +637,8 @@ async function reviewAct(card, ok) {
     setStatus(ok ? (x.kind === "sub" ? "Added to the museum. Find it in the editor to fill in more details." : "Approved. It's visible now.") : "Rejected.");
   } catch (err) {
     card.querySelectorAll("button").forEach((b) => (b.disabled = false));
-    setStatus("Couldn't do that: " + friendly(err), true);
+    setStatus(`Couldn't do that (while ${step}): ` + friendly(err), true);
+    console.error("review action failed", step, err);
   }
 }
 app.addEventListener("click", (e) => {
