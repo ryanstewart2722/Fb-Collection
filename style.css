@@ -220,7 +220,8 @@ h2 {
   .grid.square { --item-h: clamp(90px, 27vw, 140px); --cell: var(--item-h); }
   .controls { padding-right: 14px; }
   .board { grid-template-columns: 1fr; }
-  .board-close, .board:has(img.second) .board-close { position: fixed; top: 50%; right: 6px; transform: translateY(-50%); writing-mode: vertical-rl; z-index: 6; font-size: 10.5px; padding: 8px 2px; }
+  /* Close sits exactly where the Refine tab sits on the museum page */
+  .board-close, .board:has(img.second) .board-close { position: fixed; top: 50%; right: 7px; transform: translateY(-50%); writing-mode: vertical-rl; z-index: 22; font-size: 10.5px; padding: 14px 3px; align-self: auto; justify-self: auto; order: 0; }
   .board-img { padding: 16px 0 0; }
   .board-img img { max-height: 62vh; }
   .board-info { padding-top: 28px; }
@@ -406,3 +407,11 @@ body > main.auth { width: 100%; box-sizing: border-box; }
   .topbar { right: 0; }
   .has-refine.rf-open .site-footer { margin-right: calc(-1 * var(--rf-shift, 0px)); }
 }
+
+/* going into a product page: the photo rises in and the details fade in after it */
+@keyframes board-in { from { opacity: 0; transform: translateY(18px) scale(0.98); } to { opacity: 1; transform: none; } }
+@keyframes board-fade { from { opacity: 0; } to { opacity: 1; } }
+.board-img img { animation: board-in 0.55s cubic-bezier(0.22, 0.61, 0.36, 1) both; }
+.board-img img.second { animation-delay: 0.1s; }
+.board-info, .board-close, .board-nav { animation: board-fade 0.5s ease 0.18s both; }
+@media (prefers-reduced-motion: reduce) { .board-img img, .board-info, .board-close, .board-nav { animation: none; } }
