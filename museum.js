@@ -153,8 +153,12 @@ function applyGifScale(src) {
   Object.assign(preview.style, { transformOrigin: `50% ${(g.t * 100).toFixed(2)}%`,
     translate: `${(m.e * (1 - k)).toFixed(1)}px ${(-g.t * boxH + m.f * (1 - k) + m.f * (deckH - boxH) / boxH).toFixed(1)}px`, scale: k.toFixed(3) });
 }
-function measureGif(src, done) {   // finds how tall the board is inside a GIF (1 = fills it) and remembers the enlargement
-  if (!/\.gif($|\?)/i.test(src) || gifAsked.has(src)) return;
+const gifWaiting = new Map();   // GIF url -> things to do once it has been measured
+function measureGif(src, done) {   // finds how tall the board is inside a GIF (1 = fills it) and remembers it
+  if (!/\.gif($|\?)/i.test(src)) return;
+  if (gifScale.has(src)) return done && done();
+  if (done) gifWaiting.set(src, [...(gifWaiting.get(src) || []), done]);
+  if (gifAsked.has(src)) return;
   gifAsked.add(src);
   const probe = new Image(); probe.crossOrigin = "anonymous";
   probe.onload = () => {
@@ -167,29 +171,22 @@ function measureGif(src, done) {   // finds how tall the board is inside a GIF (
       const f = (bot - top + 1) / c.height;
       if (bot >= 0 && f > 0.2 && f < 0.98) { gifScale.set(src, { f, t: top / c.height, ar: c.width / c.height }); if (preview.src === src) applyGifScale(src); }
     } catch (e) { /* no pixel access: leave it as is */ }
-    done && done();
+    (gifWaiting.get(src) || []).forEach((fn) => fn()); gifWaiting.delete(src);
   };
-  probe.src = src;
+  // its own address, so the browser fetches a copy the page is allowed to read (the copy already shown on the page is not)
+  probe.src = src + (src.includes("?") ? "&" : "?") + "measure=1";
 }
-   // GIF url -> how much to enlarge it so its board matches the other decks
+// In the grid a GIF keeps one cell like every other deck, enlarged so its board is as tall as the others.
 function fitGif(img) {
   if (!/\.gif($|\?)/i.test(img.src) || img.closest(".grid.square") || img.dataset.gifFit) return;
   img.dataset.gifFit = "1"; img.closest(".item").classList.remove("wide");
-  const probe = new Image(); probe.crossOrigin = "anonymous";
-  probe.onload = () => {
-    try {
-      const c = document.createElement("canvas"); c.width = probe.naturalWidth; c.height = probe.naturalHeight;
-      const x = c.getContext("2d"); x.drawImage(probe, 0, 0);
-      const d = x.getImageData(0, 0, c.width, c.height).data;
-      let top = c.height, bot = -1;
-      for (let y = 0; y < c.height; y++) for (let i = y * c.width * 4 + 3, e = i + c.width * 4; i < e; i += 4) if (d[i] > 40) { top = Math.min(top, y); bot = y; break; }
-      const f = (bot - top + 1) / c.height;
-      if (bot >= 0 && f > 0.2 && f < 0.98) gifScale.set(img.src, 1 / f);
-      if (bot >= 0 && f > 0.2 && f < 0.98) { Object.assign(img.style, { width: "auto", height: "100%", maxWidth: "none", flex: "none", aspectRatio: `${probe.naturalWidth} / ${probe.naturalHeight}`, transform: `scale(${(1 / f).toFixed(3)})`, pointerEvents: "none" }); }
-      fitItem(img.closest(".item"));
-    } catch (e) { /* no pixel access: leave it as is */ }
-  };
-  probe.src = img.src;
+  const src = img.src;
+  measureGif(src, () => {
+    const g = gifScale.get(src);
+    if (!g || !img.isConnected) return;
+    Object.assign(img.style, { width: "auto", height: "100%", maxWidth: "none", flex: "none", aspectRatio: String(g.ar), transform: `scale(${(1 / g.f).toFixed(3)})`, pointerEvents: "none" });
+    fitItem(img.closest(".item"));
+  });
 }
 const markWide = (img) => {
   fitGif(img);
