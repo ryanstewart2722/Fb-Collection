@@ -419,3 +419,4 @@ body > main.auth { width: 100%; box-sizing: border-box; }
 .board-info, .board-close, .board-nav { animation: board-fade 0.5s ease 0.18s both; }
 @media (prefers-reduced-motion: reduce) { .board-img img, .board-info, .board-close, .board-nav { animation: none; } }
 @media (min-width: 761px) { .board-img { grid-column: 1; } .board-info { grid-column: 3; } }   /* Close is out of the grid now, so keep the photo and details in their columns */
+.board > * { min-width: 0; }   /* a wide GIF must not stretch the photo column and push the details and Close over */
