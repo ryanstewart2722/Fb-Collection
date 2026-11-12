@@ -151,7 +151,7 @@ function applyGifScale(src) {
   // the preview is centred with a CSS transform, which the enlargement would also multiply; cancel that part out
   const m = new DOMMatrix(cs.transform === "none" ? "" : cs.transform);
   Object.assign(preview.style, { transformOrigin: `50% ${(g.t * 100).toFixed(2)}%`,
-    translate: `${(m.e * (1 - k)).toFixed(1)}px ${(-g.t * boxH + m.f * (1 - k) + m.f * (deckH - boxH) / boxH).toFixed(1)}px`, scale: k.toFixed(3) });
+    translate: `${(m.e * (1 - k) + (0.5 - g.cx) * boxH * g.ar * k).toFixed(1)}px ${(-g.t * boxH + m.f * (1 - k) + m.f * (deckH - boxH) / boxH).toFixed(1)}px`, scale: k.toFixed(3) });
 }
 const gifWaiting = new Map();   // GIF url -> things to do once it has been measured
 function measureGif(src, done) {   // finds how tall the board is inside a GIF (1 = fills it) and remembers it
@@ -169,7 +169,10 @@ function measureGif(src, done) {   // finds how tall the board is inside a GIF (
       let top = c.height, bot = -1;
       for (let y = 0; y < c.height; y++) for (let i = y * c.width * 4 + 3, e = i + c.width * 4; i < e; i += 4) if (d[i] > 40) { top = Math.min(top, y); bot = y; break; }
       const f = (bot - top + 1) / c.height;
-      if (bot >= 0 && f > 0.2 && f < 0.98) { gifScale.set(src, { f, t: top / c.height, ar: c.width / c.height }); if (preview.src === src) applyGifScale(src); }
+      let left = c.width, right = -1;   // the board is not always in the middle of the frame either
+      for (let y = Math.max(0, top); y <= bot; y += 4) for (let xx = 0, i = y * c.width * 4 + 3; xx < c.width; xx++, i += 4) if (d[i] > 40) { if (xx < left) left = xx; if (xx > right) right = xx; }
+      const cx = right >= 0 ? (left + right + 1) / 2 / c.width : 0.5;
+      if (bot >= 0 && f > 0.2 && f < 0.98) { gifScale.set(src, { f, cx, t: top / c.height, ar: c.width / c.height }); if (preview.src === src) applyGifScale(src); }
     } catch (e) { /* no pixel access: leave it as is */ }
     (gifWaiting.get(src) || []).forEach((fn) => fn()); gifWaiting.delete(src);
   };
@@ -184,7 +187,7 @@ function fitGif(img) {
   measureGif(src, () => {
     const g = gifScale.get(src);
     if (!g || !img.isConnected) return;
-    Object.assign(img.style, { width: "auto", height: "100%", maxWidth: "none", flex: "none", aspectRatio: String(g.ar), transform: `scale(${(1 / g.f).toFixed(3)})`, pointerEvents: "none" });
+    Object.assign(img.style, { width: "auto", height: "100%", maxWidth: "none", flex: "none", aspectRatio: String(g.ar), transform: `translateX(${((0.5 - g.cx) / g.f * 100).toFixed(2)}%) scale(${(1 / g.f).toFixed(3)})`, pointerEvents: "none" });
     fitItem(img.closest(".item"));
   });
 }
