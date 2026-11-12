@@ -18,7 +18,7 @@ const MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Se
 
 // What each tab edits. Field kinds: text, textarea, brand, molds, release.
 const TYPES = {
-  decks:  { one: "deck",  fields: [["brand_id", "Brand", "brand"], ["extra_brand_ids", "Other brands", "morebrands", "Optional, for collabs. Separate with commas. New names are added as brands."], ["name", "Deck name"], ["color", "Color", "text", "Primary color first, then secondary, joined with / (e.g. White/Black). Use Multicolor for lots of colors or a graphic. Capitals are added for you."], ["size", "Size", "text", "e.g. 32mm"],
+  decks:  { one: "deck",  fields: [["brand_id", "Brand", "brand"], ["extra_brand_ids", "Second brand", "morebrands", "For collabs: shows as “first brand x second brand”."], ["name", "Deck name"], ["color", "Color", "text", "Primary color first, then secondary, joined with / (e.g. White/Black). Use Multicolor for lots of colors or a graphic. Capitals are added for you."], ["size", "Size", "text", "e.g. 32mm"],
             ["molds", "Molds", "molds", "Separate with commas, e.g. Freshwater, Freshwater Deep, Saltwater, NotCool FB, KS1"],
             ["shape", "Shape", "text", "e.g. Egg, Cruiser, Old School. Adds a Shape filter to the site once any board has one."],
             ["drop_no", "Drop", "text", "Dr. M's drop number, e.g. 57. Shows in front of the name, with the drop title: “Drop 127, Title - 1740”."],
@@ -26,10 +26,10 @@ const TYPES = {
             ["mold_code", "Mold letter", "text", "Fills in by itself from the mold (f, d, s, nc, os…) and shows after the name, e.g. “3078 (f)”. Clear it to reset."],
             ["graphic", "Graphic", "text", "e.g. Screenprint Graphic"], ["made_in", "Made in", "text", "e.g. Chicago, IL"], ["release", "Release date", "release"], ["description", "Description", "textarea"]],
             slug: (v, b) => `${v.name} ${v.color || ""} ${b}` },
-  trucks: { one: "truck", fields: [["brand_id", "Brand", "brand"], ["extra_brand_ids", "Other brands", "morebrands", "Optional, for collabs. Separate with commas. New names are added as brands."], ["name", "Truck name"], ["color", "Color", "text", "Primary color first, then secondary, joined with / (e.g. White/Black). Use Multicolor for lots of colors or a graphic. Capitals are added for you."], ["size", "Size", "text", "e.g. 32mm"],
+  trucks: { one: "truck", fields: [["brand_id", "Brand", "brand"], ["extra_brand_ids", "Second brand", "morebrands", "For collabs: shows as “first brand x second brand”."], ["name", "Truck name"], ["color", "Color", "text", "Primary color first, then secondary, joined with / (e.g. White/Black). Use Multicolor for lots of colors or a graphic. Capitals are added for you."], ["size", "Size", "text", "e.g. 32mm"],
             ["release", "Release date", "release"], ["description", "Description", "textarea"]],
             slug: (v, b) => `${v.name} ${v.color || ""} ${v.size || ""} ${b}` },
-  wheels: { one: "wheel", fields: [["brand_id", "Brand", "brand"], ["extra_brand_ids", "Other brands", "morebrands", "Optional, for collabs. Separate with commas. New names are added as brands."], ["name", "Wheel name"], ["color", "Color", "text", "Primary color first, then secondary, joined with / (e.g. White/Black). Use Multicolor for lots of colors or a graphic. Capitals are added for you."], ["material", "Material", "text", "e.g. Urethane"],
+  wheels: { one: "wheel", fields: [["brand_id", "Brand", "brand"], ["extra_brand_ids", "Second brand", "morebrands", "For collabs: shows as “first brand x second brand”."], ["name", "Wheel name"], ["color", "Color", "text", "Primary color first, then secondary, joined with / (e.g. White/Black). Use Multicolor for lots of colors or a graphic. Capitals are added for you."], ["material", "Material", "text", "e.g. Urethane"],
             ["duro", "Duro", "text", "e.g. 70d"], ["release", "Release date", "release"], ["description", "Description", "textarea"]],
             slug: (v, b) => `${v.name} ${v.color || ""} ${b}` },
   brands: { one: "brand", fields: [["name", "Brand name"], ["made_in", "Made in", "text", "e.g. Chicago, IL"], ["website", "Website"], ["notes", "Notes", "textarea"]],
@@ -125,11 +125,19 @@ function releaseParts(r) {
   return { y, m: p === "year" ? "" : String(+m), d: p === "day" ? String(+d) : "" };
 }
 
+function extraRow(selected) {   // one more brand on the same board: a drop-down like the first brand
+  return `<div class="me-extra"><select data-x>
+      <option value="">Choose a brand…</option>
+      ${brands.map((b) => `<option value="${b.id}" ${b.id === selected ? "selected" : ""}>${esc(b.name)}</option>`).join("")}
+      <option value="new">+ New brand…</option>
+    </select><input data-xn placeholder="New brand name" hidden><button type="button" class="ad-btn" data-act="rm-extra" title="Remove this brand">×</button></div>`;
+}
+
 function fieldHtml([key, label, kind = "text", hint = ""], r) {
   const val = r[key] ?? "";
   let input;
   if (kind === "textarea") input = `<textarea data-f="${key}" rows="4">${esc(val)}</textarea>`;
-  else if (kind === "morebrands") input = `<input data-f="extra_brands" value="${esc((r.extra_brand_ids || []).map((id) => brands.find((b) => b.id === id)?.name).filter(Boolean).join(", "))}" placeholder="e.g. NotCool FB, Dr. M's">`;
+  else if (kind === "morebrands") return `<div class="ad-field"><span>${label}</span><div class="me-extras">${(r.extra_brand_ids || []).map((id) => extraRow(id)).join("")}</div><button type="button" class="ad-btn" data-act="add-extra">+ Add another brand</button>${hint ? `<small>${hint}</small>` : ""}</div>`;
   else if (kind === "molds") input = `<input data-f="molds" value="${esc((r.molds || []).join(", "))}">`;
   else if (kind === "brand") input = `<select data-f="brand_id">
       <option value="">Choose a brand…</option>
@@ -230,11 +238,16 @@ async function save() {
     }
     if (tab !== "brands") {   // other brands on the same board
       const ids = [];
-      for (const n of (v.extra_brands || "").split(",").map((x) => x.trim()).filter(Boolean)) {
-        const hit = sameBrand(brands, n);
-        const id = hit ? hit.id : (await insertWithSlug("brands", { name: n }, n)).id;
-        if (!hit) await loadBrands();
-        if (id !== row.brand_id && !ids.includes(id)) ids.push(id);
+      for (const el of app.querySelectorAll(".me-extra")) {
+        const sel = el.querySelector("[data-x]").value, nn = el.querySelector("[data-xn]").value.trim();
+        let id = null;
+        if (sel === "new") {
+          if (!nn) continue;
+          const hit = sameBrand(brands, nn);
+          id = hit ? hit.id : (await insertWithSlug("brands", { name: nn }, nn)).id;
+          if (!hit) await loadBrands();
+        } else if (sel) id = parseInt(sel, 10);
+        if (id && id !== row.brand_id && !ids.includes(id)) ids.push(id);
       }
       row.extra_brand_ids = ids;
     }
@@ -541,6 +554,11 @@ app.addEventListener("input", (e) => {
   if (e.target.closest(".me-form")) formDirty = true;
 });
 app.addEventListener("change", (e) => {
+  if (e.target.matches("[data-x]")) {
+    const nn = e.target.parentElement.querySelector("[data-xn]");
+    nn.hidden = e.target.value !== "new";
+    if (!nn.hidden) nn.focus();
+  }
   if (e.target.dataset.f === "brand_id") {
     const nb = app.querySelector('[data-f="new_brand"]');
     nb.hidden = e.target.value !== "new";
@@ -577,6 +595,8 @@ app.addEventListener("click", async (e) => {
   }
   if (act === "more") { await loadList(false).catch(fail("Couldn't load")); renderList(); }
   if (act === "photo") { target = 1; fileInput.value = ""; fileInput.click(); }
+  if (act === "add-extra") { app.querySelector(".me-extras").insertAdjacentHTML("beforeend", extraRow(null)); formDirty = true; }
+  if (act === "rm-extra") { e.target.closest(".me-extra").remove(); formDirty = true; }
   if (act === "photo2") { target = 2; fileInput.value = ""; fileInput.click(); }
   if (act === "rm-photo2") { photo2 = null; drop2 = true; renderForm2(); }
   if (act === "rotate") rotatePhoto();

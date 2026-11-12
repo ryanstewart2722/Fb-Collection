@@ -82,3 +82,6 @@
 .me-merge { margin-top: 36px; padding-top: 18px; border-top: 1px solid var(--line); display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
 .me-merge p { flex: 1 1 100%; margin: 0; color: #555; font-size: 12px; }
 .me-merge select { font: inherit; padding: 8px; }
+.me-extras { display: grid; gap: 8px; margin-bottom: 8px; }
+.me-extra { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.me-extra select, .me-extra input { flex: 1 1 160px; min-width: 0; }
