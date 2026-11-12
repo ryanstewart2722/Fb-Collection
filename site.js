@@ -30,3 +30,33 @@
       footer.querySelectorAll("[data-me]").forEach(function (a) { a.href = "/u/" + u; });
     }).catch(function () {});
 })();
+
+// Refresh (or Back) keeps you exactly where you were. The browser's own version restores the position before the page has
+// finished loading its boards, so it lands somewhere else; this waits until the page is tall enough, then goes there.
+(function () {
+  var KEY = "moms-scroll:" + location.pathname + location.search;
+  try { history.scrollRestoration = "manual"; } catch (e) {}
+  var nav = performance.getEntriesByType && performance.getEntriesByType("navigation")[0];
+  var again = nav && (nav.type === "reload" || nav.type === "back_forward");
+  var target = 0;
+  try { target = again ? parseInt(sessionStorage.getItem(KEY) || "0", 10) || 0 : 0; } catch (e) {}
+  var stop = false, saving = false;
+  function save() {
+    if (saving) return; saving = true;
+    setTimeout(function () { saving = false; try { sessionStorage.setItem(KEY, String(Math.round(scrollY))); } catch (e) {} }, 150);
+  }
+  if (target > 0) {
+    var t0 = Date.now();
+    var halt = function () { stop = true; };
+    addEventListener("wheel", halt, { passive: true, once: true });
+    addEventListener("touchstart", halt, { passive: true, once: true });
+    addEventListener("keydown", halt, { once: true });
+    (function go() {
+      if (stop) return;
+      var max = document.documentElement.scrollHeight - innerHeight;
+      if (max >= target - 2 || Date.now() - t0 > 6000) { scrollTo(0, Math.min(target, Math.max(0, max))); if (max >= target - 2) return; }
+      requestAnimationFrame(function () { setTimeout(go, 60); });
+    })();
+  }
+  addEventListener("scroll", save, { passive: true });
+})();
