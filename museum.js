@@ -138,6 +138,27 @@ function normalizeSquare(img) {
   } catch (e) { /* tainted canvas: leave the CSS default */ }
 }
 // A GIF is kept at its original size, so its board may fill only part of the frame. Scale it so the board is as tall as the others.
+const gifScale = new Map();
+const gifAsked = new Set();
+function measureGif(src, done) {   // finds how tall the board is inside a GIF (1 = fills it) and remembers the enlargement
+  if (!/\.gif($|\?)/i.test(src) || gifAsked.has(src)) return;
+  gifAsked.add(src);
+  const probe = new Image(); probe.crossOrigin = "anonymous";
+  probe.onload = () => {
+    try {
+      const c = document.createElement("canvas"); c.width = probe.naturalWidth; c.height = probe.naturalHeight;
+      const x = c.getContext("2d"); x.drawImage(probe, 0, 0);
+      const d = x.getImageData(0, 0, c.width, c.height).data;
+      let top = c.height, bot = -1;
+      for (let y = 0; y < c.height; y++) for (let i = y * c.width * 4 + 3, e = i + c.width * 4; i < e; i += 4) if (d[i] > 40) { top = Math.min(top, y); bot = y; break; }
+      const f = (bot - top + 1) / c.height;
+      if (bot >= 0 && f > 0.2 && f < 0.98) { gifScale.set(src, 1 / f); if (preview.src === src) preview.style.scale = 1 / f; }
+    } catch (e) { /* no pixel access: leave it as is */ }
+    done && done();
+  };
+  probe.src = src;
+}
+   // GIF url -> how much to enlarge it so its board matches the other decks
 function fitGif(img) {
   if (!/\.gif($|\?)/i.test(img.src) || img.closest(".grid.square") || img.dataset.gifFit) return;
   img.dataset.gifFit = "1"; img.closest(".item").classList.remove("wide");
@@ -150,6 +171,7 @@ function fitGif(img) {
       let top = c.height, bot = -1;
       for (let y = 0; y < c.height; y++) for (let i = y * c.width * 4 + 3, e = i + c.width * 4; i < e; i += 4) if (d[i] > 40) { top = Math.min(top, y); bot = y; break; }
       const f = (bot - top + 1) / c.height;
+      if (bot >= 0 && f > 0.2 && f < 0.98) gifScale.set(img.src, 1 / f);
       if (bot >= 0 && f > 0.2 && f < 0.98) { Object.assign(img.style, { width: "auto", height: "100%", maxWidth: "none", flex: "none", aspectRatio: `${probe.naturalWidth} / ${probe.naturalHeight}`, transform: `scale(${(1 / f).toFixed(3)})`, pointerEvents: "none" }); }
       fitItem(img.closest(".item"));
     } catch (e) { /* no pixel access: leave it as is */ }
@@ -165,10 +187,12 @@ let gridWatchers = [];                                              // re-fit wh
 const stopWatching = () => { gridWatchers.forEach((w) => w.disconnect()); gridWatchers = []; };
 
 const warmed = new Set();   // photos already requested, so a hover never waits on the network
-const warm = (src) => { if (src && !warmed.has(src)) { warmed.add(src); new Image().src = src; } };
+const warm = (src) => { if (src && !warmed.has(src)) { warmed.add(src); new Image().src = src; measureGif(src); } };
 function showPreview(src) {
   if (!src) return hidePreview();
   preview.src = src;
+  measureGif(src);
+  preview.style.scale = gifScale.get(src) || "";   // the big preview gets the same GIF correction as the grid
   preview.classList.add("show");
 }
 function hidePreview() { preview.classList.remove("show"); }
