@@ -1,4 +1,4 @@
-// Phones, list view: scrolling moves the "active" row. The row about three lines below the header is always the
+// Phones, list view: scrolling moves the "active" row. The row about two lines below the header is always the
 // active one (black bar + its big photo at the top), like the image view, so one is always active.
 (function () {
   var canHover = matchMedia("(hover: hover)").matches, narrow = matchMedia("(max-width: 760px)");
@@ -14,7 +14,7 @@
     if (!rows.length) return;
     var bar = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--bar-h")) || 43;
     var h = rows[0].getBoundingClientRect().height || 48;
-    var focus = bar + h * 2.5, best = null, dist = Infinity;
+    var focus = bar + h * 1.5, best = null, dist = Infinity;
     for (var i = 0; i < rows.length; i++) {
       var r = rows[i].getBoundingClientRect();
       var d = focus >= r.top && focus < r.bottom ? 0 : Math.min(Math.abs(r.top - focus), Math.abs(r.bottom - focus));

@@ -143,7 +143,11 @@ const gifAsked = new Set();
 // Enlarge a GIF so its board is as tall as the other decks, keeping the board's top edge where an ordinary deck photo's top edge would be.
 function applyGifScale(src) {
   const g = gifScale.get(src);
-  Object.assign(preview.style, g ? { transformOrigin: `50% ${(g.t * 100).toFixed(2)}%`, translate: `0 ${(-g.t * 100).toFixed(2)}%`, scale: g.s } : { transformOrigin: "", translate: "", scale: "" });
+  if (!g) return Object.assign(preview.style, { transformOrigin: "", translate: "", scale: "" });
+  // the size an ordinary deck photo (529×1200) gets in this spot, against the size this GIF's frame gets
+  const cs = getComputedStyle(preview), mh = parseFloat(cs.maxHeight) || innerHeight * 0.8, mw = parseFloat(cs.maxWidth) || innerWidth * 0.92;
+  const boxH = Math.min(mh, mw / g.ar), deckH = Math.min(mh, mw * 1200 / 529);
+  Object.assign(preview.style, { transformOrigin: `50% ${(g.t * 100).toFixed(2)}%`, translate: `0 ${(-g.t * 100).toFixed(2)}%`, scale: (deckH / (g.f * boxH)).toFixed(3) });
 }
 function measureGif(src, done) {   // finds how tall the board is inside a GIF (1 = fills it) and remembers the enlargement
   if (!/\.gif($|\?)/i.test(src) || gifAsked.has(src)) return;
@@ -157,7 +161,7 @@ function measureGif(src, done) {   // finds how tall the board is inside a GIF (
       let top = c.height, bot = -1;
       for (let y = 0; y < c.height; y++) for (let i = y * c.width * 4 + 3, e = i + c.width * 4; i < e; i += 4) if (d[i] > 40) { top = Math.min(top, y); bot = y; break; }
       const f = (bot - top + 1) / c.height;
-      if (bot >= 0 && f > 0.2 && f < 0.98) { gifScale.set(src, { s: 1 / f, t: top / c.height }); if (preview.src === src) applyGifScale(src); }
+      if (bot >= 0 && f > 0.2 && f < 0.98) { gifScale.set(src, { f, t: top / c.height, ar: c.width / c.height }); if (preview.src === src) applyGifScale(src); }
     } catch (e) { /* no pixel access: leave it as is */ }
     done && done();
   };
