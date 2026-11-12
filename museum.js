@@ -209,6 +209,7 @@ function showPreview(src) {
   preview.classList.add("show");
 }
 function hidePreview() { preview.classList.remove("show"); }
+preview.addEventListener("load", () => applyGifScale(preview.src));   // the preview's own size is only known once the new photo has loaded
 
 let activeUrl = null;   // the board the big preview is showing (mobile image view)
 let scrubGrids = [];    // image-view grids that follow the scroll position
