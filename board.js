@@ -8,7 +8,9 @@ const type = TYPES[params.get("type")] ? params.get("type") : "decks";
 const slug = params.get("slug") || "";
 
 // "Close" goes back to where you came from in the museum, or to the museum home.
+const topBack = document.getElementById("top-back");
 const backHref = document.referrer.startsWith(location.origin) && !document.referrer.includes("board.html") ? document.referrer : "./";
+if (topBack) topBack.href = backHref;   // "Back" in the header goes where you came from
 
 // Left and right spec columns; empty values are skipped.
 function specs(r) {
