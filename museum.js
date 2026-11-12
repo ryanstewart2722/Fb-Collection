@@ -357,6 +357,11 @@ function scrubUpdate() {
     if (g.els[idx] !== scrubEl || !activeUrl) { scrubEl = g.els[idx]; g.activate(scrubEl); }
     return;
   }
+  const top = scrubGrids[0];   // above the first board (page just opened): start on the first one
+  if (top && top.els.length && focus < top.grid.getBoundingClientRect().top) {
+    if (top.els[0] !== scrubEl || !activeUrl) { scrubEl = top.els[0]; top.activate(scrubEl); }
+    return;
+  }
   scrubEl = null;
   clearActive();
 }
