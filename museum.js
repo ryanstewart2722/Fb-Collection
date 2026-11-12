@@ -108,6 +108,7 @@ async function loadAll() {
 function fitItem(item) {
   const img = item.querySelector("img");
   if (!img || !img.naturalHeight) return;
+  if (img.dataset.gifFit) { item.classList.remove("wide"); item.style.gridColumn = ""; return; }   // a GIF keeps one cell like every other deck
   const grid = item.parentElement, cs = getComputedStyle(grid);
   const tracks = cs.gridTemplateColumns.split(" ").map(parseFloat);
   const cols = tracks.length, cell = tracks[0];
@@ -139,7 +140,7 @@ function normalizeSquare(img) {
 // A GIF is kept at its original size, so its board may fill only part of the frame. Scale it so the board is as tall as the others.
 function fitGif(img) {
   if (!/\.gif($|\?)/i.test(img.src) || img.closest(".grid.square") || img.dataset.gifFit) return;
-  img.dataset.gifFit = "1";
+  img.dataset.gifFit = "1"; img.closest(".item").classList.remove("wide");
   const probe = new Image(); probe.crossOrigin = "anonymous";
   probe.onload = () => {
     try {
@@ -149,7 +150,8 @@ function fitGif(img) {
       let top = c.height, bot = -1;
       for (let y = 0; y < c.height; y++) for (let i = y * c.width * 4 + 3, e = i + c.width * 4; i < e; i += 4) if (d[i] > 40) { top = Math.min(top, y); bot = y; break; }
       const f = (bot - top + 1) / c.height;
-      if (bot >= 0 && f > 0.2 && f < 0.98) { img.style.transform = `scale(${(1 / f).toFixed(3)})`; img.style.pointerEvents = "none"; img.closest(".item").style.overflow = "visible"; }
+      if (bot >= 0 && f > 0.2 && f < 0.98) { Object.assign(img.style, { width: "auto", height: "100%", maxWidth: "none", flex: "none", aspectRatio: `${probe.naturalWidth} / ${probe.naturalHeight}`, transform: `scale(${(1 / f).toFixed(3)})`, pointerEvents: "none" }); }
+      fitItem(img.closest(".item"));
     } catch (e) { /* no pixel access: leave it as is */ }
   };
   probe.src = img.src;
