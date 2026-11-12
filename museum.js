@@ -346,7 +346,7 @@ let scrubEl = null;
 function scrubUpdate() {
   scrubPending = false;
   if (view !== "image" || !isMobile() || !scrubGrids.length || document.body.classList.contains("rf-open")) return;
-  const focus = innerHeight * 0.45;
+  const focus = innerHeight * 0.32;
   for (const g of scrubGrids) {
     const rect = g.grid.getBoundingClientRect();
     if (focus < rect.top || focus > rect.bottom || !g.els.length) continue;
