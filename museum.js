@@ -136,7 +136,26 @@ function normalizeSquare(img) {
     img.style.transform = `scale(${k.toFixed(3)}) translate(${tx.toFixed(2)}%, ${ty.toFixed(2)}%)`;
   } catch (e) { /* tainted canvas: leave the CSS default */ }
 }
+// A GIF is kept at its original size, so its board may fill only part of the frame. Scale it so the board is as tall as the others.
+function fitGif(img) {
+  if (!/\.gif($|\?)/i.test(img.src) || img.closest(".grid.square") || img.dataset.gifFit) return;
+  img.dataset.gifFit = "1";
+  const probe = new Image(); probe.crossOrigin = "anonymous";
+  probe.onload = () => {
+    try {
+      const c = document.createElement("canvas"); c.width = probe.naturalWidth; c.height = probe.naturalHeight;
+      const x = c.getContext("2d"); x.drawImage(probe, 0, 0);
+      const d = x.getImageData(0, 0, c.width, c.height).data;
+      let top = c.height, bot = -1;
+      for (let y = 0; y < c.height; y++) for (let i = y * c.width * 4 + 3, e = i + c.width * 4; i < e; i += 4) if (d[i] > 40) { top = Math.min(top, y); bot = y; break; }
+      const f = (bot - top + 1) / c.height;
+      if (bot >= 0 && f > 0.2 && f < 0.98) { img.style.transform = `scale(${(1 / f).toFixed(3)})`; img.style.pointerEvents = "none"; img.closest(".item").style.overflow = "visible"; }
+    } catch (e) { /* no pixel access: leave it as is */ }
+  };
+  probe.src = img.src;
+}
 const markWide = (img) => {
+  fitGif(img);
   if (img.closest(".grid.square")) normalizeSquare(img);
   fitItem(img.closest(".item"));
 };            // runs when a photo finishes loading
