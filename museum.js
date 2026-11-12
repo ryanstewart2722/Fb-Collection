@@ -1,4 +1,4 @@
-// The Museum of Mini Skateboards: Decks, Trucks and Wheels read live from the database.
+// The Museum of Mini Skateboards: Decks, Trucks, Wheels and Obstacles read live from the database.
 const app = document.getElementById("app");
 const preview = document.querySelector(".preview");
 const canHover = matchMedia("(hover: hover)").matches;
@@ -23,6 +23,9 @@ const SECTIONS = [
   { type: "wheels", title: "Wheels", square: true,
     select: "id,brand_id,name,slug,color,material,duro,release_date,release_precision,image_path,extra_brand_ids,brands(name,slug)",
     cols: [["Wheel/manufacturer", (r) => r.name], ["Color", (r) => r.color], ["Material", (r) => r.material], ["Duro", (r) => r.duro]] },
+  { type: "obstacles", title: "Obstacles", square: true,
+    select: "id,brand_id,name,slug,color,size,material,release_date,release_precision,image_path,extra_brand_ids,brands(name,slug)",
+    cols: [["Obstacle/manufacturer", (r) => r.name], ["Color", (r) => r.color], ["Material", (r) => r.material], ["Size", (r) => r.size]] },
 ];
 SECTIONS.forEach((s) => Object.assign(s, { rows: [], total: 0 }));
 
@@ -51,7 +54,7 @@ const filterCount = () => F.brand.length + F.mold.length + F.shape.length + F.co
 function filterParams(s) {
   const wantsSize = F.size[0] || F.size[1];
   if ((F.mold.length || F.shape.length) && s.type !== "decks") return null;
-  if (wantsSize && s.type === "wheels") return null;
+  if (wantsSize && (s.type === "wheels" || s.type === "obstacles")) return null;
   const q = [];
   if (F.brand.length) q.push(`or=(brand_id.in.(${F.brand.join(",")}),extra_brand_ids.ov.{${F.brand.join(",")}})`);
   if (F.mold.length) q.push("molds=ov." + encodeURIComponent("{" + F.mold.map((m) => '"' + m.replace(/(["\\])/g, "\\$1") + '"').join(",") + "}"));

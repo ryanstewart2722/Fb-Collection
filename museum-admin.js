@@ -1,4 +1,4 @@
-// Museum editor: sign in with Supabase, then add/edit decks, trucks, wheels and brands.
+// Museum editor: sign in with Supabase, then add/edit decks, trucks, wheels, obstacles and brands.
 // The database security rules decide who can save; this page only shows the tools.
 const sb = supabase.createClient(MOMS.url, MOMS.key);
 const BUCKET = "photos";
@@ -31,6 +31,8 @@ const TYPES = {
             slug: (v, b) => `${v.name} ${v.color || ""} ${v.size || ""} ${b}` },
   wheels: { one: "wheel", fields: [["brand_id", "Brand", "brand"], ["extra_brand_ids", "Second brand", "morebrands", "For collabs: shows as “first brand x second brand”."], ["name", "Wheel name"], ["color", "Color", "text", "Primary color first, then secondary, joined with / (e.g. White/Black). Use Multicolor for lots of colors or a graphic. Capitals are added for you."], ["material", "Material", "text", "e.g. Urethane"],
             ["duro", "Duro", "text", "e.g. 70d"], ["release", "Release date", "release"], ["description", "Description", "textarea"]],
+            slug: (v, b) => `${v.name} ${v.color || ""} ${b}` },
+  obstacles: { one: "obstacle", fields: [["brand_id", "Brand", "brand"], ["extra_brand_ids", "Second brand", "morebrands", "For collabs: shows as “first brand x second brand”."], ["name", "Obstacle name"], ["color", "Color", "text", "Primary color first, then secondary, joined with / (e.g. White/Black). Capitals are added for you."], ["material", "Material", "text", "e.g. Wood, Resin"], ["size", "Size", "text", "e.g. 4in"], ["release", "Release date", "release"], ["description", "Description", "textarea"]],
             slug: (v, b) => `${v.name} ${v.color || ""} ${b}` },
   brands: { one: "brand", fields: [["name", "Brand name"], ["made_in", "Made in", "text", "e.g. Chicago, IL"], ["website", "Website"], ["notes", "Notes", "textarea"]],
             slug: (v) => v.name },
@@ -329,7 +331,7 @@ async function mergeBrand() {
   if (!confirm(`Move everything from “${editing.name}” into “${target.name}” and remove “${editing.name}”? This can't be undone.`)) return;
   setStatus("Merging…");
   try {
-    for (const t of ["decks", "trucks", "wheels"]) {
+    for (const t of ["decks", "trucks", "wheels", "obstacles"]) {
       let r = await sb.from(t).update({ brand_id: to }).eq("brand_id", from).select("id");
       if (r.error) throw r.error;
       r = await sb.from(t).select("id,brand_id,extra_brand_ids").contains("extra_brand_ids", [from]);
@@ -373,7 +375,7 @@ function friendly(err) {
 // Every photo ends up the same size: decks match the collection deck photos (529×1200),
 // trucks and wheels are square. The photo is scaled evenly (never stretched) and centred in the frame.
 // Transparent PNGs are kept as they are; a solid backdrop (white sheet, grey card) is removed.
-const PHOTO_SIZE = { decks: [529, 1200], trucks: [800, 800], wheels: [800, 800] };
+const PHOTO_SIZE = { decks: [529, 1200], trucks: [800, 800], wheels: [800, 800], obstacles: [800, 800] };
 
 async function preparePhoto(file) {
   const head = new TextDecoder("latin1").decode(await file.slice(0, 6).arrayBuffer());
@@ -685,7 +687,8 @@ async function reviewAct(card, ok) {
       step = "copying the photo";
       const row = { brand_id, name: f.name, color: f.color || null, image_path: await publishPhoto(r.image_path) };
       if (table === "decks") { row.size = f.size || null; row.molds = f.mold ? f.mold.split(",").map((m) => m.trim()).filter(Boolean) : []; row.shape = f.shape || null; row.attributes = { source: "Museum submission", submitted_by: r.profiles?.username || null }; }
-      if (table === "trucks") row.size = f.size || null;
+      if (table === "trucks" || table === "obstacles") row.size = f.size || null;
+      if (table === "obstacles") row.material = f.material || null;
       if (table === "wheels") { row.material = f.material || null; row.duro = f.duro || null; }
       step = `adding it to ${table}`;
       const made = await insertWithSlug(table, row, `${f.name} ${f.color || ""} ${f.brand || ""}`);

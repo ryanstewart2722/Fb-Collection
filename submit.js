@@ -5,6 +5,7 @@ const FIELDS = {
   decks: [["brand", "Brand", true], ["name", "Deck name or graphic", true], ["color", "Color"], ["size", "Size, e.g. 32mm"], ["mold", "Mold, e.g. Freshwater"], ["shape", "Shape, e.g. Popsicle"], ["year", "Year or release date"], ["source", "Where did you see it? A link, shop or event"], ["notes", "Anything else", false, "textarea"]],
   trucks: [["brand", "Brand", true], ["name", "Truck name", true], ["color", "Color"], ["size", "Size / width, e.g. 32mm"], ["year", "Year or release date"], ["source", "Where did you see it? A link, shop or event"], ["notes", "Anything else", false, "textarea"]],
   wheels: [["brand", "Brand", true], ["name", "Wheel name", true], ["color", "Color"], ["material", "Material, e.g. Urethane"], ["duro", "Duro, e.g. 70d"], ["year", "Year or release date"], ["source", "Where did you see it? A link, shop or event"], ["notes", "Anything else", false, "textarea"]],
+  obstacles: [["brand", "Brand", true], ["name", "Obstacle name", true], ["color", "Color"], ["material", "Material, e.g. Wood"], ["size", "Size, e.g. 4in"], ["year", "Year or release date"], ["source", "Where did you see it? A link, shop or event"], ["notes", "Anything else", false, "textarea"]],
 };
 let type = new URLSearchParams(location.search).get("type");
 if (!FIELDS[type]) type = "decks";

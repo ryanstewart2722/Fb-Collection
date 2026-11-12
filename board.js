@@ -1,6 +1,6 @@
 // One board (deck, truck or wheel), opened from the museum lists: board.html?type=decks&slug=...
 const root = document.getElementById("board");
-const TYPES = { decks: "Decks", trucks: "Trucks", wheels: "Wheels" };
+const TYPES = { decks: "Decks", trucks: "Trucks", wheels: "Wheels", obstacles: "Obstacles" };
 const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
 
 const params = new URLSearchParams(location.search);
