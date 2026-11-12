@@ -175,7 +175,12 @@ function renderForm() {
       <button class="ad-btn ad-btn-dark" data-act="save">${isNew ? `Add ${t.one}` : "Save changes"}</button>
       ${!isNew && tab !== "brands" ? `<a class="ad-btn" href="board.html?type=${tab}&slug=${encodeURIComponent(r.slug)}" target="_blank" rel="noopener">View on site ↗</a>` : ""}
       ${!isNew ? `<button class="ad-btn me-danger" data-act="delete">Delete</button>` : ""}
-    </div>`;
+    </div>
+    ${!isNew && tab === "brands" ? `<div class="me-merge">
+      <p>Same brand under two names? Move everything from “${esc(r.name)}” into another brand, then remove “${esc(r.name)}”.</p>
+      <select id="merge-to"><option value="">Merge into…</option>${brands.filter((b) => b.id !== r.id).map((b) => `<option value="${b.id}">${esc(b.name)}</option>`).join("")}</select>
+      <button class="ad-btn" data-act="merge">Merge</button>
+    </div>` : ""}`;
   formDirty = false;
   window.scrollTo(0, 0);
 }
@@ -302,6 +307,33 @@ async function removeOurPhoto(url) {
   const marker = `/storage/v1/object/public/${BUCKET}/`;
   if (!url || !url.includes(marker)) return;
   await sb.storage.from(BUCKET).remove([url.split(marker)[1]]);
+}
+
+// Move every board from the open brand to another brand (as main brand and as an extra brand), then remove the open one.
+async function mergeBrand() {
+  const to = parseInt($("#merge-to").value, 10), from = editing.id, target = brands.find((b) => b.id === to);
+  if (!to || !target) return setStatus("Choose which brand to merge into.", true);
+  if (!confirm(`Move everything from “${editing.name}” into “${target.name}” and remove “${editing.name}”? This can't be undone.`)) return;
+  setStatus("Merging…");
+  try {
+    for (const t of ["decks", "trucks", "wheels"]) {
+      let r = await sb.from(t).update({ brand_id: to }).eq("brand_id", from).select("id");
+      if (r.error) throw r.error;
+      r = await sb.from(t).select("id,brand_id,extra_brand_ids").contains("extra_brand_ids", [from]);
+      if (r.error) throw r.error;
+      for (const row of r.data) {
+        const ids = [...new Set(row.extra_brand_ids.map((i) => (i === from ? to : i)))].filter((i) => i !== row.brand_id);
+        const u = await sb.from(t).update({ extra_brand_ids: ids }).eq("id", row.id);
+        if (u.error) throw u.error;
+      }
+    }
+    const d = await sb.from("brands").delete().eq("id", from).select("id");
+    if (d.error || !d.data.length) throw d.error || { code: "42501", message: "not allowed" };
+    await loadBrands();
+    editing = null; photo = null; photo2 = null; drop2 = false;
+    await loadList(); renderList();
+    setStatus(`Merged into ${target.name}.`);
+  } catch (err) { setStatus("Couldn't merge: " + friendly(err), true); }
 }
 
 async function del() {
@@ -550,6 +582,7 @@ app.addEventListener("click", async (e) => {
   if (act === "rotate") rotatePhoto();
   if (act === "save") save();
   if (act === "delete") del();
+  if (act === "merge") mergeBrand();
 });
 
 document.querySelectorAll(".ad-tabs button").forEach((b) => b.addEventListener("click", async () => {
