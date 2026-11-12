@@ -75,7 +75,7 @@ async function load() {
     try { extras = (await momsFetch(`brands?select=id,name&id=in.(${r.extra_brand_ids.join(",")})`)).rows; } catch (e) {}
     extras.sort((x, y) => r.extra_brand_ids.indexOf(x.id) - r.extra_brand_ids.indexOf(y.id));
   }
-  const brand = [r.brands?.name, ...extras.map((b) => b.name)].filter(Boolean).join(" / ");
+  const brand = [r.brands?.name, ...extras.map((b) => b.name)].filter(Boolean).join(" x ");
   const title = brand ? `${momsDeckName(r)} - ${brand}` : momsDeckName(r);
   document.title = `${title} · The Museum of Mini Skateboards`;
 
@@ -87,7 +87,7 @@ async function load() {
       <h1>${esc(title)}</h1>
       <div class="board-specs">${specs(r)}</div>
       <div class="board-brand">
-        ${r.brand_id ? [`<a class="board-brand-link" href="./?brand=${r.brand_id}">${esc(r.brands?.name || "")}</a>`, ...extras.map((b) => `<a class="board-brand-link" href="./?brand=${b.id}">${esc(b.name)}</a>`)].join(" / ") : `<span>${esc(brand)}</span>`}
+        ${r.brand_id ? [`<a class="board-brand-link" href="./?brand=${r.brand_id}">${esc(r.brands?.name || "")}</a>`, ...extras.map((b) => `<a class="board-brand-link" href="./?brand=${b.id}">${esc(b.name)}</a>`)].join(" x ") : `<span>${esc(brand)}</span>`}
         <div class="board-more${type === "decks" ? "" : " square"}"></div>
       </div>
     </div>`;

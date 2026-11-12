@@ -10,7 +10,7 @@ const PAGE = 100; // rows loaded per section at a time
 const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
 const spans = (list) => list.map((c) => `<span>${esc(c)}</span>`).join("");
 const BRANDS = new Map();   // id -> name, so a board with several brands can list them all
-const brandName = (r) => [r.brands?.name, ...(r.extra_brand_ids || []).map((id) => BRANDS.get(id))].filter(Boolean).join(" / ");
+const brandName = (r) => [r.brands?.name, ...(r.extra_brand_ids || []).map((id) => BRANDS.get(id))].filter(Boolean).join(" x ");
 
 // Columns follow the Figma frames.
 const SECTIONS = [

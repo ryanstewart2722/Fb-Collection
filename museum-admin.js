@@ -5,6 +5,10 @@ const BUCKET = "photos";
 const PAGE = 50;
 
 const $ = (s) => document.querySelector(s);
+// Brand names that are really the same brand: ignore capitals, punctuation, spacing, a leading "the", and endings like Co, Co., Company, Inc, LLC, Ltd.
+const brandKey = (n) => String(n || "").toLowerCase().normalize("NFKD").replace(/[̀-ͯ]/g, "").replace(/&/g, "and")
+  .replace(/[^a-z0-9 ]+/g, "").replace(/^the /, "").replace(/( (co|company|inc|incorporated|llc|ltd|limited|corp|corporation))+$/, "").replace(/ +/g, "");
+const sameBrand = (list, name) => { const k = brandKey(name); return k ? list.find((b) => brandKey(b.name) === k) : undefined; };
 const app = $("#me-app");
 const fileInput = $("#file");
 const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
@@ -215,14 +219,14 @@ async function save() {
   setStatus("Saving…");
   try {
     if (v.brand_id === "new") {
-      const existing = brands.find((b) => b.name.toLowerCase() === v.new_brand.toLowerCase());
+      const existing = sameBrand(brands, v.new_brand);
       row.brand_id = existing ? existing.id : (await insertWithSlug("brands", { name: v.new_brand }, v.new_brand)).id;
       await loadBrands();
     }
     if (tab !== "brands") {   // other brands on the same board
       const ids = [];
       for (const n of (v.extra_brands || "").split(",").map((x) => x.trim()).filter(Boolean)) {
-        const hit = brands.find((b) => b.name.toLowerCase() === n.toLowerCase());
+        const hit = sameBrand(brands, n);
         const id = hit ? hit.id : (await insertWithSlug("brands", { name: n }, n)).id;
         if (!hit) await loadBrands();
         if (id !== row.brand_id && !ids.includes(id)) ids.push(id);
@@ -602,7 +606,7 @@ async function publishPhoto(path) {
 async function findOrMakeBrand(name) {
   name = name.trim();
   const have = (await sb.from("brands").select("id,name")).data || [];
-  const hit = have.find((b) => b.name.toLowerCase() === name.toLowerCase());
+  const hit = sameBrand(have, name);
   if (hit) return hit.id;
   return (await insertWithSlug("brands", { name }, name)).id;
 }
