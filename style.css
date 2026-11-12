@@ -420,3 +420,7 @@ body > main.auth { width: 100%; box-sizing: border-box; }
 @media (prefers-reduced-motion: reduce) { .board-img img, .board-info, .board-close, .board-nav { animation: none; } }
 @media (min-width: 761px) { .board-img { grid-column: 1; } .board-info { grid-column: 3; } }   /* Close is out of the grid now, so keep the photo and details in their columns */
 .board > * { min-width: 0; }   /* a wide GIF must not stretch the photo column and push the details and Close over */
+/* desktop and tablet: Close sits in the gap between the photo and the details, vertically centred, always in view */
+@media (min-width: 761px) {
+  .board-close { right: auto; left: calc(var(--gutter) + (100vw - 2 * var(--gutter) - 70px) / 2.45 + 35px); transform: translate(-50%, -50%); font-size: 11.5px; color: #555; }
+}
