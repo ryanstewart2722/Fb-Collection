@@ -147,7 +147,11 @@ function applyGifScale(src) {
   // the size an ordinary deck photo (529×1200) gets in this spot, against the size this GIF's frame gets
   const cs = getComputedStyle(preview), mh = parseFloat(cs.maxHeight) || innerHeight * 0.8, mw = parseFloat(cs.maxWidth) || innerWidth * 0.92;
   const boxH = Math.min(mh, mw / g.ar), deckH = Math.min(mh, mw * 1200 / 529);
-  Object.assign(preview.style, { transformOrigin: `50% ${(g.t * 100).toFixed(2)}%`, translate: `0 ${(-g.t * 100).toFixed(2)}%`, scale: (deckH / (g.f * boxH)).toFixed(3) });
+  const k = deckH / (g.f * boxH);
+  // the preview is centred with a CSS transform, which the enlargement would also multiply; cancel that part out
+  const m = new DOMMatrix(cs.transform === "none" ? "" : cs.transform);
+  Object.assign(preview.style, { transformOrigin: `50% ${(g.t * 100).toFixed(2)}%`,
+    translate: `${(m.e * (1 - k)).toFixed(1)}px ${(-g.t * boxH + m.f * (1 - k)).toFixed(1)}px`, scale: k.toFixed(3) });
 }
 function measureGif(src, done) {   // finds how tall the board is inside a GIF (1 = fills it) and remembers the enlargement
   if (!/\.gif($|\?)/i.test(src) || gifAsked.has(src)) return;
