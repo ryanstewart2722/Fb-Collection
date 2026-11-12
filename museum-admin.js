@@ -14,7 +14,7 @@ const MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Se
 
 // What each tab edits. Field kinds: text, textarea, brand, molds, release.
 const TYPES = {
-  decks:  { one: "deck",  fields: [["brand_id", "Brand", "brand"], ["name", "Deck name"], ["color", "Color", "text", "Primary color first, then secondary, joined with / (e.g. White/Black). Use Multicolor for lots of colors or a graphic. Capitals are added for you."], ["size", "Size", "text", "e.g. 32mm"],
+  decks:  { one: "deck",  fields: [["brand_id", "Brand", "brand"], ["extra_brand_ids", "Other brands", "morebrands", "Optional, for collabs. Separate with commas. New names are added as brands."], ["name", "Deck name"], ["color", "Color", "text", "Primary color first, then secondary, joined with / (e.g. White/Black). Use Multicolor for lots of colors or a graphic. Capitals are added for you."], ["size", "Size", "text", "e.g. 32mm"],
             ["molds", "Molds", "molds", "Separate with commas, e.g. Freshwater, Freshwater Deep, Saltwater, NotCool FB, KS1"],
             ["shape", "Shape", "text", "e.g. Egg, Cruiser, Old School. Adds a Shape filter to the site once any board has one."],
             ["drop_no", "Drop", "text", "Dr. M's drop number, e.g. 57. Shows in front of the name, with the drop title: “Drop 127, Title - 1740”."],
@@ -22,10 +22,10 @@ const TYPES = {
             ["mold_code", "Mold letter", "text", "Fills in by itself from the mold (f, d, s, nc, os…) and shows after the name, e.g. “3078 (f)”. Clear it to reset."],
             ["graphic", "Graphic", "text", "e.g. Screenprint Graphic"], ["made_in", "Made in", "text", "e.g. Chicago, IL"], ["release", "Release date", "release"], ["description", "Description", "textarea"]],
             slug: (v, b) => `${v.name} ${v.color || ""} ${b}` },
-  trucks: { one: "truck", fields: [["brand_id", "Brand", "brand"], ["name", "Truck name"], ["color", "Color", "text", "Primary color first, then secondary, joined with / (e.g. White/Black). Use Multicolor for lots of colors or a graphic. Capitals are added for you."], ["size", "Size", "text", "e.g. 32mm"],
+  trucks: { one: "truck", fields: [["brand_id", "Brand", "brand"], ["extra_brand_ids", "Other brands", "morebrands", "Optional, for collabs. Separate with commas. New names are added as brands."], ["name", "Truck name"], ["color", "Color", "text", "Primary color first, then secondary, joined with / (e.g. White/Black). Use Multicolor for lots of colors or a graphic. Capitals are added for you."], ["size", "Size", "text", "e.g. 32mm"],
             ["release", "Release date", "release"], ["description", "Description", "textarea"]],
             slug: (v, b) => `${v.name} ${v.color || ""} ${v.size || ""} ${b}` },
-  wheels: { one: "wheel", fields: [["brand_id", "Brand", "brand"], ["name", "Wheel name"], ["color", "Color", "text", "Primary color first, then secondary, joined with / (e.g. White/Black). Use Multicolor for lots of colors or a graphic. Capitals are added for you."], ["material", "Material", "text", "e.g. Urethane"],
+  wheels: { one: "wheel", fields: [["brand_id", "Brand", "brand"], ["extra_brand_ids", "Other brands", "morebrands", "Optional, for collabs. Separate with commas. New names are added as brands."], ["name", "Wheel name"], ["color", "Color", "text", "Primary color first, then secondary, joined with / (e.g. White/Black). Use Multicolor for lots of colors or a graphic. Capitals are added for you."], ["material", "Material", "text", "e.g. Urethane"],
             ["duro", "Duro", "text", "e.g. 70d"], ["release", "Release date", "release"], ["description", "Description", "textarea"]],
             slug: (v, b) => `${v.name} ${v.color || ""} ${b}` },
   brands: { one: "brand", fields: [["name", "Brand name"], ["made_in", "Made in", "text", "e.g. Chicago, IL"], ["website", "Website"], ["notes", "Notes", "textarea"]],
@@ -125,6 +125,7 @@ function fieldHtml([key, label, kind = "text", hint = ""], r) {
   const val = r[key] ?? "";
   let input;
   if (kind === "textarea") input = `<textarea data-f="${key}" rows="4">${esc(val)}</textarea>`;
+  else if (kind === "morebrands") input = `<input data-f="extra_brands" value="${esc((r.extra_brand_ids || []).map((id) => brands.find((b) => b.id === id)?.name).filter(Boolean).join(", "))}" placeholder="e.g. NotCool FB, Dr. M's">`;
   else if (kind === "molds") input = `<input data-f="molds" value="${esc((r.molds || []).join(", "))}">`;
   else if (kind === "brand") input = `<select data-f="brand_id">
       <option value="">Choose a brand…</option>
@@ -187,7 +188,7 @@ async function save() {
   if (!v.name) return setStatus("Please fill in the name.", true);
   const row = {};
   t.fields.forEach(([key, , kind]) => {
-    if (kind === "brand" || kind === "release") return;
+    if (kind === "brand" || kind === "release" || kind === "morebrands") return;
     row[key] = kind === "molds" ? v.molds.split(",").map((s) => s.trim()).filter(Boolean) : (v[key] || null);
   });
   row.name = v.name;
@@ -217,6 +218,16 @@ async function save() {
       const existing = brands.find((b) => b.name.toLowerCase() === v.new_brand.toLowerCase());
       row.brand_id = existing ? existing.id : (await insertWithSlug("brands", { name: v.new_brand }, v.new_brand)).id;
       await loadBrands();
+    }
+    if (tab !== "brands") {   // other brands on the same board
+      const ids = [];
+      for (const n of (v.extra_brands || "").split(",").map((x) => x.trim()).filter(Boolean)) {
+        const hit = brands.find((b) => b.name.toLowerCase() === n.toLowerCase());
+        const id = hit ? hit.id : (await insertWithSlug("brands", { name: n }, n)).id;
+        if (!hit) await loadBrands();
+        if (id !== row.brand_id && !ids.includes(id)) ids.push(id);
+      }
+      row.extra_brand_ids = ids;
     }
     const brandName = brands.find((b) => b.id === row.brand_id)?.name || "";
     const slugBase = t.slug(row, brandName);

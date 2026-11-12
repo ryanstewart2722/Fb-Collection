@@ -9,18 +9,19 @@ const PAGE = 100; // rows loaded per section at a time
 
 const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
 const spans = (list) => list.map((c) => `<span>${esc(c)}</span>`).join("");
-const brandName = (r) => r.brands?.name || "";
+const BRANDS = new Map();   // id -> name, so a board with several brands can list them all
+const brandName = (r) => [r.brands?.name, ...(r.extra_brand_ids || []).map((id) => BRANDS.get(id))].filter(Boolean).join(" / ");
 
 // Columns follow the Figma frames.
 const SECTIONS = [
   { type: "decks", title: "Decks", square: false,
-    select: "id,brand_id,name,mold_code,drop_no,drop_title,slug,color,size,release_date,release_precision,image_path,brands(name,slug)",
+    select: "id,brand_id,name,mold_code,drop_no,drop_title,slug,color,size,release_date,release_precision,image_path,extra_brand_ids,brands(name,slug)",
     cols: [["Deck name", (r) => momsDeckName(r)], ["Manufacturer", brandName], ["Year", (r) => momsYear(r.release_date)], ["Color", (r) => r.color]] },
   { type: "trucks", title: "Trucks", square: true,
-    select: "id,brand_id,name,slug,color,size,release_date,release_precision,image_path,brands(name,slug)",
+    select: "id,brand_id,name,slug,color,size,release_date,release_precision,image_path,extra_brand_ids,brands(name,slug)",
     cols: [["Manufacturer", (r) => r.name], ["Color", (r) => r.color], ["Size", (r) => r.size]] },
   { type: "wheels", title: "Wheels", square: true,
-    select: "id,brand_id,name,slug,color,material,duro,release_date,release_precision,image_path,brands(name,slug)",
+    select: "id,brand_id,name,slug,color,material,duro,release_date,release_precision,image_path,extra_brand_ids,brands(name,slug)",
     cols: [["Wheel/manufacturer", (r) => r.name], ["Color", (r) => r.color], ["Material", (r) => r.material], ["Duro", (r) => r.duro]] },
 ];
 SECTIONS.forEach((s) => Object.assign(s, { rows: [], total: 0 }));
@@ -52,7 +53,7 @@ function filterParams(s) {
   if ((F.mold.length || F.shape.length) && s.type !== "decks") return null;
   if (wantsSize && s.type === "wheels") return null;
   const q = [];
-  if (F.brand.length) q.push(`brand_id=in.(${F.brand.join(",")})`);
+  if (F.brand.length) q.push(`or=(brand_id.in.(${F.brand.join(",")}),extra_brand_ids.ov.{${F.brand.join(",")}})`);
   if (F.mold.length) q.push("molds=ov." + encodeURIComponent("{" + F.mold.map((m) => '"' + m.replace(/(["\\])/g, "\\$1") + '"').join(",") + "}"));
   if (F.shape.length) q.push("shape=in." + encodeURIComponent("(" + F.shape.map((m) => '"' + m.replace(/(["\\])/g, "\\$1") + '"').join(",") + ")"));
   // "any of these colors" and "any of these years" are each an OR group; the groups are ANDed together
@@ -91,6 +92,7 @@ let loadSeq = 0;
 async function loadAll() {
   const mine = ++loadSeq;                 // ignore a slow older request if filters changed again
   app.classList.add("loading");
+  if (!BRANDS.size) { try { (await momsFetch("brands?select=id,name&limit=2000")).rows.forEach((b) => BRANDS.set(b.id, b.name)); } catch (e) { /* names of extra brands just won't show */ } }
   await Promise.all(SECTIONS.map((s) => loadSection(s, true)));
   if (mine !== loadSeq) return;
   render();
