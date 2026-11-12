@@ -194,8 +194,8 @@ h2 {
 /* with a second photo: the title, specs, Close and Previous/Next stay put while the photos scroll */
 .board-img:has(img.second) { flex-direction: column; justify-content: flex-start; gap: 60px; }
 .board:has(img.second) .board-info { position: sticky; top: calc(var(--bar-h) + 10px); align-self: start; max-height: calc(100vh - var(--bar-h) - 20px); }
-.board:has(img.second) .board-close { position: sticky; top: calc(50vh - 30px); align-self: start; }
-.board-close { writing-mode: vertical-rl; align-self: center; justify-self: center; font-size: 11.5px; color: #555; }
+/* Close sits on the right edge, vertically centred, on every page and screen size, exactly like the Refine tab */
+.board-close { position: fixed; top: 50%; right: 7px; transform: translateY(-50%); z-index: 22; writing-mode: vertical-rl; font-size: 11.5px; color: #555; padding: 14px 3px; }
 .board-close:hover { color: #000; }
 .board-nav { position: fixed; bottom: 14px; z-index: 5; font-size: 11.5px; color: #555; }
 .board-nav:hover, .board-brand-link:hover { color: #000; }
@@ -224,7 +224,7 @@ h2 {
   .controls { padding-right: 14px; }
   .board { grid-template-columns: 1fr; }
   /* Close sits exactly where the Refine tab sits on the museum page */
-  .board-close, .board:has(img.second) .board-close { position: fixed; top: 50%; right: 7px; transform: translateY(-50%); writing-mode: vertical-rl; z-index: 22; font-size: 10.5px; padding: 14px 3px; align-self: auto; justify-self: auto; order: 0; }
+  .board-close { font-size: 10.5px; }
   .board-img { padding: 16px 0 0; }
   .board-img img { max-height: 62vh; }
   .board-info { padding-top: 28px; }
@@ -418,3 +418,4 @@ body > main.auth { width: 100%; box-sizing: border-box; }
 .board-img img.second { animation-delay: 0.1s; }
 .board-info, .board-close, .board-nav { animation: board-fade 0.5s ease 0.18s both; }
 @media (prefers-reduced-motion: reduce) { .board-img img, .board-info, .board-close, .board-nav { animation: none; } }
+@media (min-width: 761px) { .board-img { grid-column: 1; } .board-info { grid-column: 3; } }   /* Close is out of the grid now, so keep the photo and details in their columns */
