@@ -312,7 +312,7 @@ body.has-refine.rf-open { --rf-shift: calc(var(--rf-w) + 28px); --rf-open-w: cal
 
 @media (max-width: 760px) {
   :root { --rf-w: min(88vw, 400px); }
-  .refine-tab { top: 64%; font-size: 10.5px; }
+  .refine-tab { top: 50%; font-size: 10.5px; }
   /* small screens: the page slides left as the panel slides in */
   body.has-refine.rf-open { --rf-shift: 0px; --rf-open-w: 0px; overflow: hidden; }
   .topbar, .controls, #app { transition: transform 0.42s var(--rf-ease), opacity 0.25s ease; }
