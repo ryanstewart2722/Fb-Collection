@@ -191,7 +191,7 @@ h2 {
 /* with a second photo: the title, specs, Close and Previous/Next stay put while the photos scroll */
 .board-img:has(img.second) { flex-direction: column; justify-content: flex-start; gap: 60px; }
 .board:has(img.second) .board-info { position: sticky; top: calc(var(--bar-h) + 10px); align-self: start; max-height: calc(100vh - var(--bar-h) - 20px); }
-.board:has(img.second) .board-close { position: sticky; top: 50vh; }
+.board:has(img.second) .board-close { position: sticky; top: calc(50vh - 30px); align-self: start; }
 .board-close { writing-mode: vertical-rl; align-self: center; justify-self: center; font-size: 11.5px; color: #555; }
 .board-close:hover { color: #000; }
 .board-nav { position: fixed; bottom: 14px; z-index: 5; font-size: 11.5px; color: #555; }
@@ -220,7 +220,7 @@ h2 {
   .grid.square { --item-h: clamp(90px, 27vw, 140px); --cell: var(--item-h); }
   .controls { padding-right: 14px; }
   .board { grid-template-columns: 1fr; }
-  .board-close { writing-mode: horizontal-tb; justify-self: end; order: -1; font-size: 10.5px; padding-top: 14px; }
+  .board-close, .board:has(img.second) .board-close { position: fixed; top: 50%; right: 6px; transform: translateY(-50%); writing-mode: vertical-rl; z-index: 6; font-size: 10.5px; padding: 8px 2px; }
   .board-img { padding: 16px 0 0; }
   .board-img img { max-height: 62vh; }
   .board-info { padding-top: 28px; }
