@@ -1,4 +1,4 @@
-// Desktop: text that is cut off with "…" in a list row or an image-view info bar slides across while you hover it.
+// Desktop: text that is cut off with "…" in a list row or an image-view info bar slides across (then restarts) while you hover it.
 (function () {
   if (!window.matchMedia || !matchMedia("(hover: hover) and (pointer: fine) and (min-width: 761px)").matches) return;
   var running = new Map();   // span -> {raf, timer}
@@ -11,12 +11,14 @@
     if (running.has(el) || el.scrollWidth <= el.clientWidth + 1) return;
     var r = { raf: 0, timer: 0 }; running.set(el, r);
     el.style.textOverflow = "clip";
-    var max = el.scrollWidth - el.clientWidth + 14, dir = 1, last = 0;
+    var max = el.scrollWidth - el.clientWidth + 14, last = 0;
     function step(t) {
       if (!last) last = t;
-      el.scrollLeft += dir * 0.06 * (t - last); last = t;
-      if (dir > 0 && el.scrollLeft >= max - 1) { dir = 0; r.timer = setTimeout(function () { dir = -1; last = 0; r.raf = requestAnimationFrame(step); }, 700); return; }
-      if (dir < 0 && el.scrollLeft <= 0) { dir = 0; r.timer = setTimeout(function () { dir = 1; last = 0; r.raf = requestAnimationFrame(step); }, 700); return; }
+      el.scrollLeft += 0.1 * (t - last); last = t;
+      if (el.scrollLeft >= max - 1) {   // reached the end: hold a moment, jump back to the start, play again
+        r.timer = setTimeout(function () { el.scrollLeft = 0; last = 0; r.timer = setTimeout(function () { r.raf = requestAnimationFrame(step); }, 600); }, 700);
+        return;
+      }
       r.raf = requestAnimationFrame(step);
     }
     r.timer = setTimeout(function () { r.raf = requestAnimationFrame(step); }, 350);
