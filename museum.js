@@ -394,7 +394,8 @@ function render() {
   document.querySelectorAll("[data-sort]").forEach((a) => a.classList.toggle("active", a.dataset.sort === sort));
   const newestLink = document.querySelector('[data-sort="newest"]');
   if (newestLink) newestLink.textContent = F.order === "old" ? "Oldest" : chronological() ? "Chronological" : "Newest";
-  view === "list" ? renderList() : renderGrid();
+  const draw = () => (view === "list" ? renderList() : renderGrid());
+  window.momsKeepScroll ? window.momsKeepScroll(app, draw) : draw();   // redraw without the page jumping (e.g. after "Show more")
 }
 
 function saveState() {

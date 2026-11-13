@@ -213,7 +213,7 @@ function paintItems() {
     });
   }
 }
-window.addEventListener("hashchange", () => { view = location.hash === "#list" ? "list" : "image"; if (state) paint(); });
+window.addEventListener("hashchange", () => { view = location.hash === "#list" ? "list" : "image"; if (state) { paint(); window.scrollTo({ top: 0, behavior: "instant" }); } });
 
 /* ---------- page ---------- */
 function syncEditHeader() {
@@ -225,7 +225,9 @@ function syncEditHeader() {
     t.textContent = "Done"; t.onclick = (e) => { e.preventDefault(); state.edit = false; state.draft = null; paint(); };
   } else if (t.dataset.prev !== undefined) { t.textContent = t.dataset.prev; t.onclick = null; delete t.dataset.prev; }
 }
-function paint() {
+function keep(box, fn, anchor) { return window.momsKeepScroll ? window.momsKeepScroll(box, fn, anchor) : fn(); }
+function paint(anchor) { keep(app, () => paintNow(), anchor); }   // redraw without the page jumping
+function paintNow() {
   document.title = `${state.profile.display_name || state.profile.username} · MoMS`;
   $("#views").hidden = !state.items.length && !state.owner;
   $("#views-gap").hidden = !!state.items.length || state.owner;
@@ -250,7 +252,7 @@ app.addEventListener("click", async (e) => {
     e.preventDefault();
     state.edit = true; state.draft = e.target.closest("[data-act]").dataset.section;
     if (view !== "list") { view = "list"; history.replaceState(null, "", "#list"); }   // adding is a row form: from the image view, hop to the list view to fill it in
-    paint();
+    paintNow();   // not kept in place: the new row's box gets the cursor and scrolls into view
     return;
   }
   if (act === "edit") { const f = $("#edit-form"); f.hidden = !f.hidden; }
@@ -269,7 +271,7 @@ app.addEventListener("click", async (e) => {
     const changed = [];
     sec.forEach((x, n) => { if (x.position !== n + 1) { x.position = n + 1; changed.push(x); } });
     state.items.sort((x, y) => ORDER.indexOf(x.section) - ORDER.indexOf(y.section) || (x.position || 0) - (y.position || 0));
-    paint();
+    paint(`.el-row[data-id="${it.id}"]`);   // the row you moved stays under your cursor
     const res = await Promise.all(changed.map((x) => sb.from("collection_items").update({ position: x.position }).eq("id", x.id)));
     $("#owner-msg").textContent = res.some((r) => r.error) ? "Couldn't save the new order. Refresh and try again." : "Order saved.";
     return;

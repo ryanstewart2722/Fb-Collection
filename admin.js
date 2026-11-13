@@ -118,7 +118,9 @@ const section = (s) => content.sections[s];
 const itemOf = (s, id) => section(s).items.find((i) => i.id === id);
 
 /* ---------- Rendering ---------- */
-function render() {
+function keep(fn) { return window.momsKeepScroll ? window.momsKeepScroll(app, fn) : fn(); }
+function render() { keep(renderNow); }   // redraw without the page jumping
+function renderNow() {
   document.querySelectorAll(".ad-tabs button").forEach((b) => b.classList.toggle("active", b.dataset.tab === tab));
   if (tab === "list") renderList();
   if (tab === "grid") renderGrid();
@@ -176,7 +178,7 @@ function renderList() {
         const order = [...el.children].map((r) => r.dataset.id);
         section(s).items.sort((a, b) => order.indexOf(a.id) - order.indexOf(b.id));
         changed();
-        renderList(); // refresh divider lines for the new order
+        keep(renderList); // refresh divider lines for the new order
       },
     });
   });
@@ -266,7 +268,7 @@ app.addEventListener("click", (e) => {
       const it = { id: uid("i"), img: "", divider: false, hideInGrid: false, values: Object.fromEntries(s.columns.map((c) => [c.key, ""])) };
       s.items.push(it);
       (s.gridOrder ||= []).push(it.id);
-      changed(); render();
+      changed(); renderNow();   // not kept in place: the new row's box gets the cursor and scrolls into view
       app.querySelector(`[data-id="${it.id}"] .ad-cell`)?.focus();
       return;
     }
@@ -357,7 +359,7 @@ fileInput.addEventListener("change", async () => {
 });
 
 /* ---------- Top bar ---------- */
-document.querySelectorAll(".ad-tabs button").forEach((b) => b.addEventListener("click", () => { tab = b.dataset.tab; render(); }));
+document.querySelectorAll(".ad-tabs button").forEach((b) => b.addEventListener("click", () => { tab = b.dataset.tab; renderNow(); window.scrollTo({ top: 0, behavior: "instant" }); }));
 $("#publish").addEventListener("click", publish);
 $("#discard").addEventListener("click", () => {
   if (confirm("Throw away all unpublished changes?")) loadContent().catch((e) => setStatus(e.message, true));
@@ -390,7 +392,7 @@ function addFromLink() {
   history.replaceState(null, "", location.pathname);
   if (si < 0) return;
   tab = "list";
-  render();
+  renderNow();
   app.querySelector(`.ad-sec[data-s="${si}"] [data-act="item-add"]`)?.click();
   app.querySelector(`.ad-sec[data-s="${si}"] .ad-rows .ad-row:last-child`)?.scrollIntoView({ block: "center" });
 }

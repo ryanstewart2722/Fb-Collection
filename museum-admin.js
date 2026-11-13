@@ -78,7 +78,15 @@ async function loadList(reset = true) {
 }
 
 /* ---------- List screen ---------- */
-function renderList() {
+let listY = 0;   // where the list was scrolled to when an entry was opened, so Back / Save lands you there again
+function renderList() {   // redraw the list without the page jumping (coming back from an entry returns to where you were)
+  const fromForm = !app.querySelector(".me-toolbar");
+  if (!fromForm) return window.momsKeepScroll ? window.momsKeepScroll(app, renderListNow) : renderListNow();
+  renderListNow();
+  window.scrollTo({ top: listY, behavior: "instant" });
+  requestAnimationFrame(() => window.scrollTo({ top: listY, behavior: "instant" }));
+}
+function renderListNow() {
   const t = TYPES[tab];
   const year = (r) => (r.release_date ? r.release_date.slice(0, 4) : "");
   app.innerHTML = `
@@ -542,10 +550,11 @@ app.addEventListener("click", async (e) => {
   if (card) {
     const a = e.target.closest("[data-act]")?.dataset.act;
     if (a === "rotate-card") return rotateCard(card);
-    if (a === "open") { editing = { ...list.rows[card.dataset.i] }; photo = null; photo2 = null; drop2 = false; return renderForm(); }
+    if (a === "open") { listY = window.scrollY; editing = { ...list.rows[card.dataset.i] }; photo = null; photo2 = null; drop2 = false; return renderForm(); }
   }
   const item = e.target.closest(".me-item");
   if (item) {
+    listY = window.scrollY;
     editing = { ...list.rows[item.dataset.i] }; photo = null; photo2 = null; drop2 = false;
     photo = null;
     return renderForm();
@@ -584,7 +593,7 @@ document.querySelectorAll(".ad-tabs button").forEach((b) => b.addEventListener("
   setStatus("");
   if (tab === "review") return renderReview().catch(fail("Couldn't load the review list"));
   await loadList().catch(fail("Couldn't load"));
-  renderList();
+  renderListNow(); listY = 0; window.scrollTo({ top: 0, behavior: "instant" });   // a different tab starts at the top
 }));
 
 /* ---------- Review: what people uploaded, waiting for you ---------- */

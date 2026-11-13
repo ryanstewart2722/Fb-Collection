@@ -1,3 +1,22 @@
+// Redraw part of a page without the page jumping: runs fn() (which rebuilds the content of box), then puts the
+// scroll back where it was. If anchor (a selector) is given, that element stays at the same spot on screen instead,
+// so a row you moved keeps its place under your cursor. The box holds its old height for a moment so the page
+// can't shrink (and snap to the top) while photos are still loading.
+window.momsKeepScroll = function (box, fn, anchor) {
+  var y = window.scrollY, top = 0, a = null;
+  if (anchor && box) { a = box.querySelector(anchor); if (a) top = a.getBoundingClientRect().top; }
+  if (box && box.offsetHeight) box.style.minHeight = box.offsetHeight + "px";
+  function put() {
+    var n = a && box.querySelector(anchor);
+    if (n) window.scrollBy({ top: n.getBoundingClientRect().top - top, behavior: "instant" });
+    else window.scrollTo({ top: y, behavior: "instant" });
+  }
+  try { fn(); } finally {
+    put(); requestAnimationFrame(put);
+    if (box) setTimeout(function () { box.style.minHeight = ""; }, 800);
+  }
+};
+
 // Desktop: text that is cut off with "…" in a list row or an image-view info bar slides across (then restarts) while you hover it.
 (function () {
   if (!window.matchMedia || !matchMedia("(hover: hover) and (pointer: fine) and (min-width: 761px)").matches) return;
