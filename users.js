@@ -6,7 +6,7 @@
     const rows = await r.json();
     const fmt = (d) => new Date(d).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
     const people = rows.map((p) => ({ ...p, owner: p.username === "r", count: Number(p.items) || 0 }))
-      .sort((a, b) => (b.owner - a.owner));
+      .sort((a, b) => (b.owner - a.owner) || (b.count - a.count));   // you first, then the most entries
     box.innerHTML = `<div class="row head"><span>User</span><span>Page</span><span>Entries</span><span>Joined</span></div>` + people.map((p) =>
       `<a class="row" href="/u/${esc(p.username)}"><span>${esc(p.display_name || p.username)}${p.owner ? ` <i class="u-tag">Museum Owner</i>` : ""}</span><span>u/${esc(p.username)}</span><span>${p.count}</span><span>${p.owner ? "Oct 15, 2026" : fmt(p.joined)}</span></a>`).join("");
   } catch { box.innerHTML = `<p class="p-empty">Couldn't load the list. Please refresh.</p>`; }
