@@ -90,7 +90,7 @@ async function photoUrl(item) {
 
 function sections() {
   const by = {};
-  state.items.forEach((i) => (by[i.section] ||= []).push(i));
+  state.items.forEach((i) => { if (i.status !== "removed" || (state.staff && state.edit)) (by[i.section] ||= []).push(i); });   // hidden entries show only while an admin is editing
   return ORDER.filter((s) => by[s] || state.owner).map((s) => ({ id: s, title: SCHEMA[s].title, items: by[s] || [] }));
 }
 
@@ -108,7 +108,7 @@ function fieldsHtml(sec) {
 function ownerBar() {
   const p = state.profile;
   if (state.staff) return `<div class="p-owner">
-    <button class="auth-link" data-act="editimg">${state.edit ? "Done editing" : "Edit"}</button> · <span class="auth-note">Admin: you can change or remove ${esc(p.display_name || p.username)}'s entries and photos.</span>
+    <button class="auth-link" data-act="editimg">${state.edit ? "Done editing" : "Edit"}</button> · <span class="auth-note">Admin: you can change or hide ${esc(p.display_name || p.username)}'s entries and photos. Hidden ones are dimmed and nobody else sees them.</span>
     <p id="owner-msg" class="auth-note" aria-live="polite"></p>
   </div>`;
   return `<div class="p-owner">
@@ -145,7 +145,7 @@ function renderListEdit() {
     <h2>${esc(s.title)}</h2>
     <div class="list-wrap"><div class="list el-list el-n${SCHEMA[s.id].fields.length}${s.items.length || state.draft === s.id ? "" : " is-empty"}" data-s="${s.id}" style="--cols:${colsFor(SCHEMA[s.id].fields.length)}">
       <div class="el-row el-head"><span></span>${SCHEMA[s.id].fields.map((f) => `<span class="el-h">${esc(f[1])}</span>`).join("")}<span></span></div>
-      ${s.items.map((i, n) => `<div class="el-row${n > 0 && brandOf(s.id, i) !== brandOf(s.id, s.items[n - 1]) ? " divide" : ""}" data-id="${esc(i.id)}">${elThumb(i)}${elInputs(s.id, i)}<span class="el-acts"><button class="el-mv" data-act="up" title="Move up">↑</button><button class="el-mv" data-act="down" title="Move down">↓</button><button class="el-x" data-act="remove" data-id="${esc(i.id)}" title="Remove">×</button></span></div>`).join("")}
+      ${s.items.map((i, n) => `<div class="el-row${n > 0 && brandOf(s.id, i) !== brandOf(s.id, s.items[n - 1]) ? " divide" : ""}${i.status === "removed" ? " is-hidden" : ""}" data-id="${esc(i.id)}">${elThumb(i)}${elInputs(s.id, i)}<span class="el-acts"><button class="el-mv" data-act="up" title="Move up">↑</button><button class="el-mv" data-act="down" title="Move down">↓</button>${state.staff ? `<button class="el-x el-hide" data-act="hide" data-id="${esc(i.id)}" title="${i.status === "removed" ? "Show again" : "Hide from the site"}">${i.status === "removed" ? "Show" : "Hide"}</button>` : `<button class="el-x" data-act="remove" data-id="${esc(i.id)}" title="Remove">×</button>`}</span></div>`).join("")}
       ${state.draft === s.id ? `<div class="el-row el-new" data-section="${s.id}">${elThumb(null)}${elInputs(s.id, null)}<button class="ed-btn el-save" data-act="savenew">Add</button></div>` : ""}
       <button class="ed-btn el-add" data-act="newrow" data-section="${s.id}">+ Add to My ${esc(s.title)}</button>
     </div></div></section>`).join("");
@@ -153,12 +153,12 @@ function renderListEdit() {
 function renderEdit() {
   return sections().filter((s) => s.items.length).map((s) => `<section class="grid-section">
     <h2>${esc(s.title)}</h2>
-    <div class="ed-grid">${s.items.map((i) => `<div class="ed-card" data-id="${esc(i.id)}">
+    <div class="ed-grid">${s.items.map((i) => `<div class="ed-card${i.status === "removed" ? " is-hidden" : ""}" data-id="${esc(i.id)}">
       <div class="ed-img">${i.url ? `<img src="${esc(i.url)}" alt="">` : "No photo"}</div>
       <div class="ed-name">${esc(i.name)}</div>
       <div class="ed-btns">
         <label class="ed-btn">${i.url ? "Replace" : "Add photo"}<input class="ed-file" type="file" accept="image/*"></label>
-        <button class="ed-btn" data-act="remove" data-id="${esc(i.id)}">Remove</button>
+        ${state.staff ? `<button class="ed-btn" data-act="hide" data-id="${esc(i.id)}">${i.status === "removed" ? "Show again" : "Hide"}</button>` : `<button class="ed-btn" data-act="remove" data-id="${esc(i.id)}">Remove</button>`}
       </div></div>`).join("")}</div></section>`).join("");
 }
 function renderGrid() {
@@ -265,7 +265,17 @@ app.addEventListener("click", async (e) => {
     $("#owner-msg").textContent = res.some((r) => r.error) ? "Couldn't save the new order. Refresh and try again." : "Order saved.";
     return;
   }
-  if (act === "remove") {
+  if (act === "hide" && state.staff) {   // the museum's owner can hide an entry (and bring it back); nothing is deleted
+    const id = e.target.closest("[data-id]").dataset.id, it = state.items.find((i) => i.id === id);
+    if (!it) return;
+    const status = it.status === "removed" ? "approved" : "removed";
+    const { data, error } = await sb.from("collection_items").update({ status }).eq("id", id).select("status");
+    if (error || !data?.length) return (msg.textContent = "Couldn't change that. " + (error?.message || "not allowed"));
+    it.status = data[0].status; paint();
+    $("#owner-msg").textContent = status === "removed" ? `“${it.name}” is hidden. Nobody else can see it. Press Show to bring it back.` : `“${it.name}” is showing again.`;
+    return;
+  }
+  if (act === "remove" && !state.staff) {
     const id = e.target.closest("[data-id]").dataset.id, it = state.items.find((i) => i.id === id);
     if (!it || !confirm(`Remove “${it.name}” from your collection?`)) return;
     const { error } = await sb.from("collection_items").delete().eq("id", id);
@@ -472,7 +482,7 @@ async function load() {
   if (session && !self) { const { data: me } = await sb.from("profiles").select("role").eq("id", session.user.id).maybeSingle(); staff = ["admin", "editor"].includes(me?.role); }
   const owner = self || staff;
   const { data: items } = await sb.from("collection_items").select("*").eq("user_id", profile.id).order("section").order("position").order("created_at");
-  const rows = items || [];
+  const rows = (items || []).filter((i) => staff || i.status !== "removed");   // hidden entries show only to the museum's owner
   await loadRecuts();
   await Promise.all(rows.map(async (i) => (i.url = await photoUrl(i))));
   state = { profile, items: rows, owner, staff, viewer: session?.user.id };

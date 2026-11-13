@@ -124,3 +124,6 @@
 .el-mv { border: 0; background: none; font: inherit; font-size: 12px; color: #8c8c8c; cursor: pointer; padding: 2px 5px; }
 .el-mv:hover { color: #000; }
 @media (max-width: 760px) { .el-mv { width: 32px; height: 44px; font-size: 18px; padding: 0; } .el-list { min-width: 740px; } }
+
+.el-row.is-hidden, .ed-card.is-hidden { opacity: .38; }
+.el-hide { width: auto; padding: 0 6px; font-size: 11px; }
