@@ -93,7 +93,7 @@ $("#username").addEventListener("input", (e) => {
   const msg = $("#pick-msg"), btn = $("#pick-btn");
   btn.disabled = true; msg.textContent = "";
   clearTimeout(checkTimer);
-  if (v.length < 4) { if (v) msg.textContent = "At least 4 characters."; return; }
+  if (v.length < 3) { if (v) msg.textContent = "At least 3 characters."; return; }
   const seq = ++checkSeq;
   checkTimer = setTimeout(async () => {
     const { data, error } = await sb.rpc("username_available", { u: v });
