@@ -75,8 +75,10 @@ async function uploadPhoto(file, section) {
 const stored = (p) => p && !/^https?:/.test(p);
 function dropFiles(...paths) { const list = [...new Set(paths.filter(stored))]; if (list.length) sb.storage.from("uploads").remove(list).catch(() => {}); }
 async function photoUrl(item) {
-  const rc = RECUTS[item.id];
-  if (rc && item.source_path && rc.src === item.source_path) {
+  const rc = RECUTS[item.id], pick = item.details?.cut;   // pick: an admin's choice, "quick" or "refined"; otherwise the refined cut is used when it passed the quality check
+  item.cutInfo = null;
+  if (rc && rc.file && item.source_path && rc.src === item.source_path) item.cutInfo = { q: rc.q, bad: !!rc.bad, pick };
+  if (rc && rc.file && item.source_path && rc.src === item.source_path && pick !== "quick" && (!rc.bad || pick === "refined")) {
     const u = "/" + rc.file + "?c=1";   // a new address, so a copy of the page that was cached before the file existed can't get in the way
     // use the better cut-out only once it really loads; if the site is still publishing it, keep showing the quick one
     if (await new Promise((ok) => { const im = new Image(); im.onload = () => ok(true); im.onerror = () => ok(false); im.src = u; })) return u;
@@ -135,6 +137,8 @@ function renderList() {
       ${state.owner ? `<a class="add-new" href="#" data-act="add" data-section="${s.id}">+ Add new</a>` : ""}
     </div></div></section>`).join("");
 }
+const cutNow = (i) => i.cutInfo && (i.cutInfo.pick === "quick" || (i.cutInfo.bad && i.cutInfo.pick !== "refined")) ? "quick" : "refined";
+const cutSwitch = (i) => state.staff && i && i.cutInfo ? `<a href="#" class="orig-dl" data-act="cut" data-id="${esc(i.id)}" title="${i.cutInfo.bad ? "The refined cut failed the quality check" : "Both cuts are kept"}${i.cutInfo.q ? " (shape score " + i.cutInfo.q + ")" : ""}">${cutNow(i) === "quick" ? "Quick cut · switch to Refined" : "Refined cut · switch to Quick"}</a>` : "";
 const origLink = (i) => state.staff && i && (i.source_path || i.image_path) ? `<a href="#" class="orig-dl" data-act="dl" data-id="${esc(i.id)}" title="Download the photo they uploaded, before any cut-out">Original Photo</a>` : "";
 function elThumb(i) { return `<label class="el-thumb">${i && i.url ? `<img src="${esc(i.url)}" alt="">` : "+"}<input class="ed-file" type="file" accept="image/*"></label>`; }
 function elInputs(sec, i) {
@@ -146,7 +150,7 @@ function renderListEdit() {
     <h2>${esc(s.title)}</h2>
     <div class="list-wrap"><div class="list el-list el-n${SCHEMA[s.id].fields.length}${s.items.length || state.draft === s.id ? "" : " is-empty"}" data-s="${s.id}" style="--cols:${colsFor(SCHEMA[s.id].fields.length)}">
       <div class="el-row el-head"><span></span>${SCHEMA[s.id].fields.map((f) => `<span class="el-h">${esc(f[1])}</span>`).join("")}<span></span></div>
-      ${s.items.map((i, n) => `<div class="el-row${n > 0 && brandOf(s.id, i) !== brandOf(s.id, s.items[n - 1]) ? " divide" : ""}${i.status === "removed" ? " is-hidden" : ""}" data-id="${esc(i.id)}"><span class="el-tcell">${elThumb(i)}${origLink(i)}</span>${elInputs(s.id, i)}<span class="el-acts"><button class="el-mv" data-act="up" title="Move up">↑</button><button class="el-mv" data-act="down" title="Move down">↓</button>${state.staff ? `<button class="el-x el-hide" data-act="hide" data-id="${esc(i.id)}" title="${i.status === "removed" ? "Show again" : "Hide from the site"}">${i.status === "removed" ? "Show" : "Hide"}</button>` : `<button class="el-x" data-act="remove" data-id="${esc(i.id)}" title="Remove">×</button>`}</span></div>`).join("")}
+      ${s.items.map((i, n) => `<div class="el-row${n > 0 && brandOf(s.id, i) !== brandOf(s.id, s.items[n - 1]) ? " divide" : ""}${i.status === "removed" ? " is-hidden" : ""}" data-id="${esc(i.id)}"><span class="el-tcell">${elThumb(i)}${origLink(i)}${cutSwitch(i)}</span>${elInputs(s.id, i)}<span class="el-acts"><button class="el-mv" data-act="up" title="Move up">↑</button><button class="el-mv" data-act="down" title="Move down">↓</button>${state.staff ? `<button class="el-x el-hide" data-act="hide" data-id="${esc(i.id)}" title="${i.status === "removed" ? "Show again" : "Hide from the site"}">${i.status === "removed" ? "Show" : "Hide"}</button>` : `<button class="el-x" data-act="remove" data-id="${esc(i.id)}" title="Remove">×</button>`}</span></div>`).join("")}
       ${state.draft === s.id ? `<div class="el-row el-new" data-section="${s.id}">${elThumb(null)}${elInputs(s.id, null)}<button class="ed-btn el-save" data-act="savenew">Add</button></div>` : ""}
       <button class="ed-btn el-add" data-act="newrow" data-section="${s.id}">+ Add to My ${esc(s.title)}</button>
     </div></div></section>`).join("");
@@ -156,7 +160,7 @@ function renderEdit() {
     <h2>${esc(s.title)}</h2>
     <div class="ed-grid">${s.items.map((i) => `<div class="ed-card${i.status === "removed" ? " is-hidden" : ""}" data-id="${esc(i.id)}">
       <div class="ed-img">${i.url ? `<img src="${esc(i.url)}" alt="">` : "No photo"}</div>
-      ${origLink(i)}
+      ${origLink(i)}${cutSwitch(i)}
       <div class="ed-name">${esc(i.name)}</div>
       <div class="ed-btns">
         <label class="ed-btn">${i.url ? "Replace" : "Add photo"}<input class="ed-file" type="file" accept="image/*"></label>
@@ -265,6 +269,17 @@ app.addEventListener("click", async (e) => {
     paint();
     const res = await Promise.all(changed.map((x) => sb.from("collection_items").update({ position: x.position }).eq("id", x.id)));
     $("#owner-msg").textContent = res.some((r) => r.error) ? "Couldn't save the new order. Refresh and try again." : "Order saved.";
+    return;
+  }
+  if (act === "cut" && state.staff) {   // admin: choose which of the two kept cuts this photo shows
+    e.preventDefault();
+    const id = e.target.closest("[data-id]").dataset.id, it = state.items.find((i) => i.id === id);
+    if (!it) return;
+    const details = { ...(it.details || {}), cut: cutNow(it) === "quick" ? "refined" : "quick" };
+    const { data, error } = await sb.from("collection_items").update({ details }).eq("id", id).select();
+    if (error || !data?.length) return (msg.textContent = "Couldn't switch. " + (error?.message || ""));
+    Object.assign(it, data[0]); it.url = await photoUrl(it);
+    paint(); msg.textContent = (cutNow(it) === "quick" ? "Quick" : "Refined") + " cut is showing for " + it.name + ".";
     return;
   }
   if (act === "dl" && state.staff) {   // admin: the photo as they uploaded it (before the cut-out), so it can be cut by hand and put back with Replace

@@ -1,5 +1,5 @@
 # When someone adds a photo to their collection, the browser makes a quick cut-out so it shows right away.
-# Every few minutes this job re-cuts new photos with a much stronger model and publishes the cleaner version
+# Right after a photo is added (the database starts this job) and, as a backup, on a schedule, this job re-cuts new photos with a much stronger model and publishes the cleaner version
 # (see scripts/recut_worker.py). Free on a public repository. It only reads what any visitor can see.
 name: Re-cut collection photos
 

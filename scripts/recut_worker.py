@@ -70,6 +70,23 @@ def tilt(keep):
     return a - 180 if a > 90 else a + 180 if a < -90 else a          # the smaller turn, so the nose stays the way it was shot
 
 
+MIN_SOLID = 0.88                                                     # boards/setups: a cut this "dented" has lost part of the board
+
+
+def solidity(img):
+    """Cut-out area / area of its convex hull (1 = a clean solid shape). A board that was split in two or chewed away scores low."""
+    import numpy as np
+    from scipy.spatial import ConvexHull
+    a = np.asarray(img.getchannel("A").resize((img.width // 4, img.height // 4)))[...] > 128
+    ys, xs = np.nonzero(a)
+    if len(xs) < 20:
+        return 0.0
+    try:
+        return round(float(a.sum() / ConvexHull(np.column_stack([xs, ys])).volume), 3)
+    except Exception:
+        return 1.0
+
+
 def cut(data, section, sess):
     """Original photo -> museum-style cut-out (PIL image), or None if no clear subject."""
     import numpy as np
@@ -131,6 +148,10 @@ def run():
                         (ROOT / old).unlink()
                     img.save(ROOT / name, "WEBP", quality=92, method=6)
                     entry["file"] = name
+                    q = solidity(img)
+                    entry["q"] = q
+                    if it["section"] in ("decks", "setups") and q < MIN_SOLID:
+                        entry["bad"] = "failed the quality check"   # the file is kept, but the page keeps showing the quick cut
                     done += 1
                 else:
                     entry["skip"] = "no clear subject"
@@ -138,7 +159,7 @@ def run():
                 print(f"::warning::{it['id']}: {e}")
                 continue
             index[it["id"]] = entry
-    # entries without a file are remembered so they are not retried, but the page ignores them
+    # entries without a file (or marked bad) are remembered so they are not retried; the page keeps the quick cut for them
     INDEX.write_text(json.dumps(index, indent=0, sort_keys=True) + "\n")
     print(f"re-cut {done}, removed {len(stale)}, still waiting {max(0, len(todo) - LIMIT)}")
 
