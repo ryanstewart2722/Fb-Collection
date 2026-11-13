@@ -132,7 +132,7 @@ function renderList() {
     <div class="list-wrap"><div class="list${s.items.length ? "" : " is-empty"}" data-s="${s.id}" style="--cols:${colsFor(SCHEMA[s.id].fields.length)}">
       <div class="row head">${spans(SCHEMA[s.id].fields.map((f) => f[1]))}</div>
       ${s.items.map((i, n) => `<div class="row${n > 0 && brandOf(s.id, i) !== brandOf(s.id, s.items[n - 1]) ? " divide" : ""}" data-id="${esc(i.id)}">${spans(rowCells(s.id, i))}</div>`).join("")}
-      ${state.owner && !state.staff ? `<a class="add-new" href="#" data-act="add" data-section="${s.id}">+ Add new</a>` : ""}
+      ${state.owner ? `<a class="add-new" href="#" data-act="add" data-section="${s.id}">+ Add new</a>` : ""}
     </div></div></section>`).join("");
 }
 function elThumb(i) { return `<label class="el-thumb">${i && i.url ? `<img src="${esc(i.url)}" alt="">` : "+"}<input class="ed-file" type="file" accept="image/*"></label>`; }
@@ -180,7 +180,7 @@ function paintItems() {
     return;
   }
   const editing = state.edit && state.owner;
-  const TIP = `<p class="el-tip">Photo tip: shoot from straight above on a clean, contrasting background in good light. The background is removed for you.</p>${state.isAdmin ? `<label class="el-skip"><input type="checkbox" id="skip-cut"> Admin: skip cutout and use the photo exactly as it is. <b>Only for transparent PNGs.</b></label>` : ""}`;
+  const TIP = `<p class="el-tip">Photo tip: shoot from straight above on a clean, contrasting background in good light. The background is removed for you.</p>${state.isAdmin ? `<label class="el-skip"><input type="checkbox" id="skip-cut"${state.skipCut ? " checked" : ""}> Admin: skip cutout and use the photo exactly as it is. <b>Only for transparent PNGs.</b></label>` : ""}`;
   box.innerHTML = view === "list" ? (editing ? TIP + renderListEdit() : renderList()) : editing ? TIP + renderEdit() : renderGrid();
   if (editing && state.draft) { const n = box.querySelector(".el-new .el-in"); if (n) n.focus({ preventScroll: false }); }
   const find = (id) => state.items.find((i) => i.id === id);
@@ -373,7 +373,7 @@ async function tryInsert(row) {
     if (file) ({ image_path, source_path } = await uploadPhoto(file, section));
     const details = Object.fromEntries([...row.querySelectorAll(".el-in")].filter((el) => el.dataset.k !== "name").map((el) => [el.dataset.k, el.value.trim()]).filter(([, v]) => v));
     const position = state.items.reduce((m, i) => Math.max(m, i.position || 0), 0) + 1;
-    const { data, error } = await sb.from("collection_items").insert({ section, name, details, image_path, source_path, position }).select().single();
+    const { data, error } = await sb.from("collection_items").insert({ section, name, details, image_path, source_path, position, ...(state.staff ? { user_id: state.profile.id } : {}) }).select().single();
     if (error) { dropFiles(image_path, source_path); throw error; }
     data.url = await photoUrl(data);
     state.items.push(data); state.draft = null; paint();
@@ -395,6 +395,7 @@ async function saveRow(row) {
   const url = it.url; Object.assign(it, data[0]); it.url = url;
   msg.textContent = "Saved." + note;
 }
+app.addEventListener("change", (e) => { if (e.target.id === "skip-cut") state.skipCut = e.target.checked; });
 app.addEventListener("keydown", (e) => {
   if (e.key !== "Enter" || !e.target.classList.contains("el-in")) return;
   const row = e.target.closest(".el-new");
