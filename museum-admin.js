@@ -705,7 +705,11 @@ async function reviewAct(card, ok) {
     } else {
       const { error } = await sb.from("submissions").update({ status: "rejected" }).eq("id", r.id);
       if (error) throw error;
-      if (r.image_path) await sb.storage.from("uploads").remove([r.image_path]).catch(() => {});
+      if (r.image_path && !/^https?:/.test(r.image_path)) {
+        // the same file may still be somebody's collection photo; only delete it if nothing uses it
+        const used = await sb.from("collection_items").select("id").eq("image_path", r.image_path).limit(1);
+        if (!used.data?.length) await sb.storage.from("uploads").remove([r.image_path]).catch(() => {});
+      }
     }
     card.remove();
     reviewItems[card.dataset.i] = null;
