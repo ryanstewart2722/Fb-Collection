@@ -127,12 +127,9 @@ function releaseParts(r) {
   return { y, m: p === "year" ? "" : String(+m), d: p === "day" ? String(+d) : "" };
 }
 
-function extraRow(selected) {   // one more brand on the same board: a drop-down like the first brand
-  return `<div class="me-extra"><select data-x>
-      <option value="">Choose a brand…</option>
-      ${brands.map((b) => `<option value="${b.id}" ${b.id === selected ? "selected" : ""}>${esc(b.name)}</option>`).join("")}
-      <option value="new">+ New brand…</option>
-    </select><input data-xn placeholder="New brand name" hidden><button type="button" class="ad-btn" data-act="rm-extra" title="Remove this brand">×</button></div>`;
+function extraRow(selected) {   // one more brand on the same board: type a name or pick one
+  const name = brands.find((b) => b.id === selected)?.name || "";
+  return `<div class="me-extra"><input data-x list="me-brands" placeholder="Type or pick a brand" value="${esc(name)}" autocomplete="off"><button type="button" class="ad-btn" data-act="rm-extra" title="Remove this brand">×</button></div>`;
 }
 
 function fieldHtml([key, label, kind = "text", hint = ""], r) {
@@ -141,12 +138,8 @@ function fieldHtml([key, label, kind = "text", hint = ""], r) {
   if (kind === "textarea") input = `<textarea data-f="${key}" rows="4">${esc(val)}</textarea>`;
   else if (kind === "morebrands") return `<div class="ad-field"><span>${label}</span><div class="me-extras">${(r.extra_brand_ids || []).map((id) => extraRow(id)).join("")}</div><button type="button" class="ad-btn" data-act="add-extra">+ Add another brand</button>${hint ? `<small>${hint}</small>` : ""}</div>`;
   else if (kind === "molds") input = `<input data-f="molds" value="${esc((r.molds || []).join(", "))}">`;
-  else if (kind === "brand") input = `<select data-f="brand_id">
-      <option value="">Choose a brand…</option>
-      ${brands.map((b) => `<option value="${b.id}" ${b.id === r.brand_id ? "selected" : ""}>${esc(b.name)}</option>`).join("")}
-      <option value="new">+ New brand…</option>
-    </select>
-    <input data-f="new_brand" placeholder="New brand name" hidden>`;
+  else if (kind === "brand") input = `<input data-f="brand_name" list="me-brands" placeholder="Type or pick a brand" value="${esc(brands.find((b) => b.id === r.brand_id)?.name || "")}" autocomplete="off">
+    <datalist id="me-brands">${brands.map((b) => `<option value="${esc(b.name)}"></option>`).join("")}</datalist>`;
   else if (kind === "release") {
     const { y, m, d } = releaseParts(r);
     input = `<div class="me-release">
@@ -215,9 +208,7 @@ async function save() {
 
   if (tab !== "brands") {
     // Brand: existing, or a new one (created when saving, below).
-    if (v.brand_id === "new" && !v.new_brand) return setStatus("Type the new brand's name.", true);
-    if (!v.brand_id) return setStatus("Please choose a brand.", true);
-    if (v.brand_id !== "new") row.brand_id = Number(v.brand_id);
+    if (!v.brand_name) return setStatus("Please type or pick a brand.", true);
 
     // Release date: year, optional month and day.
     const y = parseInt(v.rel_y, 10), m = parseInt(v.rel_m, 10), d = parseInt(v.rel_d, 10);
@@ -233,22 +224,13 @@ async function save() {
   btn.disabled = true;
   setStatus("Saving…");
   try {
-    if (v.brand_id === "new") {
-      const existing = sameBrand(brands, v.new_brand);
-      row.brand_id = existing ? existing.id : (await insertWithSlug("brands", { name: v.new_brand }, v.new_brand)).id;
-      await loadBrands();
-    }
+    if (tab !== "brands") row.brand_id = await brandIdFor(v.brand_name);
     if (tab !== "brands") {   // other brands on the same board
       const ids = [];
       for (const el of app.querySelectorAll(".me-extra")) {
-        const sel = el.querySelector("[data-x]").value, nn = el.querySelector("[data-xn]").value.trim();
-        let id = null;
-        if (sel === "new") {
-          if (!nn) continue;
-          const hit = sameBrand(brands, nn);
-          id = hit ? hit.id : (await insertWithSlug("brands", { name: nn }, nn)).id;
-          if (!hit) await loadBrands();
-        } else if (sel) id = parseInt(sel, 10);
+        const nn = el.querySelector("[data-x]").value.trim();
+        if (!nn) continue;
+        const id = await brandIdFor(nn);
         if (id && id !== row.brand_id && !ids.includes(id)) ids.push(id);
       }
       row.extra_brand_ids = ids;
@@ -555,19 +537,6 @@ function leaveForm() {
 app.addEventListener("input", (e) => {
   if (e.target.closest(".me-form")) formDirty = true;
 });
-app.addEventListener("change", (e) => {
-  if (e.target.matches("[data-x]")) {
-    const nn = e.target.parentElement.querySelector("[data-xn]");
-    nn.hidden = e.target.value !== "new";
-    if (!nn.hidden) nn.focus();
-  }
-  if (e.target.dataset.f === "brand_id") {
-    const nb = app.querySelector('[data-f="new_brand"]');
-    nb.hidden = e.target.value !== "new";
-    if (!nb.hidden) nb.focus();
-  }
-});
-
 app.addEventListener("click", async (e) => {
   const card = e.target.closest(".me-card");
   if (card) {
@@ -658,12 +627,21 @@ async function publishPhoto(path) {
   if (up.error) throw up.error;
   return sb.storage.from("user-photos").getPublicUrl(path).data.publicUrl;
 }
-async function findOrMakeBrand(name) {
-  name = name.trim();
-  const have = (await sb.from("brands").select("id,name")).data || [];
-  const hit = sameBrand(have, name);
-  if (hit) return hit.id;
-  return (await insertWithSlug("brands", { name }, name)).id;
+let brandLock = Promise.resolve();
+// One at a time, and always looking at the live list, so clicking quickly can't make the same brand twice.
+// An existing brand is reused; otherwise the brand is made with the name exactly as typed.
+function brandIdFor(name) {
+  const run = brandLock.then(async () => {
+    name = String(name || "").trim().replace(/\s+/g, " ");
+    const have = (await sb.from("brands").select("id,name")).data || [];
+    const hit = sameBrand(have, name);
+    if (hit) return hit.id;
+    const made = await insertWithSlug("brands", { name }, name);
+    brands = [...brands, { id: made.id, name }].sort((a, b) => a.name.localeCompare(b.name));
+    return made.id;
+  });
+  brandLock = run.catch(() => {});
+  return run;
 }
 async function reviewAct(card, ok) {
   const x = reviewItems[card.dataset.i], r = x.r;
@@ -683,7 +661,7 @@ async function reviewAct(card, ok) {
     } else if (ok) {
       const f = r.fields, table = r.section;
       step = "finding or making the brand";
-      const brand_id = await findOrMakeBrand(f.brand || "Unknown");
+      const brand_id = await brandIdFor(f.brand || "Unknown");
       step = "copying the photo";
       const row = { brand_id, name: f.name, color: f.color || null, image_path: await publishPhoto(r.image_path) };
       if (table === "decks") { row.size = f.size || null; row.molds = f.mold ? f.mold.split(",").map((m) => m.trim()).filter(Boolean) : []; row.shape = f.shape || null; row.attributes = { source: "Museum submission", submitted_by: r.profiles?.username || null }; }
