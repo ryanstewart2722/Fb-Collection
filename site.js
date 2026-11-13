@@ -1,3 +1,45 @@
+// Desktop: text that is cut off with "…" in a list row or an image-view info bar slides across while you hover it.
+(function () {
+  if (!window.matchMedia || !matchMedia("(hover: hover) and (pointer: fine) and (min-width: 761px)").matches) return;
+  var running = new Map();   // span -> {raf, timer}
+  function stop(el) {
+    var r = running.get(el); if (!r) return;
+    cancelAnimationFrame(r.raf); clearTimeout(r.timer); running.delete(el);
+    el.scrollLeft = 0; el.style.textOverflow = "";
+  }
+  function go(el) {
+    if (running.has(el) || el.scrollWidth <= el.clientWidth + 1) return;
+    var r = { raf: 0, timer: 0 }; running.set(el, r);
+    el.style.textOverflow = "clip";
+    var max = el.scrollWidth - el.clientWidth + 14, dir = 1, last = 0;
+    function step(t) {
+      if (!last) last = t;
+      el.scrollLeft += dir * 0.06 * (t - last); last = t;
+      if (dir > 0 && el.scrollLeft >= max - 1) { dir = 0; r.timer = setTimeout(function () { dir = -1; last = 0; r.raf = requestAnimationFrame(step); }, 700); return; }
+      if (dir < 0 && el.scrollLeft <= 0) { dir = 0; r.timer = setTimeout(function () { dir = 1; last = 0; r.raf = requestAnimationFrame(step); }, 700); return; }
+      r.raf = requestAnimationFrame(step);
+    }
+    r.timer = setTimeout(function () { r.raf = requestAnimationFrame(step); }, 350);
+  }
+  function each(box, fn) { box.querySelectorAll("span").forEach(fn); }
+  document.addEventListener("mouseover", function (e) {
+    var row = e.target.closest && e.target.closest(".row:not(.head)");
+    if (row) each(row, go);
+  });
+  document.addEventListener("mouseout", function (e) {
+    var row = e.target.closest && e.target.closest(".row:not(.head)");
+    if (row && !row.contains(e.relatedTarget)) each(row, stop);
+  });
+  // image view: the info bar fades in over the photo you are hovering, so follow the bar instead of the mouse
+  new MutationObserver(function (list) {
+    list.forEach(function (m) {
+      var bar = m.target; if (!bar.classList || !bar.classList.contains("bar")) return;
+      if (m.type === "childList") { running.forEach(function (_, el) { if (!el.isConnected) stop(el); }); }
+      if (bar.classList.contains("show")) setTimeout(function () { each(bar, go); }, 50); else each(bar, stop);
+    });
+  }).observe(document.documentElement, { attributes: true, attributeFilter: ["class"], childList: true, subtree: true });
+})();
+
 // Shared bits on every page: the footer, and the sign-in link that says "Sign in" until you are signed in.
 (function () {
   var BOARD = '<svg class="fb-board" viewBox="0 0 140 36" aria-hidden="true"><path class="fb-deck" d="M4 6 Q6 14 16 15 L124 15 Q134 14 136 5"/><circle cx="38" cy="27" r="5"/><circle cx="104" cy="27" r="5"/></svg>';

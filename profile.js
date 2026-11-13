@@ -156,8 +156,9 @@ function renderListEdit() {
     </div></div></section>`).join("");
 }
 function renderEdit() {
-  return sections().filter((s) => s.items.length).map((s) => `<section class="grid-section">
+  return sections().map((s) => `<section class="grid-section">
     <h2>${esc(s.title)}</h2>
+    <button class="ed-btn el-add" data-act="newrow" data-section="${s.id}">+ Add to My ${esc(s.title)}</button>
     <div class="ed-grid">${s.items.map((i) => `<div class="ed-card${i.status === "removed" ? " is-hidden" : ""}" data-id="${esc(i.id)}">
       <div class="ed-img">${i.url ? `<img src="${esc(i.url)}" alt="">` : "No photo"}</div>
       ${origLink(i)}${cutSwitch(i)}
@@ -247,7 +248,9 @@ app.addEventListener("click", async (e) => {
   if (act === "edit") { const f = $("#edit-form"); f.hidden = !f.hidden; }
   if (act === "add" || act === "newrow") {
     e.preventDefault();
-    state.edit = true; state.draft = e.target.closest("[data-act]").dataset.section; paint();
+    state.edit = true; state.draft = e.target.closest("[data-act]").dataset.section;
+    if (view !== "list") { view = "list"; history.replaceState(null, "", "#list"); }   // adding is a row form: from the image view, hop to the list view to fill it in
+    paint();
     return;
   }
   if (act === "edit") { const f = $("#edit-form"); f.hidden = !f.hidden; }
