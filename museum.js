@@ -25,7 +25,7 @@ const SECTIONS = [
     cols: [["Wheel/manufacturer", (r) => r.name], ["Color", (r) => r.color], ["Material", (r) => r.material], ["Duro", (r) => r.duro]] },
   { type: "obstacles", title: "Obstacles", square: true,
     select: "id,brand_id,name,slug,color,size,material,release_date,release_precision,image_path,extra_brand_ids,brands(name,slug)",
-    cols: [["Obstacle/manufacturer", (r) => r.name], ["Color", (r) => r.color], ["Material", (r) => r.material], ["Size", (r) => r.size]] },
+    cols: [["Obstacle", (r) => r.name], ["Brand", brandName], ["Material", (r) => r.material]] },
 ];
 SECTIONS.forEach((s) => Object.assign(s, { rows: [], total: 0 }));
 
