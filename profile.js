@@ -145,7 +145,7 @@ function renderListEdit() {
     <h2>${esc(s.title)}</h2>
     <div class="list-wrap"><div class="list el-list el-n${SCHEMA[s.id].fields.length}${s.items.length || state.draft === s.id ? "" : " is-empty"}" data-s="${s.id}" style="--cols:${colsFor(SCHEMA[s.id].fields.length)}">
       <div class="el-row el-head"><span></span>${SCHEMA[s.id].fields.map((f) => `<span class="el-h">${esc(f[1])}</span>`).join("")}<span></span></div>
-      ${s.items.map((i, n) => `<div class="el-row${n > 0 && brandOf(s.id, i) !== brandOf(s.id, s.items[n - 1]) ? " divide" : ""}${i.status === "removed" ? " is-hidden" : ""}" data-id="${esc(i.id)}">${elThumb(i)}${elInputs(s.id, i)}<span class="el-acts"><button class="el-mv" data-act="up" title="Move up">↑</button><button class="el-mv" data-act="down" title="Move down">↓</button>${state.staff ? `<button class="el-x el-hide" data-act="hide" data-id="${esc(i.id)}" title="${i.status === "removed" ? "Show again" : "Hide from the site"}">${i.status === "removed" ? "Show" : "Hide"}</button>` : `<button class="el-x" data-act="remove" data-id="${esc(i.id)}" title="Remove">×</button>`}</span></div>`).join("")}
+      ${s.items.map((i, n) => `<div class="el-row${n > 0 && brandOf(s.id, i) !== brandOf(s.id, s.items[n - 1]) ? " divide" : ""}${i.status === "removed" ? " is-hidden" : ""}" data-id="${esc(i.id)}">${elThumb(i)}${elInputs(s.id, i)}<span class="el-acts">${state.staff && (i.source_path || i.image_path) ? `<button class="el-mv el-dl" data-act="dl" data-id="${esc(i.id)}" title="Download the photo they uploaded, before any cut-out">⤓</button>` : ""}<button class="el-mv" data-act="up" title="Move up">↑</button><button class="el-mv" data-act="down" title="Move down">↓</button>${state.staff ? `<button class="el-x el-hide" data-act="hide" data-id="${esc(i.id)}" title="${i.status === "removed" ? "Show again" : "Hide from the site"}">${i.status === "removed" ? "Show" : "Hide"}</button>` : `<button class="el-x" data-act="remove" data-id="${esc(i.id)}" title="Remove">×</button>`}</span></div>`).join("")}
       ${state.draft === s.id ? `<div class="el-row el-new" data-section="${s.id}">${elThumb(null)}${elInputs(s.id, null)}<button class="ed-btn el-save" data-act="savenew">Add</button></div>` : ""}
       <button class="ed-btn el-add" data-act="newrow" data-section="${s.id}">+ Add to My ${esc(s.title)}</button>
     </div></div></section>`).join("");
@@ -158,6 +158,7 @@ function renderEdit() {
       <div class="ed-name">${esc(i.name)}</div>
       <div class="ed-btns">
         <label class="ed-btn">${i.url ? "Replace" : "Add photo"}<input class="ed-file" type="file" accept="image/*"></label>
+        ${state.staff && (i.source_path || i.image_path) ? `<button class="ed-btn" data-act="dl" data-id="${esc(i.id)}" title="Download the photo they uploaded, before any cut-out">Original</button>` : ""}
         ${state.staff ? `<button class="ed-btn" data-act="hide" data-id="${esc(i.id)}">${i.status === "removed" ? "Show again" : "Hide"}</button>` : `<button class="ed-btn" data-act="remove" data-id="${esc(i.id)}">Remove</button>`}
       </div></div>`).join("")}</div></section>`).join("");
 }
@@ -263,6 +264,22 @@ app.addEventListener("click", async (e) => {
     paint();
     const res = await Promise.all(changed.map((x) => sb.from("collection_items").update({ position: x.position }).eq("id", x.id)));
     $("#owner-msg").textContent = res.some((r) => r.error) ? "Couldn't save the new order. Refresh and try again." : "Order saved.";
+    return;
+  }
+  if (act === "dl" && state.staff) {   // admin: the photo as they uploaded it (before the cut-out), so it can be cut by hand and put back with Replace
+    e.preventDefault();
+    const id = e.target.closest("[data-id]").dataset.id, it = state.items.find((i) => i.id === id);
+    const p = it && (it.source_path || it.image_path);
+    if (!p) return;
+    let url = p;
+    if (!/^https?:/.test(p)) {
+      const ext = (p.split(".").pop() || "jpg").toLowerCase();
+      const nm = (state.profile.username + "-" + (it.name || "photo")).replace(/[^A-Za-z0-9._-]+/g, "-").slice(0, 80) + "." + ext;
+      const { data, error } = await sb.storage.from("uploads").createSignedUrl(p, 300, { download: nm });
+      if (error || !data?.signedUrl) return (msg.textContent = "Couldn't get the original. " + (error?.message || ""));
+      url = data.signedUrl;
+    }
+    const a = document.createElement("a"); a.href = url; a.target = "_blank"; a.rel = "noopener"; a.download = ""; document.body.appendChild(a); a.click(); a.remove();
     return;
   }
   if (act === "hide" && state.staff) {   // the museum's owner can hide an entry (and bring it back); nothing is deleted
