@@ -180,7 +180,7 @@ function paintItems() {
     return;
   }
   const editing = state.edit && state.owner;
-  const TIP = `<p class="el-tip">Photo tip: shoot from straight above on a clean, contrasting background in good light. The background is removed for you.</p>`;
+  const TIP = `<p class="el-tip">Photo tip: shoot from straight above on a clean, contrasting background in good light. The background is removed for you.</p>${state.isAdmin ? `<label class="el-skip"><input type="checkbox" id="skip-cut"> Admin: skip cutout and use the photo exactly as it is. <b>Only for transparent PNGs.</b></label>` : ""}`;
   box.innerHTML = view === "list" ? (editing ? TIP + renderListEdit() : renderList()) : editing ? TIP + renderEdit() : renderGrid();
   if (editing && state.draft) { const n = box.querySelector(".el-new .el-in"); if (n) n.focus({ preventScroll: false }); }
   const find = (id) => state.items.find((i) => i.id === id);
@@ -478,14 +478,15 @@ async function load() {
   if (!profile) return notFound(raw);
   const { data: { session } } = await sb.auth.getSession();
   const self = session?.user.id === profile.id;
-  let staff = false;   // the museum's owner (admin or editor) can fix anyone's entries
-  if (session && !self) { const { data: me } = await sb.from("profiles").select("role").eq("id", session.user.id).maybeSingle(); staff = ["admin", "editor"].includes(me?.role); }
+  let isAdmin = false;   // the museum's owner (admin or editor) can fix anyone's entries
+  if (session) { const { data: me } = await sb.from("profiles").select("role").eq("id", session.user.id).maybeSingle(); isAdmin = ["admin", "editor"].includes(me?.role); }
+  const staff = isAdmin && !self;
   const owner = self || staff;
   const { data: items } = await sb.from("collection_items").select("*").eq("user_id", profile.id).order("section").order("position").order("created_at");
   const rows = (items || []).filter((i) => staff || i.status !== "removed");   // hidden entries show only to the museum's owner
   await loadRecuts();
   await Promise.all(rows.map(async (i) => (i.url = await photoUrl(i))));
-  state = { profile, items: rows, owner, staff, viewer: session?.user.id };
+  state = { profile, items: rows, owner, staff, isAdmin, viewer: session?.user.id };
   paint();
 }
 

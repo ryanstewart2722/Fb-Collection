@@ -127,3 +127,6 @@
 
 .el-row.is-hidden, .ed-card.is-hidden { opacity: .38; }
 .el-hide { width: auto; padding: 0 6px; font-size: 11px; }
+.el-skip { display: block; margin: 6px 0 0; font-size: 11px; line-height: 1.4; color: #888; cursor: pointer; }
+.el-skip input { margin-right: 6px; vertical-align: -1px; }
+.el-skip b { font-weight: 400; color: #555; }
