@@ -1,4 +1,4 @@
-// Link-preview pictures: a screenshot of each page, so a shared link shows what the page looks like.
+// Link-preview pictures: a screenshot of each page, so a shared link shows what the page looks like (collections are shown in the image view).
 //   node scripts/make_og.mjs        (run by .github/workflows/og.yml; needs `npm i playwright-core` and Chrome)
 // - the museum, users and submit pages get one picture each (og/<page>.jpg)
 // - every public collection gets its own picture (og/<username>.jpg) and a small page at u/<username>/ that holds
@@ -50,11 +50,16 @@ for (const [key, url, wait] of [
 const now = new Set();
 for (const p of people) {
   now.add(p.username);
-  const sig = String(p.items), key = "u:" + p.username;
-  if (stale(key, sig) && await shoot(`${SITE}/profile.html?u=${p.username}#list`, `${p.username}.jpg`, "#items .row, #items .item")) {
+  const sig = p.items + "-image", key = "u:" + p.username;
+  if (stale(key, sig) && await shoot(`${SITE}/profile.html?u=${p.username}#image`, `${p.username}.jpg`, "#items .item img")) {
     index[key] = { sig, at: Date.now() };
   }
-  if (!fs.existsSync(path.join(OG, `${p.username}.jpg`))) continue;
+  if (!index[key] || index[key].sig !== sig) {   // no photos to show (so no image-view picture): fall back to the museum's picture
+    fs.rmSync(path.join(OG, `${p.username}.jpg`), { force: true });
+    fs.rmSync(path.join(ROOT, "u", p.username), { recursive: true, force: true });
+    delete index[key];
+    continue;
+  }
   const name = p.display_name || p.username, at = index[key]?.at || 0;
   const dir = path.join(ROOT, "u", p.username); fs.mkdirSync(dir, { recursive: true });
   fs.writeFileSync(path.join(dir, "index.html"), `<!doctype html>
