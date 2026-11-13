@@ -85,3 +85,11 @@
 .me-extras { display: grid; gap: 8px; margin-bottom: 8px; }
 .me-extra { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
 .me-extra select, .me-extra input { flex: 1 1 160px; min-width: 0; }
+
+/* Molds tab */
+.me-mold { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 10px 0; border-top: 1px solid #ddd; font-size: 13px; }
+.me-mold .me-meta { color: #777; }
+.me-mold-edit { display: flex; gap: 8px; align-items: center; justify-content: flex-end; }
+.me-mold-in { font: inherit; padding: 6px 8px; border: 1px solid #000; background: #fff; min-width: 180px; }
+.me-mold-merge { font: inherit; padding: 6px 8px; border: 1px solid #000; background: #fff; max-width: 200px; }
+@media (max-width: 760px) { .me-mold { grid-template-columns: 1fr; } .me-mold-edit { justify-content: flex-start; flex-wrap: wrap; } }

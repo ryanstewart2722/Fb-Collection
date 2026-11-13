@@ -592,9 +592,96 @@ document.querySelectorAll(".ad-tabs button").forEach((b) => b.addEventListener("
   document.querySelectorAll(".ad-tabs button").forEach((x) => x.classList.toggle("active", x === b));
   setStatus("");
   if (tab === "review") return renderReview().catch(fail("Couldn't load the review list"));
+  if (tab === "molds") return renderMolds().catch(fail("Couldn't load the molds"));
   await loadList().catch(fail("Couldn't load"));
   renderListNow(); listY = 0; window.scrollTo({ top: 0, behavior: "instant" });   // a different tab starts at the top
 }));
+
+
+/* ---------- Molds: every mold name in use, to rename or merge ---------- */
+// Molds are plain text on each deck (museum decks keep a list, collection decks one name), so this gathers them all,
+// shows how many boards use each spelling, and lets you rename one or merge it into another everywhere at once.
+let moldRows = [];   // [{ name, museum: [deck rows], coll: [collection rows] }]
+async function allRows(make) {
+  const out = [];
+  for (let from = 0; ; from += 1000) {
+    const { data, error } = await make().range(from, from + 999);
+    if (error) throw error;
+    out.push(...data);
+    if (data.length < 1000) break;
+  }
+  return out;
+}
+async function renderMolds() {
+  app.innerHTML = `<p class="me-count">Loading…</p>`;
+  const [decks, items] = await Promise.all([
+    allRows(() => sb.from("decks").select("id,molds").order("id")),
+    allRows(() => sb.from("collection_items").select("id,details").eq("section", "decks").order("id")),
+  ]);
+  const by = new Map();
+  const slot = (n) => by.get(n) || by.set(n, { name: n, museum: [], coll: [] }).get(n);
+  decks.forEach((d) => (d.molds || []).forEach((m) => { if (m && m.trim()) slot(m).museum.push(d); }));
+  items.forEach((i) => { const m = (i.details?.mold || "").trim(); if (m) slot(m).coll.push(i); });
+  moldRows = [...by.values()].sort((a, b) => a.name.toLowerCase().localeCompare(b.name.toLowerCase()) || a.name.localeCompare(b.name));
+  drawMolds();
+}
+function drawMolds(open) { window.momsKeepScroll ? window.momsKeepScroll(app, () => drawMoldsNow(open)) : drawMoldsNow(open); }
+function drawMoldsNow(open) {
+  const names = moldRows.map((m) => m.name);
+  app.innerHTML = `<p class="me-count">${moldRows.length} molds. Rename fixes a spelling everywhere; Merge moves everything from one mold into another.</p><div class="me-molds">` +
+    moldRows.map((m, i) => `<div class="me-mold" data-i="${i}">
+      <span class="me-name"><b>${esc(m.name)}</b></span>
+      <span class="me-meta">${m.museum.length} in the museum · ${m.coll.length} in collections</span>
+      ${open === i ? `<span class="me-mold-edit"><input class="me-mold-in" value="${esc(m.name)}" maxlength="60"> <button class="ad-btn ad-btn-dark" data-act="mold-save">Save</button> <button class="ad-btn" data-act="mold-cancel">Cancel</button></span>`
+        : `<span class="me-mold-edit"><button class="ad-btn" data-act="mold-rename">Rename</button>
+        <select class="me-mold-merge" aria-label="Merge ${esc(m.name)} into"><option value="">Merge into…</option>${names.map((n, j) => j === i ? "" : `<option value="${j}">${esc(n)}</option>`).join("")}</select></span>`}
+    </div>`).join("") + `</div>`;
+  if (open != null) app.querySelector(".me-mold-in")?.select();
+}
+async function moldReplace(m, to) {
+  to = to.trim().replace(/\s+/g, " ");
+  if (!to || to === m.name) return;
+  const want = moldRows.find((x) => x.name === to);
+  const n = m.museum.length + m.coll.length;
+  if (want && !confirm(`Merge “${m.name}” into “${to}”? That changes ${n} board${n === 1 ? "" : "s"}.`)) return;
+  setStatus("Saving…");
+  const jobs = [];
+  m.museum.forEach((d) => {
+    const next = [...new Set((d.molds || []).map((x) => (x === m.name ? to : x)))];
+    jobs.push(sb.from("decks").update({ molds: next }).eq("id", d.id));
+  });
+  m.coll.forEach((i) => jobs.push(sb.from("collection_items").update({ details: { ...i.details, mold: to } }).eq("id", i.id)));
+  const res = await Promise.all(jobs);
+  const bad = res.find((r) => r.error);
+  if (bad) return setStatus("Couldn't save every board: " + friendly(bad.error), true);
+  // the suggestion list people pick from while typing
+  try {
+    const have = await sb.from("user_terms").select("id").eq("kind", "mold").eq("name", to).limit(1);
+    if (have.data?.length) await sb.from("user_terms").delete().eq("kind", "mold").eq("name", m.name);
+    else await sb.from("user_terms").update({ name: to }).eq("kind", "mold").eq("name", m.name);
+  } catch { /* the suggestion list is optional */ }
+  setStatus(want ? `Merged into ${to}.` : `Renamed to ${to}.`);
+  await renderMolds();
+}
+app.addEventListener("click", (e) => {
+  const act = e.target.closest("[data-act]")?.dataset.act, row = e.target.closest(".me-mold");
+  if (!row || !act?.startsWith("mold-")) return;
+  const i = +row.dataset.i;
+  if (act === "mold-rename") drawMolds(i);
+  if (act === "mold-cancel") drawMolds();
+  if (act === "mold-save") moldReplace(moldRows[i], row.querySelector(".me-mold-in").value).catch(fail("Couldn't rename"));
+});
+app.addEventListener("keydown", (e) => {
+  if (e.key !== "Enter" || !e.target.classList.contains("me-mold-in")) return;
+  e.preventDefault();
+  const row = e.target.closest(".me-mold");
+  moldReplace(moldRows[+row.dataset.i], e.target.value).catch(fail("Couldn't rename"));
+});
+app.addEventListener("change", (e) => {
+  if (!e.target.classList.contains("me-mold-merge") || !e.target.value) return;
+  const row = e.target.closest(".me-mold");
+  moldReplace(moldRows[+row.dataset.i], moldRows[+e.target.value].name).catch(fail("Couldn't merge"));
+});
 
 /* ---------- Review: what people uploaded, waiting for you ---------- */
 // Photos people upload sit in a private folder. Nothing is public until you approve it here.
