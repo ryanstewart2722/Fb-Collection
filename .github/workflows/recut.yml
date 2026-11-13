@@ -59,4 +59,4 @@ jobs:
           git pull --rebase -q origin main
           git push -q origin HEAD:main
           # a push from this job does not start the site build by itself, so ask for one
-          gh api -X POST "repos/${{ github.repository }}/pages/builds" >/dev/null && echo "site build requested"
+          for i in 1 2 3 4; do gh api -X POST "repos/${{ github.repository }}/pages/builds" >/dev/null && echo "site build requested" && exit 0; sleep 20; done; echo "could not request a site build"; exit 0
