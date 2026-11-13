@@ -39,7 +39,7 @@ const SAMPLE = {
   ].map(([section, name, brand, size, color, f], n) => ({ id: "s" + n, section, name, details: { maker: brand, size, color, ...(section === "setups" ? { trucks: "Independent 32mm Silver", wheels: "Joycult Classic 3.0 Tan" } : { mold: color ? "Freshwater" : "" }) }, image_path: D(f), status: "approved" })),
 };
 
-let view = location.hash === "#list" ? "list" : "image";
+let view = location.hash === "#image" ? "image" : "list";   // collection pages open on the list
 let state = null;   // { profile, items, owner }
 
 function showPreview(src) { if (!src) return hidePreview(); preview.src = src; preview.classList.add("show"); }
@@ -213,7 +213,7 @@ function paintItems() {
     });
   }
 }
-window.addEventListener("hashchange", () => { view = location.hash === "#list" ? "list" : "image"; if (state) { paintNow(); window.scrollTo({ top: 0, behavior: "instant" }); } });   // a different view starts at the top
+window.addEventListener("hashchange", () => { view = location.hash === "#image" ? "image" : "list"; if (state) { paintNow(); window.scrollTo({ top: 0, behavior: "instant" }); } });   // a different view starts at the top
 
 /* ---------- page ---------- */
 function syncEditHeader() {
