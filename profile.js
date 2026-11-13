@@ -61,7 +61,7 @@ let RECUTS = {};
 async function loadRecuts() { try { const r = await fetch("/user-cuts/index.json", { cache: "no-cache" }); if (r.ok) RECUTS = await r.json(); } catch { /* none yet */ } }
 // Uploads the cut-out and, for the later high-quality re-cut, a cropped copy of the original photo.
 async function uploadPhoto(file, section) {
-  const p = await window.momsPreparePhoto(file, section), uid = state.profile.id, id = crypto.randomUUID();
+  const p = await window.momsPreparePhoto(file, section), uid = state.viewer || state.profile.id, id = crypto.randomUUID();   // an admin's uploads go in the admin's own folder
   const image_path = `${uid}/${id}.${p.ext}`;
   const up = await sb.storage.from("uploads").upload(image_path, p.blob, { contentType: p.type, cacheControl: "3600" });
   if (up.error) throw up.error;
@@ -76,7 +76,11 @@ const stored = (p) => p && !/^https?:/.test(p);
 function dropFiles(...paths) { const list = [...new Set(paths.filter(stored))]; if (list.length) sb.storage.from("uploads").remove(list).catch(() => {}); }
 async function photoUrl(item) {
   const rc = RECUTS[item.id];
-  if (rc && item.source_path && rc.src === item.source_path) return "/" + rc.file;
+  if (rc && item.source_path && rc.src === item.source_path) {
+    const u = "/" + rc.file + "?c=1";   // a new address, so a copy of the page that was cached before the file existed can't get in the way
+    // use the better cut-out only once it really loads; if the site is still publishing it, keep showing the quick one
+    if (await new Promise((ok) => { const im = new Image(); im.onload = () => ok(true); im.onerror = () => ok(false); im.src = u; })) return u;
+  }
   const p = item.image_path;
   if (!p) return "";
   if (/^https?:/.test(p)) return p;
@@ -103,6 +107,10 @@ function fieldsHtml(sec) {
 }
 function ownerBar() {
   const p = state.profile;
+  if (state.staff) return `<div class="p-owner">
+    <button class="auth-link" data-act="editimg">${state.edit ? "Done editing" : "Edit"}</button> · <span class="auth-note">Admin: you can change or remove ${esc(p.display_name || p.username)}'s entries and photos.</span>
+    <p id="owner-msg" class="auth-note" aria-live="polite"></p>
+  </div>`;
   return `<div class="p-owner">
     <button class="auth-link" data-act="editimg">${state.edit ? "Done editing" : "Edit"}</button> ·
     <button class="auth-link" data-act="edit">Edit name and bio</button> ·
@@ -124,7 +132,7 @@ function renderList() {
     <div class="list-wrap"><div class="list${s.items.length ? "" : " is-empty"}" data-s="${s.id}" style="--cols:${colsFor(SCHEMA[s.id].fields.length)}">
       <div class="row head">${spans(SCHEMA[s.id].fields.map((f) => f[1]))}</div>
       ${s.items.map((i, n) => `<div class="row${n > 0 && brandOf(s.id, i) !== brandOf(s.id, s.items[n - 1]) ? " divide" : ""}" data-id="${esc(i.id)}">${spans(rowCells(s.id, i))}</div>`).join("")}
-      ${state.owner ? `<a class="add-new" href="#" data-act="add" data-section="${s.id}">+ Add new</a>` : ""}
+      ${state.owner && !state.staff ? `<a class="add-new" href="#" data-act="add" data-section="${s.id}">+ Add new</a>` : ""}
     </div></div></section>`).join("");
 }
 function elThumb(i) { return `<label class="el-thumb">${i && i.url ? `<img src="${esc(i.url)}" alt="">` : "+"}<input class="ed-file" type="file" accept="image/*"></label>`; }
@@ -459,12 +467,15 @@ async function load() {
   const { data: profile } = await sb.from("profiles").select("id,username,display_name,bio,is_private").eq("username", username).maybeSingle();
   if (!profile) return notFound(raw);
   const { data: { session } } = await sb.auth.getSession();
-  const owner = session?.user.id === profile.id;
+  const self = session?.user.id === profile.id;
+  let staff = false;   // the museum's owner (admin or editor) can fix anyone's entries
+  if (session && !self) { const { data: me } = await sb.from("profiles").select("role").eq("id", session.user.id).maybeSingle(); staff = ["admin", "editor"].includes(me?.role); }
+  const owner = self || staff;
   const { data: items } = await sb.from("collection_items").select("*").eq("user_id", profile.id).order("section").order("position").order("created_at");
   const rows = items || [];
   await loadRecuts();
   await Promise.all(rows.map(async (i) => (i.url = await photoUrl(i))));
-  state = { profile, items: rows, owner };
+  state = { profile, items: rows, owner, staff, viewer: session?.user.id };
   paint();
 }
 
