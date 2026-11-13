@@ -213,7 +213,7 @@ function paintItems() {
     });
   }
 }
-window.addEventListener("hashchange", () => { view = location.hash === "#list" ? "list" : "image"; if (state) { paint(); window.scrollTo({ top: 0, behavior: "instant" }); } });
+window.addEventListener("hashchange", () => { view = location.hash === "#list" ? "list" : "image"; if (state) { paintNow(); window.scrollTo({ top: 0, behavior: "instant" }); } });   // a different view starts at the top
 
 /* ---------- page ---------- */
 function syncEditHeader() {
