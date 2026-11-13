@@ -172,7 +172,7 @@ function paintItems() {
     return;
   }
   const editing = state.edit && state.owner;
-  const TIP = `<p class="el-tip">Photo tip: shoot from straight above on a clean, contrasting background in good light. The background is removed for you.</p>`;
+  const TIP = `<p class="el-tip">Photo tip: shoot from straight above on a clean, contrasting background in good light. The background is removed for you.</p><label class="el-skip"><input type="checkbox" id="skip-cut"> Skip cutout: use my photo exactly as it is. <b>Only use for transparent PNGs.</b></label>`;
   box.innerHTML = view === "list" ? (editing ? TIP + renderListEdit() : renderList()) : editing ? TIP + renderEdit() : renderGrid();
   if (editing && state.draft) { const n = box.querySelector(".el-new .el-in"); if (n) n.focus({ preventScroll: false }); }
   const find = (id) => state.items.find((i) => i.id === id);

@@ -18,6 +18,7 @@ function paintForm() {
       : `<input name="${k}" type="text" placeholder="${label}${req ? " (required)" : ""}" maxlength="${k === "source" ? 300 : 120}" ${req ? "required" : ""}>`).join("") +
     `<label class="p-file">Photo (required) <input name="photo" type="file" accept="image/jpeg,image/png,image/webp,image/*" required></label>
      <p class="el-tip">Photo tip: shoot from straight above on a clean, contrasting background in good light. The background is removed for you.</p>
+     <label class="el-skip"><input type="checkbox" id="skip-cut"> Skip cutout: use my photo exactly as it is. <b>Only use for transparent PNGs.</b></label>
      <button class="auth-btn" type="submit" id="s-btn">Submit</button>`;
 }
 document.addEventListener("click", (e) => { const b = e.target.closest("[data-t]"); if (b) { e.preventDefault(); type = b.dataset.t; paintForm(); $("#s-msg").textContent = ""; } });

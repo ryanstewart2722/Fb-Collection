@@ -427,3 +427,7 @@ body > main.auth { width: 100%; box-sizing: border-box; }
 
 /* Previous / Next sit at the bottom of the page, just above the footer */
 .board { position: relative; padding-bottom: 56px; }
+
+.el-skip { display: block; margin: 6px 0 0; font-size: 11px; line-height: 1.4; color: #888; cursor: pointer; }
+.el-skip input { margin-right: 6px; vertical-align: -1px; }
+.el-skip b { font-weight: 400; color: #555; }
