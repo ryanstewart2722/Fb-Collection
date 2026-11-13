@@ -56,7 +56,7 @@ jobs:
           git add user-cuts
           if git diff --cached --quiet; then echo "nothing changed"; exit 0; fi
           git commit -qm "Re-cut collection photos"
-          git pull --rebase -q origin main
+          git pull --rebase -q -X theirs origin main   # if the list was changed meanwhile, keep this run's version
           git push -q origin HEAD:main
           # a push from this job does not start the site build by itself, so ask for one
           for i in 1 2 3 4; do gh api -X POST "repos/${{ github.repository }}/pages/builds" >/dev/null && echo "site build requested" && exit 0; sleep 20; done; echo "could not request a site build"; exit 0
