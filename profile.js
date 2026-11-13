@@ -334,7 +334,21 @@ async function canonRow(row, preview) {
   const notes = [];
   for (const inp of row.querySelectorAll(".el-in")) {
     const kind = TERM_KIND[inp.dataset.k]; if (!kind) continue;
-    const old = inp.value, r = canonTerm(kind, old);
+    const old = inp.value;
+    if (kind === "brand" && /\s[x×]\s/i.test(old)) {   // a collab ("Joycult x Independent"): check each brand on its own, keep them all
+      const parts = old.split(/\s+[x×]\s+/i).map((p) => canonTerm(kind, p)).filter((r) => r.status !== "empty");
+      const joined = parts.map((r) => r.name).join(" x ");
+      if (joined !== old) inp.value = joined;
+      parts.forEach((r) => {
+        if (r.status === "new" && r.name.length >= 3) {
+          notes.push(`New ${kind} added: ${r.name}`);
+          TERMS[kind].set(tkey(r.name), r.name);
+          if (!preview) sb.from("user_terms").insert({ kind, name: r.name }).then(() => {}, () => {});
+        }
+      });
+      continue;
+    }
+    const r = canonTerm(kind, old);
     if (r.status === "empty") continue;
     if (r.name !== old) inp.value = r.name;
     if (r.status === "fixed" && r.name !== old.trim()) notes.push(`“${old.trim()}” is ${r.name}`);
