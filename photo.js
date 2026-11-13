@@ -264,7 +264,6 @@ function tiltOf(d, w, h) {
 
 window.momsPreparePhoto = async function (file, section) {
   if (file.size > 25 * 1024 * 1024) throw new Error("That photo is too big (25 MB max).");
-  const skip = document.getElementById("skip-cut")?.checked;   // "Skip the cutout" box: only for transparent PNGs
   let bmp;
   try { bmp = await createImageBitmap(file); } catch { throw new Error("Couldn't read that photo. Try a JPG or PNG."); }
   const k0 = Math.min(1, 2000 / Math.max(bmp.width, bmp.height));   // working copy for finding the outline
@@ -287,12 +286,6 @@ window.momsPreparePhoto = async function (file, section) {
   for (let j = 0; j < h; j += 3) { edgeN += 2; if (d[at(0, j) + 3] < 250) edgeClear++; if (d[at(w - 1, j) + 3] < 250) edgeClear++; }
   let preCut = false;   // the person supplied a ready-made cut-out
   if (edgeClear > edgeN * 0.3) { cut = true; preCut = true; }
-  if (skip) {   // use the picture exactly as it is, no cutout, trimming or resizing
-    if (file.type !== "image/png") throw new Error("Skip cutout only works with PNG files. Untick it to have the background removed for you.");
-    if (!preCut) throw new Error("That PNG doesn't have a transparent background, so the cutout can't be skipped. Untick \"Skip cutout\" and the background is removed for you.");
-    if (file.size > 8 * 1024 * 1024) throw new Error("That PNG is over 8 MB. Make it smaller (for example 1000 px wide) and try again.");
-    return { blob: file, ext: "png", type: "image/png", cut: true, source: null };
-  }
 
   // 2. plain backdrop? flood in from the edges over colours close to the corner colour
   if (!cut) {
