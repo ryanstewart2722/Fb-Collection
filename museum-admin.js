@@ -40,7 +40,8 @@ const TYPES = {
 
 let brands = [];
 let tab = "decks";
-let list = { rows: [], total: 0, search: "", brand: "", photo: "" };
+let list = { rows: [], total: 0, search: "", brand: "", photo: "", tab: "", sort: (() => { try { return localStorage.getItem("me-sort") === "added" ? "added" : "release"; } catch { return "release"; } })() };
+let fromReview = false;   // the entry being edited was just added from the Review tab
 let editing = null;   // row being edited ({} for a new one), or null when showing the list
 let photo2 = null, target = 1, drop2 = false;   // second photo (shown below the first on the board page)
 let photo = null;     // new photo waiting to upload: { blob, ext, preview }
@@ -63,9 +64,12 @@ async function loadBrands() {
 
 async function loadList(reset = true) {
   if (reset) list.rows = [];
+  list.tab = tab;
+  const added = list.sort === "added";   // "Recently added": newest first, whatever the release date
   let q = tab === "brands"
-    ? sb.from("brands").select("*", { count: "exact" }).order("name")
-    : sb.from(tab).select("*,brands(name)", { count: "exact" }).order("release_date", { ascending: false, nullsFirst: false }).order("id", { ascending: false });
+    ? sb.from("brands").select("*", { count: "exact" }).order(...(added ? ["created_at", { ascending: false }] : ["name"]))
+    : added ? sb.from(tab).select("*,brands(name)", { count: "exact" }).order("created_at", { ascending: false }).order("id", { ascending: false })
+      : sb.from(tab).select("*,brands(name)", { count: "exact" }).order("release_date", { ascending: false, nullsFirst: false }).order("id", { ascending: false });
   if (list.search) q = q.ilike("name", `%${list.search}%`);
   if (list.brand && tab !== "brands") q = q.eq("brand_id", list.brand);
   if (list.photo === "without" && tab !== "brands") q = q.is("image_path", null);
@@ -94,6 +98,7 @@ function renderListNow() {
       <input id="search" type="search" placeholder="Search ${tab}…" value="${esc(list.search)}">
       ${tab === "brands" ? "" : `<select id="photo-filter" aria-label="Filter by photo"><option value="">All boards</option><option value="without" ${list.photo === "without" ? "selected" : ""}>No photo yet</option><option value="with" ${list.photo === "with" ? "selected" : ""}>Has a photo</option></select>`}
       ${tab === "brands" ? "" : `<select id="brand-filter" aria-label="Filter by brand"><option value="">All brands</option>${brands.map((b) => `<option value="${b.id}" ${String(b.id) === String(list.brand) ? "selected" : ""}>${esc(b.name)}</option>`).join("")}</select>`}
+      <select id="sort-by" aria-label="Sort"><option value="release" ${list.sort === "release" ? "selected" : ""}>${tab === "brands" ? "A to Z" : "By release date"}</option><option value="added" ${list.sort === "added" ? "selected" : ""}>Recently added</option></select>
       <button class="ad-btn ad-btn-dark" data-act="new">+ Add ${t.one}</button>
     </div>
     <p class="me-count">${list.total} ${list.total === 1 ? t.one : tab}${tab === "brands" ? "" : `<span class="me-views"><button class="ad-link${view === "list" ? " on" : ""}" data-act="view-list">List</button> / <button class="ad-link${view === "images" ? " on" : ""}" data-act="view-images">Images</button></span>`}</p>
@@ -114,6 +119,11 @@ function renderListNow() {
 
   $("#photo-filter")?.addEventListener("change", (e) => {
     list.photo = e.target.value;
+    loadList().then(renderList).catch(fail("Couldn't load"));
+  });
+  $("#sort-by")?.addEventListener("change", (e) => {
+    list.sort = e.target.value;
+    try { localStorage.setItem("me-sort", list.sort); } catch {}
     loadList().then(renderList).catch(fail("Couldn't load"));
   });
   $("#brand-filter")?.addEventListener("change", (e) => {
@@ -160,13 +170,38 @@ function fieldHtml([key, label, kind = "text", hint = ""], r) {
   return `<label class="ad-field"><span>${label}</span>${input}${hint ? `<small>${hint}</small>` : ""}</label>`;
 }
 
+// Previous / Next while editing: walks the list you opened this from (or, right after adding from Review, goes back for the next one)
+function navHtml() {
+  if (!editing || !editing.id) return "";
+  if (fromReview) return `<span class="me-step"><button class="ad-link" data-act="next-review">Next in review →</button></span>`;
+  const i = list.tab === tab ? list.rows.findIndex((x) => x.id === editing.id) : -1;
+  if (i < 0) return "";
+  const more = list.rows.length < list.total;
+  return `<span class="me-step">${i > 0 ? `<button class="ad-link" data-act="prev">← Previous</button>` : `<span class="me-off">← Previous</span>`}
+    <span class="me-pos">${i + 1} of ${list.total}</span>
+    ${i < list.rows.length - 1 || more ? `<button class="ad-link" data-act="next">Next →</button>` : `<span class="me-off">Next →</span>`}</span>`;
+}
+async function stepTo(dir) {
+  if (!leaveForm()) return;
+  let i = list.rows.findIndex((x) => x.id === editing.id) + dir;
+  try {
+    if (i >= list.rows.length && list.rows.length < list.total) { setStatus("Loading…"); await loadList(false); setStatus(""); }
+  } catch (err) { return fail("Couldn't load")(err); }
+  if (i < 0 || i >= list.rows.length) return;
+  editing = { ...list.rows[i] }; photo = null; photo2 = null; drop2 = false;
+  setStatus("");
+  renderForm();
+}
 function renderForm() {
   const t = TYPES[tab];
   const r = editing;
   const isNew = !r.id;
   const img = photo?.preview || r.image_path;
   app.innerHTML = `
-    <button class="ad-link me-back" data-act="back">← All ${tab}</button>
+    <div class="me-nav">
+      <button class="ad-link me-back" data-act="back">${fromReview ? "← Back to review" : `← All ${tab}`}</button>
+      ${navHtml()}
+    </div>
     <h2 class="me-title">${isNew ? `New ${t.one}` : esc(r.name)}</h2>
     <div class="me-form">
       ${tab === "brands" ? "" : `<div class="me-photo">
@@ -288,6 +323,8 @@ async function save() {
     if (tab === "brands") await loadBrands();
     photo = null;
     editing = saved;
+    const li = list.tab === tab ? list.rows.findIndex((x) => x.id === saved.id) : -1;
+    if (li >= 0) list.rows[li] = { ...list.rows[li], ...saved };   // so Previous / Next and the list show what you just saved
     renderForm();
     setStatus(`Saved ✓ It's live on the museum now.`);
   } catch (err) {
@@ -550,11 +587,11 @@ app.addEventListener("click", async (e) => {
   if (card) {
     const a = e.target.closest("[data-act]")?.dataset.act;
     if (a === "rotate-card") return rotateCard(card);
-    if (a === "open") { listY = window.scrollY; editing = { ...list.rows[card.dataset.i] }; photo = null; photo2 = null; drop2 = false; return renderForm(); }
+    if (a === "open") { listY = window.scrollY; fromReview = false; editing = { ...list.rows[card.dataset.i] }; photo = null; photo2 = null; drop2 = false; return renderForm(); }
   }
   const item = e.target.closest(".me-item");
   if (item) {
-    listY = window.scrollY;
+    listY = window.scrollY; fromReview = false;
     editing = { ...list.rows[item.dataset.i] }; photo = null; photo2 = null; drop2 = false;
     photo = null;
     return renderForm();
@@ -565,7 +602,15 @@ app.addEventListener("click", async (e) => {
     try { localStorage.setItem("me-view", view); } catch {}
     await loadList().catch(fail("Couldn't load")); return renderList();
   }
-  if (act === "new") { editing = {}; photo = null; photo2 = null; drop2 = false; renderForm(); }
+  if (act === "new") { fromReview = false; editing = {}; photo = null; photo2 = null; drop2 = false; renderForm(); }
+  if (act === "prev") stepTo(-1);
+  if (act === "next") stepTo(1);
+  if ((act === "next-review" || (act === "back" && fromReview)) && leaveForm()) {
+    fromReview = false; editing = null; photo = null; photo2 = null; drop2 = false; setStatus("");
+    document.querySelectorAll(".ad-tabs button").forEach((b) => b.classList.toggle("active", b.dataset.tab === "review"));
+    tab = "review"; renderReview().catch(fail("Couldn't load the review list")); window.scrollTo({ top: 0, behavior: "instant" });
+    return;
+  }
   if (act === "back" && leaveForm()) { editing = null; photo = null; photo2 = null; drop2 = false; setStatus(""); await loadList().catch(fail("Couldn't load")); renderList(); }
   if (act === "all") {
     setStatus("Loading everything…");
@@ -587,7 +632,7 @@ app.addEventListener("click", async (e) => {
 
 document.querySelectorAll(".ad-tabs button").forEach((b) => b.addEventListener("click", async () => {
   if (!leaveForm()) return;
-  tab = b.dataset.tab;
+  tab = b.dataset.tab; fromReview = false;
   editing = null; photo = null; list.search = ""; list.brand = ""; list.photo = "";
   document.querySelectorAll(".ad-tabs button").forEach((x) => x.classList.toggle("active", x === b));
   setStatus("");
@@ -772,7 +817,7 @@ async function reviewAct(card, ok) {
       // straight into the editor for the new board, so the rest can be filled in
       reviewItems[card.dataset.i] = null;
       setReviewBadge(reviewItems.filter(Boolean).length);
-      tab = table; editing = made; photo = null; photo2 = null; drop2 = false;
+      tab = table; editing = made; photo = null; photo2 = null; drop2 = false; fromReview = true;
       document.querySelectorAll(".ad-tabs button").forEach((b) => b.classList.toggle("active", b.dataset.tab === table));
       renderForm();
       return setStatus("Added to the museum. Fill in the rest and press Save changes.");

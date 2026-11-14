@@ -93,3 +93,10 @@
 .me-mold-in { font: inherit; padding: 6px 8px; border: 1px solid #000; background: #fff; min-width: 180px; }
 .me-mold-merge { font: inherit; padding: 6px 8px; border: 1px solid #000; background: #fff; max-width: 200px; }
 @media (max-width: 760px) { .me-mold { grid-template-columns: 1fr; } .me-mold-edit { justify-content: flex-start; flex-wrap: wrap; } }
+
+/* Previous / Next in the entry form */
+.me-nav { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-top: 24px; }
+.me-nav .me-back { margin-top: 0; }
+.me-step { display: flex; gap: 14px; align-items: baseline; font-size: 13px; }
+.me-pos { color: #777; }
+.me-off { color: #bbb; }
