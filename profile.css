@@ -142,3 +142,5 @@
 .u-table .row.on span:first-child { padding-left: 14px; }
 .u-table .row.on .u-tag { color: #bbb; }
 .preview.u-touch.show { pointer-events: auto; top: calc(var(--bar-h, 44px) + 10px); transform: translateX(-50%); max-height: calc(100vh - var(--bar-h, 44px) - 24px); max-height: calc(100dvh - var(--bar-h, 44px) - 24px); }
+
+.u-count { font-size: 13px; font-weight: 400; letter-spacing: 0; color: #777; margin-left: 10px; vertical-align: middle; }
