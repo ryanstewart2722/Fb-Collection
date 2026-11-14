@@ -136,3 +136,9 @@
 .el-tcell { display: flex; flex-direction: column; align-items: center; justify-content: center; }
 .el-tcell .orig-dl { font-size: 8px; line-height: 1.05; margin-top: 2px; width: 34px; }
 .grid-section > .el-add { margin: 0 0 14px; }
+
+/* Users page on a phone: tap a person, their photo sits at the top like the other list views; tap it to open their page */
+.u-table .row.on { background: #000; color: #fff; }
+.u-table .row.on span:first-child { padding-left: 14px; }
+.u-table .row.on .u-tag { color: #bbb; }
+.preview.u-touch.show { pointer-events: auto; top: calc(var(--bar-h, 44px) + 10px); transform: translateX(-50%); max-height: calc(100vh - var(--bar-h, 44px) - 24px); max-height: calc(100dvh - var(--bar-h, 44px) - 24px); }

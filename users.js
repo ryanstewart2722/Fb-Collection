@@ -12,7 +12,7 @@
   } catch { box.innerHTML = `<p class="p-empty">Couldn't load the list. Please refresh.</p>`; return; }
 
   // Desktop: hovering a person shows their main (the one they picked), or else their first setup (or, with no setups, their first deck, obstacle...), big like the museum list does.
-  if (!matchMedia("(hover: hover) and (pointer: fine)").matches) return;
+  const touch = !matchMedia("(hover: hover) and (pointer: fine)").matches;   // phones: tap a person to see their photo, tap it (or the same row) again to open their page
   const H = { apikey: MOMS.key, Authorization: "Bearer " + MOMS.key };
   const get = async (path) => { try { const r = await fetch(`${MOMS.url}/rest/v1/${path}`, { headers: H }); return r.ok ? r.json() : []; } catch { return []; } };
   const [profiles, items, cuts] = await Promise.all([
@@ -49,9 +49,31 @@
     return url;
   }
   const pv = document.createElement("img");
-  pv.className = "preview"; pv.alt = ""; pv.style.left = "50%";
+  pv.className = "preview" + (touch ? " u-touch" : ""); pv.alt = ""; pv.style.left = "50%";
   document.body.appendChild(pv);
   let current = null;
+  async function showFor(row) {
+    current = row;
+    const u = decodeURIComponent((row.getAttribute("href") || "").replace(/^\/u\//, ""));
+    const url = await urlFor(u);
+    if (current !== row) return;
+    if (!url) { pv.classList.remove("show"); return; }
+    pv.onload = () => { if (current === row) pv.classList.add("show"); };
+    pv.onerror = () => pv.classList.remove("show");
+    if (pv.src !== new URL(url, location.href).href) { pv.classList.remove("show"); pv.src = url; } else pv.classList.add("show");
+  }
+  if (touch) {
+    let href = "";
+    box.addEventListener("click", (e) => {
+      const row = e.target.closest("a.row:not(.head)"); if (!row) return;
+      if (row === current) return;   // second tap on the same person: follow the link
+      e.preventDefault();
+      box.querySelectorAll(".row.on").forEach((x) => x.classList.remove("on"));
+      row.classList.add("on"); href = row.getAttribute("href"); showFor(row);
+    });
+    pv.addEventListener("click", () => { if (href) location.href = href; });
+    return;
+  }
   box.addEventListener("mouseover", async (e) => {
     const row = e.target.closest("a.row"); if (!row || row === current || row.classList.contains("head")) return;
     current = row;
