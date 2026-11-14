@@ -138,7 +138,7 @@ function renderList() {
     </div></div></section>`).join("");
 }
 const cutNow = (i) => i.cutInfo && (i.cutInfo.pick === "quick" || (i.cutInfo.bad && i.cutInfo.pick !== "refined")) ? "quick" : "refined";
-const cutSwitch = (i) => state.staff && i && i.cutInfo ? `<a href="#" class="orig-dl" data-act="cut" data-id="${esc(i.id)}" title="${i.cutInfo.bad ? "The refined cut failed the quality check" : "Both cuts are kept"}${i.cutInfo.q ? " (shape score " + i.cutInfo.q + ")" : ""}">${cutNow(i) === "quick" ? "Quick cut · switch to Refined" : "Refined cut · switch to Quick"}</a>` : "";
+const cutSwitch = (i) => state.staff && i && i.cutInfo ? `<a href="#" class="orig-dl" data-act="cutview" data-id="${esc(i.id)}" title="${i.cutInfo.bad ? "The refined cut failed the quality check" : "Both cuts are kept"}${i.cutInfo.q ? " (shape score " + i.cutInfo.q + ")" : ""}">${cutNow(i) === "quick" ? "Quick cut" : "Refined cut"} · compare</a>` : "";
 const mainLink = (i) => state.owner && i && i.id && !String(i.id).startsWith("s") && i.image_path ? `<a href="#" class="orig-dl" data-act="main" data-id="${esc(i.id)}" title="${i.details?.main ? "This is the photo shown when someone hovers your name on the Users page. Click to go back to your first setup." : "Show this when someone hovers your name on the Users page"}">${i.details?.main ? "Main ✓" : "Make main"}</a>` : "";
 const origLink = (i) => state.staff && i && (i.source_path || i.image_path) ? `<a href="#" class="orig-dl" data-act="dl" data-id="${esc(i.id)}" title="Download the photo they uploaded, before any cut-out">Original Photo</a>` : "";
 function elThumb(i) { return `<label class="el-thumb">${i && i.url ? `<img src="${esc(i.url)}" alt="">` : "+"}<input class="ed-file" type="file" accept="image/*"></label>`; }
@@ -240,6 +240,42 @@ function notFound(name) {
   app.innerHTML = `<section class="p-head"><h1>No one here</h1><p class="p-bio">There's no collection at <b>/u/${esc(name)}</b>. <a href="/signin.html">Sign in</a> to make yours.</p></section>`;
 }
 
+// Side-by-side view of a photo's two kept cuts (quick = made in the browser on upload, refined = the stronger model), with a button to pick which one the page shows.
+async function openCutPicker(it) {
+  const rc = RECUTS[it.id];
+  if (!rc || !rc.file) return;
+  let quick = it.image_path || "";
+  if (quick && !/^https?:/.test(quick)) quick = (await sb.storage.from("uploads").createSignedUrl(quick, 3600)).data?.signedUrl || "";
+  const refined = "/" + rc.file + "?c=1", now = cutNow(it);
+  document.getElementById("cut-modal")?.remove();
+  const box = document.createElement("div");
+  box.id = "cut-modal"; box.className = "cut-modal";
+  const col = (key, title, url, note) => `<div class="cut-col">
+      <div class="cut-img">${url ? `<img src="${esc(url)}" alt="${title}">` : "<span>No image</span>"}</div>
+      <b>${title}</b><span class="cut-note">${esc(note)}</span>
+      <button class="ed-btn${now === key ? " on" : ""}" data-cut="${key}"${now === key ? " disabled" : ""}>${now === key ? "Showing" : "Use this one"}</button>
+    </div>`;
+  box.innerHTML = `<div class="cut-panel" role="dialog" aria-label="Compare cuts">
+    <p class="cut-head"><b>${esc(it.name)}</b> <button class="ed-btn cut-x" data-close>Close</button></p>
+    <div class="cut-cols">${col("quick", "Quick cut", quick, "Made on upload, in the browser")}${col("refined", "Refined cut", refined, rc.bad ? "Failed the quality check, so it isn't used unless you pick it" + (rc.q ? ` (shape score ${rc.q})` : "") : "Stronger model" + (rc.q ? ` · shape score ${rc.q}` : ""))}</div>
+  </div>`;
+  const close = () => { box.remove(); document.removeEventListener("keydown", onKey); };
+  const onKey = (e) => { if (e.key === "Escape") close(); };
+  document.addEventListener("keydown", onKey);
+  box.addEventListener("click", async (e) => {
+    if (e.target === box || e.target.closest("[data-close]")) return close();
+    const pick = e.target.closest("[data-cut]")?.dataset.cut;
+    if (!pick || pick === now) return;
+    const details = { ...(it.details || {}), cut: pick };
+    const { data, error } = await sb.from("collection_items").update({ details }).eq("id", it.id).select();
+    if (error || !data?.length) return ($("#owner-msg").textContent = "Couldn't switch. " + (error?.message || ""));
+    Object.assign(it, data[0]); it.url = await photoUrl(it);
+    close(); paint();
+    $("#owner-msg").textContent = (cutNow(it) === "quick" ? "Quick" : "Refined") + " cut is showing for " + it.name + ".";
+  });
+  document.body.appendChild(box);
+}
+
 app.addEventListener("click", async (e) => {
   const act = e.target.closest("[data-act]")?.dataset.act;
   if (!act || !state?.owner) return;
@@ -293,15 +329,10 @@ app.addEventListener("click", async (e) => {
     $("#owner-msg").textContent = makeMain ? `“${it.name}” is now your main. It shows when someone hovers your name on the Users page.` : "Back to showing your first setup.";
     return;
   }
-  if (act === "cut" && state.staff) {   // admin: choose which of the two kept cuts this photo shows
+  if (act === "cutview" && state.staff) {   // admin: see both cuts of this photo side by side and pick the one to show
     e.preventDefault();
     const id = e.target.closest("[data-id]").dataset.id, it = state.items.find((i) => i.id === id);
-    if (!it) return;
-    const details = { ...(it.details || {}), cut: cutNow(it) === "quick" ? "refined" : "quick" };
-    const { data, error } = await sb.from("collection_items").update({ details }).eq("id", id).select();
-    if (error || !data?.length) return (msg.textContent = "Couldn't switch. " + (error?.message || ""));
-    Object.assign(it, data[0]); it.url = await photoUrl(it);
-    paint(); $("#owner-msg").textContent = (cutNow(it) === "quick" ? "Quick" : "Refined") + " cut is showing for " + it.name + ".";
+    if (it) openCutPicker(it);
     return;
   }
   if (act === "dl" && state.staff) {   // admin: the photo as they uploaded it (before the cut-out), so it can be cut by hand and put back with Replace

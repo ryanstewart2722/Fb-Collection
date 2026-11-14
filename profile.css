@@ -144,3 +144,15 @@
 .preview.u-touch.show { pointer-events: auto; top: calc(var(--bar-h, 44px) + 10px); transform: translateX(-50%); max-height: calc(100vh - var(--bar-h, 44px) - 24px); max-height: calc(100dvh - var(--bar-h, 44px) - 24px); }
 
 .u-count { font-size: 13px; font-weight: 400; letter-spacing: 0; color: #777; margin-left: 10px; vertical-align: middle; }
+
+/* Compare the two cuts of a photo (admin) */
+.cut-modal { position: fixed; inset: 0; z-index: 50; background: rgba(255, 255, 255, 0.94); display: flex; align-items: center; justify-content: center; padding: 20px; overflow-y: auto; }
+.cut-panel { width: min(1000px, 100%); }
+.cut-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin: 0 0 14px; font-size: 14px; }
+.cut-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+.cut-col { display: grid; gap: 8px; justify-items: start; font-size: 13px; }
+.cut-img { width: 100%; height: min(58vh, 560px); background: #f2f2f2; display: flex; align-items: center; justify-content: center; border: 1px solid #000; }
+.cut-img img { max-width: 100%; max-height: 100%; object-fit: contain; }
+.cut-note { color: #777; font-size: 12px; }
+.cut-col .ed-btn.on { background: #000; color: #fff; cursor: default; }
+@media (max-width: 760px) { .cut-cols { gap: 12px; } .cut-img { height: 42vh; } }
