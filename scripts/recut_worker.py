@@ -18,6 +18,9 @@ OUT = ROOT / "user-cuts"
 INDEX = OUT / "index.json"
 LIMIT = int(os.environ.get("RECUT_LIMIT", "40"))          # photos per run
 VERSION = 2                                               # bump to re-cut everything again (2: boards are straightened)
+SMALL = ("wheels", "trucks", "misc")                              # small parts, often a tiny thing in a big photo
+VERSION_OF = {"wheels": 3, "trucks": 3}                   # 3: found in the frame, cut from a close-up, sized like the museum's
+ver = lambda section: VERSION_OF.get(section, VERSION)
 cfg = (ROOT / "moms-config.js").read_text()
 URL = re.search(r'url:\s*"([^"]+)"', cfg).group(1)
 KEY = re.search(r'key:\s*"([^"]+)"', cfg).group(1)       # the public key: only what any visitor may read
@@ -50,7 +53,7 @@ def load_index():
 def plan():
     items = {i["id"]: i for i in visible_items()}
     index = load_index()
-    todo = [i for i in items.values() if index.get(i["id"], {}).get("src") != i["source_path"] or index[i["id"]].get("v") != VERSION]
+    todo = [i for i in items.values() if index.get(i["id"], {}).get("src") != i["source_path"] or index[i["id"]].get("v") != ver(i["section"])]
     stale = [k for k, v in index.items() if k not in items or v.get("src") != items[k]["source_path"]]
     return items, index, todo, stale
 
@@ -87,38 +90,67 @@ def solidity(img):
         return 1.0
 
 
+def main_object(img, sess, share):
+    """Rembg on a picture -> boolean mask of the main thing(s): every blob at least `share` of the biggest one, holes filled."""
+    import numpy as np
+    from scipy import ndimage as ndi
+    from rembg import remove
+    a = np.asarray(remove(img, session=sess))[..., 3].astype(np.float32) / 255
+    lab, n = ndi.label(a > 0.5)
+    if not n:
+        return None
+    sizes = ndi.sum(a > 0.5, lab, range(1, n + 1)); big = sizes.max()
+    return ndi.binary_fill_holes(np.isin(lab, [i + 1 for i, s in enumerate(sizes) if s >= big * share]))
+
+
 def cut(data, section, sess):
     """Original photo -> museum-style cut-out (PIL image), or None if no clear subject."""
     import numpy as np
     from PIL import Image, ImageOps
     from scipy import ndimage as ndi
-    from rembg import remove
-    im = ImageOps.exif_transpose(Image.open(io.BytesIO(data))).convert("RGB")
-    wk = im.copy(); wk.thumbnail((1600, 1600))                      # the outline does not need every pixel
-    a = np.asarray(remove(wk, session=sess))[..., 3].astype(np.float32) / 255
-    b = a > 0.5
-    lab, n = ndi.label(b)
-    if not n:
-        return None
-    sizes = ndi.sum(b, lab, range(1, n + 1)); big = sizes.max()
-    keep = ndi.binary_fill_holes(np.isin(lab, [i + 1 for i, s in enumerate(sizes) if s >= big * 0.25]))   # main object, no holes
-    frac = keep.sum() / keep.size
-    if frac < 0.03 or frac > 0.92:
-        return None
+    raw = ImageOps.exif_transpose(Image.open(io.BytesIO(data)))
+    small = section in SMALL
+    done = False
+    if raw.mode in ("RGBA", "LA", "PA") or "transparency" in raw.info:   # already cut out: there is no background to remove
+        rgba = raw.convert("RGBA")
+        if (np.asarray(rgba.getchannel("A")) < 250).mean() > 0.02:
+            wk = rgba.copy(); wk.thumbnail((1600, 1600))
+            keep = ndi.binary_fill_holes(np.asarray(wk.getchannel("A")) > 128)
+            im = rgba.convert("RGB"); done = True
+            if not keep.any():
+                return None
+    if not done:
+        im = raw.convert("RGB")
+        wk = im.copy(); wk.thumbnail((1600, 1600))                      # the outline does not need every pixel
+        keep = main_object(wk, sess, 0.1 if small else 0.25)
+        if keep is None:
+            return None
+        frac = keep.sum() / keep.size
+        if frac < (0.0015 if small else 0.03) or frac > (0.6 if small else 0.92):
+            return None
+        if small and frac < 0.35:                                       # a little thing in a big photo: take a close-up around it and cut that
+            ys, xs = np.where(keep); sx = im.width / wk.width
+            x0, x1, y0, y1 = xs.min() * sx, (xs.max() + 1) * sx, ys.min() * sx, (ys.max() + 1) * sx
+            m = 0.35 * max(x1 - x0, y1 - y0)
+            box = (int(max(0, x0 - m)), int(max(0, y0 - m)), int(min(im.width, x1 + m)), int(min(im.height, y1 + m)))
+            close = im.crop(box); wk2 = close.copy(); wk2.thumbnail((1600, 1600))
+            k2 = main_object(wk2, sess, 0.1)
+            if k2 is not None and 0.02 < k2.sum() / k2.size < 0.85:     # otherwise stay with the first cut
+                im, keep = close, k2
     ys, xs = np.where(keep); oh = ys.max() - ys.min() + 1
     sig = max(1.2, oh * 0.0035)                                      # a whisker: removes stair-steps, keeps the board's real shape (wheels included)
     s = ndi.gaussian_filter(keep.astype(np.float32), sig)
     t = np.clip((s - 0.5) / 0.10, 0, 1); alpha_w = t * t * (3 - 2 * t)   # crisp, anti-aliased edge
     alpha = Image.fromarray((alpha_w * 255).astype("uint8")).resize(im.size, Image.BICUBIC)
     c = im.convert("RGBA"); c.putalpha(alpha)
-    c = c.crop(alpha.getbbox())                                      # trim to the board itself...
+    c = c.crop(alpha.getbbox())                                      # trim to the thing itself...
     if section in ("decks", "setups"):                               # ...stand it upright if it was photographed at an angle...
         ang = tilt(keep)
         if abs(ang) > 2.5:
             c = c.rotate(-ang, resample=Image.BICUBIC, expand=True)
             c = c.crop(c.getchannel("A").getbbox())
     tall = section in ("decks", "setups") and c.height > c.width * 1.4
-    W, H, fill = (530, 1200, 0.96) if tall else (800, 800, 0.9)
+    W, H, fill = (530, 1200, 0.96) if tall else (800, 800, {"trucks": 1.0, "wheels": 0.68}.get(section, 0.9))   # trucks span the frame and wheels fill about two thirds, like the museum's own photos
     k = min(W / c.width, H / c.height) * fill
     c = c.resize((max(1, round(c.width * k)), max(1, round(c.height * k))), Image.LANCZOS)   # ...and shrink last
     o = Image.new("RGBA", (W, H), (0, 0, 0, 0)); o.paste(c, ((W - c.width) // 2, (H - c.height) // 2), c)
@@ -138,11 +170,11 @@ def run():
         from rembg import new_session
         sess = new_session("birefnet-general-lite", providers=["CPUExecutionProvider"])
         for it in todo[:LIMIT]:
-            entry = {"src": it["source_path"], "v": VERSION}
+            V = ver(it["section"]); entry = {"src": it["source_path"], "v": V}
             try:
                 img = cut(fetch_source(it["source_path"]), it["section"], sess)
                 if img is not None:
-                    name = f"user-cuts/{it['id']}-{hashlib.sha1(it['source_path'].encode()).hexdigest()[:8]}-v{VERSION}.webp"
+                    name = f"user-cuts/{it['id']}-{hashlib.sha1(it['source_path'].encode()).hexdigest()[:8]}-v{V}.webp"
                     old = index.get(it["id"], {}).get("file")
                     if old and old != name and (ROOT / old).is_file():
                         (ROOT / old).unlink()
