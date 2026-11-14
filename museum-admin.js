@@ -325,6 +325,13 @@ async function save() {
     editing = saved;
     const li = list.tab === tab ? list.rows.findIndex((x) => x.id === saved.id) : -1;
     if (li >= 0) list.rows[li] = { ...list.rows[li], ...saved };   // so Previous / Next and the list show what you just saved
+    if (fromReview) {   // finished reviewing this one: straight back to the Review page
+      fromReview = false; editing = null; photo = null; photo2 = null; drop2 = false;
+      document.querySelectorAll(".ad-tabs button").forEach((b) => b.classList.toggle("active", b.dataset.tab === "review"));
+      tab = "review"; window.scrollTo({ top: 0, behavior: "instant" });
+      await renderReview().catch(fail("Couldn't load the review list"));
+      return setStatus("Saved ✓ It's live on the museum now.");
+    }
     renderForm();
     setStatus(`Saved ✓ It's live on the museum now.`);
   } catch (err) {
