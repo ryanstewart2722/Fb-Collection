@@ -100,7 +100,11 @@ async function loadAll() {
   if (mine !== loadSeq) return;
   render();
   if (!app.children.length) {
-    app.innerHTML = filterCount()
+    const n = SECTIONS.reduce((a, x) => a + (x.total || 0), 0);
+    if (view === "image" && n) {   // the boards exist, but none of them has a photo yet: image view only shows photos
+      app.innerHTML = `<p class="empty">${n} ${n === 1 ? "board matches" : "boards match"}, but ${n === 1 ? "it has" : "none have"} a photo yet. <a href="#" class="linklike">See ${n === 1 ? "it" : "them"} in the list</a></p>`;
+      app.querySelector("a.linklike").addEventListener("click", (e) => { e.preventDefault(); view = "list"; saveState(); render(); });
+    } else app.innerHTML = filterCount()
       ? `<p class="empty">No boards match these filters. <button type="button" class="linklike" data-clear>Clear filters</button></p>`
       : `<p class="empty">Nothing here yet.</p>`;
   }
