@@ -19,7 +19,7 @@ INDEX = OUT / "index.json"
 LIMIT = int(os.environ.get("RECUT_LIMIT", "40"))          # photos per run
 VERSION = 2                                               # bump to re-cut everything again (2: boards are straightened)
 SMALL = ("wheels", "trucks", "misc")                              # small parts, often a tiny thing in a big photo
-VERSION_OF = {"wheels": 3, "trucks": 3}                   # 3: found in the frame, cut from a close-up, sized like the museum's
+VERSION_OF = {"wheels": 4, "trucks": 3}                   # 3: found in the frame, cut from a close-up, sized like the museum's
 ver = lambda section: VERSION_OF.get(section, VERSION)
 cfg = (ROOT / "moms-config.js").read_text()
 URL = re.search(r'url:\s*"([^"]+)"', cfg).group(1)
@@ -137,6 +137,22 @@ def cut(data, section, sess):
             k2 = main_object(wk2, sess, 0.1)
             if k2 is not None and 0.02 < k2.sum() / k2.size < 0.85:     # otherwise stay with the first cut
                 im, keep = close, k2
+    if small and keep.mean() > 0.04:                                 # the "thing" is really a mat or plate that the parts sit on: keep only what stands out from it
+        ys0, xs0 = np.where(keep)
+        box_fill = keep.sum() / ((ys0.max() - ys0.min() + 1) * (xs0.max() - xs0.min() + 1))
+        if box_fill > 0.88:
+            rgb = np.asarray(im.resize((keep.shape[1], keep.shape[0]))).astype(np.float32)
+            base = np.median(rgb[keep], axis=0)
+            diff = np.sqrt(((rgb - base) ** 2).sum(axis=2)) > 85
+            inner = ndi.binary_opening(diff & ndi.binary_erosion(keep, iterations=max(3, keep.shape[0] // 80)), iterations=2)
+            inner = ndi.binary_closing(inner, iterations=max(2, keep.shape[0] // 100))
+            lab2, n2 = ndi.label(inner)
+            if n2:
+                sz = ndi.sum(inner, lab2, range(1, n2 + 1))
+                k3 = ndi.binary_fill_holes(np.isin(lab2, [i + 1 for i, v in enumerate(sz) if v >= sz.max() * 0.15]))
+                k3 = ndi.binary_dilation(k3, iterations=max(2, keep.shape[0] // 150))
+                if 0.0005 < k3.mean() < keep.mean() * 0.5:
+                    keep = k3
     ys, xs = np.where(keep); oh = ys.max() - ys.min() + 1
     sig = max(1.2, oh * 0.0035)                                      # a whisker: removes stair-steps, keeps the board's real shape (wheels included)
     s = ndi.gaussian_filter(keep.astype(np.float32), sig)
