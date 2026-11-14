@@ -26,6 +26,9 @@ const SECTIONS = [
   { type: "obstacles", title: "Obstacles", square: true,
     select: "id,brand_id,name,slug,color,size,material,release_date,release_precision,image_path,extra_brand_ids,brands(name,slug)",
     cols: [["Obstacle", (r) => r.name], ["Brand", brandName], ["Material", (r) => r.material], ["Year", (r) => momsYear(r.release_date)]] },
+  { type: "misc", title: "Misc.", square: true,
+    select: "id,brand_id,name,slug,color,size,material,release_date,release_precision,image_path,extra_brand_ids,brands(name,slug)",
+    cols: [["Object name", (r) => r.name], ["Brand", brandName], ["Material", (r) => r.material], ["Year", (r) => momsYear(r.release_date)]] },
 ];
 SECTIONS.forEach((s) => Object.assign(s, { rows: [], total: 0 }));
 
@@ -54,7 +57,7 @@ const filterCount = () => F.brand.length + F.mold.length + F.shape.length + F.co
 function filterParams(s) {
   const wantsSize = F.size[0] || F.size[1];
   if ((F.mold.length || F.shape.length) && s.type !== "decks") return null;
-  if (wantsSize && (s.type === "wheels" || s.type === "obstacles")) return null;
+  if (wantsSize && (s.type === "wheels" || s.type === "obstacles" || s.type === "misc")) return null;
   const q = [];
   if (F.brand.length) q.push(`or=(brand_id.in.(${F.brand.join(",")}),extra_brand_ids.ov.{${F.brand.join(",")}})`);
   if (F.mold.length) q.push("molds=ov." + encodeURIComponent("{" + F.mold.map((m) => '"' + m.replace(/(["\\])/g, "\\$1") + '"').join(",") + "}"));

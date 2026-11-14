@@ -16,8 +16,9 @@ const SCHEMA = {
   obstacles: { title: "Obstacles", fields: [["name", "Name", "Podium"], ["maker", "Manufacturer", "Yarnbody"], ["material", "Material", "Wood/Granite"]] },
   wheels:    { title: "Wheels",    fields: [["name", "Wheel/manufacturer", "Sunpower Wheels, Satori"], ["color", "Color", "White"], ["material", "Material", "Urethane"], ["duro", "Duro", "70d"]] },
   trucks:    { title: "Trucks",    fields: [["name", "Name", "Joycult x Independent Stage 11 Polished Trucks"], ["size", "Size", "32mm"], ["color", "Color", "Silver"]] },
+  misc:      { title: "Misc.",     fields: [["name", "Object name", "Earl E. Bird Holder"], ["maker", "Brand", "w0rm"], ["material", "Material", "Corduroy"], ["year", "Year", "2026"]] },
 };
-const ORDER = ["setups", "decks", "obstacles", "wheels", "trucks"];
+const ORDER = ["setups", "decks", "obstacles", "wheels", "trucks", "misc"];
 const TALL = new Set(["decks", "setups"]);
 // Older items were saved as brand/size/color; still show them.
 const val = (i, k) => k === "name" ? i.name : (i.details?.[k] ?? (k === "maker" ? i.details?.brand : "")) || "";
@@ -71,6 +72,13 @@ async function uploadPhoto(file, section) {
     if (!u2.error) source_path = sp;
   } else if (!p.cut) source_path = image_path;   // the browser could not cut it out: let the stronger tool try the photo itself
   return { image_path, source_path };
+}
+async function photoUrl2(item) {
+  const p = item.image_path_2;
+  if (!p) return "";
+  if (/^https?:/.test(p)) return p;
+  const { data } = await sb.storage.from("uploads").createSignedUrl(p, 3600);
+  return data?.signedUrl || "";
 }
 const stored = (p) => p && !/^https?:/.test(p);
 function dropFiles(...paths) { const list = [...new Set(paths.filter(stored))]; if (list.length) sb.storage.from("uploads").remove(list).catch(() => {}); }
@@ -141,7 +149,10 @@ const cutNow = (i) => i.cutInfo && (i.cutInfo.pick === "quick" || (i.cutInfo.bad
 const cutSwitch = (i) => state.staff && i && i.cutInfo ? `<a href="#" class="orig-dl" data-act="cutview" data-id="${esc(i.id)}" title="${i.cutInfo.bad ? "The refined cut failed the quality check" : "Both cuts are kept"}${i.cutInfo.q ? " (shape score " + i.cutInfo.q + ")" : ""}">${cutNow(i) === "quick" ? "Quick cut" : "Refined cut"} · compare</a>` : "";
 const mainLink = (i) => state.owner && i && i.id && !String(i.id).startsWith("s") && i.image_path ? `<a href="#" class="orig-dl" data-act="main" data-id="${esc(i.id)}" title="${i.details?.main ? "This is the photo shown when someone hovers your name on the Users page. Click to go back to your first setup." : "Show this when someone hovers your name on the Users page"}">${i.details?.main ? "Main ✓" : "Make main"}</a>` : "";
 const origLink = (i) => state.staff && i && (i.source_path || i.image_path) ? `<a href="#" class="orig-dl" data-act="dl" data-id="${esc(i.id)}" title="Download the photo they uploaded, before any cut-out">Original Photo</a>` : "";
-function elThumb(i) { return `<label class="el-thumb">${i && i.url ? `<img src="${esc(i.url)}" alt="">` : "+"}<input class="ed-file" type="file" accept="image/*"></label>`; }
+const PLY = { decks: ["Photo 1: bottom ply (the graphic side)", "Photo 2: top ply"], setups: ["Photo 1: bottom ply (the graphic side)", "Photo 2: top ply"] };
+function elThumb(i, sec) { return `<label class="el-thumb" title="${esc((PLY[sec] || ["Photo"])[0])}">${i && i.url ? `<img src="${esc(i.url)}" alt="">` : "+"}<input class="ed-file" type="file" accept="image/*"></label>`; }
+// an optional second photo: for decks the first is the bottom ply and this one is the top ply
+function elThumb2(i, sec) { return `<label class="el-thumb el-thumb2" title="${esc((PLY[sec] || ["", "A second photo (optional)"])[1])}">${i && i.url2 ? `<img src="${esc(i.url2)}" alt="">` : "2"}<input class="ed-file ed-file2" type="file" accept="image/*"></label>`; }
 function elInputs(sec, i) {
   return `<span class="el-fields">${SCHEMA[sec].fields.map(([k, h, ph]) =>
     `<input class="el-in" data-k="${k}" type="text" autocomplete="off" value="${esc(i ? val(i, k) : "")}" placeholder="${esc(ph)}" maxlength="${k === "name" ? 120 : 60}" aria-label="${esc(h)}">`).join("")}</span>`;
@@ -151,8 +162,8 @@ function renderListEdit() {
     <h2>${esc(s.title)}</h2>
     <div class="list-wrap"><div class="list el-list el-n${SCHEMA[s.id].fields.length}${s.items.length || state.draft === s.id ? "" : " is-empty"}" data-s="${s.id}" style="--cols:${colsFor(SCHEMA[s.id].fields.length)}">
       <div class="el-row el-head"><span></span>${SCHEMA[s.id].fields.map((f) => `<span class="el-h">${esc(f[1])}</span>`).join("")}<span></span></div>
-      ${s.items.map((i, n) => `<div class="el-row${n > 0 && brandOf(s.id, i) !== brandOf(s.id, s.items[n - 1]) ? " divide" : ""}${i.status === "removed" ? " is-hidden" : ""}" data-id="${esc(i.id)}"><span class="el-tcell">${elThumb(i)}${mainLink(i)}${origLink(i)}${cutSwitch(i)}</span>${elInputs(s.id, i)}<span class="el-acts"><button class="el-mv" data-act="up" title="Move up">↑</button><button class="el-mv" data-act="down" title="Move down">↓</button>${state.staff ? `<button class="el-x el-hide" data-act="hide" data-id="${esc(i.id)}" title="${i.status === "removed" ? "Show again" : "Hide from the site"}">${i.status === "removed" ? "Show" : "Hide"}</button>` : `<button class="el-x" data-act="remove" data-id="${esc(i.id)}" title="Remove">×</button>`}</span></div>`).join("")}
-      ${state.draft === s.id ? `<div class="el-row el-new" data-section="${s.id}">${elThumb(null)}${elInputs(s.id, null)}<button class="ed-btn el-save" data-act="savenew">Add</button></div>` : ""}
+      ${s.items.map((i, n) => `<div class="el-row${n > 0 && brandOf(s.id, i) !== brandOf(s.id, s.items[n - 1]) ? " divide" : ""}${i.status === "removed" ? " is-hidden" : ""}" data-id="${esc(i.id)}"><span class="el-tcell">${elThumb(i, s.id)}${elThumb2(i, s.id)}${mainLink(i)}${origLink(i)}${cutSwitch(i)}</span>${elInputs(s.id, i)}<span class="el-acts"><button class="el-mv" data-act="up" title="Move up">↑</button><button class="el-mv" data-act="down" title="Move down">↓</button>${state.staff ? `<button class="el-x el-hide" data-act="hide" data-id="${esc(i.id)}" title="${i.status === "removed" ? "Show again" : "Hide from the site"}">${i.status === "removed" ? "Show" : "Hide"}</button>` : `<button class="el-x" data-act="remove" data-id="${esc(i.id)}" title="Remove">×</button>`}</span></div>`).join("")}
+      ${state.draft === s.id ? `<div class="el-row el-new" data-section="${s.id}"><span class="el-tcell">${elThumb(null, s.id)}${elThumb2(null, s.id)}</span>${elInputs(s.id, null)}<button class="ed-btn el-save" data-act="savenew">Add</button></div>` : ""}
       <button class="ed-btn el-add" data-act="newrow" data-section="${s.id}">+ Add to My ${esc(s.title)}</button>
     </div></div></section>`).join("");
 }
@@ -188,7 +199,7 @@ function paintItems() {
     return;
   }
   const editing = state.edit && state.owner;
-  const TIP = `<p class="el-tip">Photo tip: shoot from straight above on a clean, contrasting background in good light. The background is removed for you.</p>${state.isAdmin ? `<label class="el-skip"><input type="checkbox" id="skip-cut"${state.skipCut ? " checked" : ""}> Admin: skip cutout and use the photo exactly as it is. <b>Only for transparent PNGs.</b></label>` : ""}`;
+  const TIP = `<p class="el-tip">Photo tip: shoot from straight above on a clean, contrasting background in good light. The background is removed for you. You can add a second photo with the small “2” box under the first${/* decks */ ""} (for decks, photo 1 is the bottom ply and photo 2 is the top ply).</p>${state.isAdmin ? `<label class="el-skip"><input type="checkbox" id="skip-cut"${state.skipCut ? " checked" : ""}> Admin: skip cutout and use the photo exactly as it is. <b>Only for transparent PNGs.</b></label>` : ""}`;
   box.innerHTML = view === "list" ? (editing ? TIP + renderListEdit() : renderList()) : editing ? TIP + renderEdit() : renderGrid();
   if (editing && state.draft) { const n = box.querySelector(".el-new .el-in"); if (n) n.focus({ preventScroll: false }); }
   const find = (id) => state.items.find((i) => i.id === id);
@@ -366,7 +377,7 @@ app.addEventListener("click", async (e) => {
     if (!it || !confirm(`Remove “${it.name}” from your collection?`)) return;
     const { error } = await sb.from("collection_items").delete().eq("id", id);
     if (error) return (msg.textContent = "Couldn't remove it. " + error.message);
-    dropFiles(it.image_path, it.source_path);
+    dropFiles(it.image_path, it.source_path, it.image_path_2, it.source_path_2);
     state.items = state.items.filter((i) => i.id !== id); paint();
     $("#owner-msg").textContent = "Removed.";
   }
@@ -455,13 +466,16 @@ async function tryInsert(row) {
   msg.textContent = "Adding… (cutting out the background takes a few seconds; the first photo also loads the cut-out tool, about 44 MB, once)";
   try {
     let image_path = null, source_path = null;
-    const file = row.querySelector(".ed-file").files[0];
+    const file = row.querySelector(".ed-file:not(.ed-file2)").files[0];
     if (file) ({ image_path, source_path } = await uploadPhoto(file, section));
+    const file2 = row.querySelector(".ed-file2").files[0];
+    let image_path_2 = null, source_path_2 = null;
+    if (file2) ({ image_path: image_path_2, source_path: source_path_2 } = await uploadPhoto(file2, section));
     const details = Object.fromEntries([...row.querySelectorAll(".el-in")].filter((el) => el.dataset.k !== "name").map((el) => [el.dataset.k, el.value.trim()]).filter(([, v]) => v));
     const position = state.items.reduce((m, i) => Math.max(m, i.position || 0), 0) + 1;
-    const { data, error } = await sb.from("collection_items").insert({ section, name, details, image_path, source_path, position, ...(state.staff ? { user_id: state.profile.id } : {}) }).select().single();
-    if (error) { dropFiles(image_path, source_path); throw error; }
-    data.url = await photoUrl(data);
+    const { data, error } = await sb.from("collection_items").insert({ section, name, details, image_path, source_path, image_path_2, source_path_2, position, ...(state.staff ? { user_id: state.profile.id } : {}) }).select().single();
+    if (error) { dropFiles(image_path, source_path, image_path_2, source_path_2); throw error; }
+    data.url = await photoUrl(data); data.url2 = await photoUrl2(data);
     state.items.push(data); state.draft = null; paint();
     $("#owner-msg").textContent = "Added." + (source_path ? " A cleaner cut-out replaces the photo in a few minutes." : "") + note;
   } catch (err) { msg.textContent = "Couldn't add that. " + (err.message || err); }
@@ -503,6 +517,21 @@ app.addEventListener("change", async (e) => {
   const msg = $("#owner-msg"), file = e.target.files[0];
   if (!file) return;
   if (e.target.closest(".el-new")) { e.target.closest(".el-thumb").firstChild.textContent = "✓"; msg.textContent = "Photo attached. Fill in the rest, then press Add."; return; }
+  if (e.target.classList.contains("ed-file2")) {   // a second photo for an item that is already there
+    if (state.profile.id === "sample") return (msg.textContent = "This is a preview. Nothing is saved here.");
+    const it2 = state.items.find((i) => i.id === e.target.closest("[data-id]").dataset.id);
+    if (!it2) return;
+    msg.textContent = "Uploading the second photo…";
+    try {
+      const nu = await uploadPhoto(file, it2.section);
+      const { data, error } = await sb.from("collection_items").update({ image_path_2: nu.image_path, source_path_2: nu.source_path }).eq("id", it2.id).select();
+      if (error || !data?.length) { dropFiles(nu.image_path, nu.source_path); throw error || new Error("not saved"); }
+      dropFiles(it2.image_path_2, it2.source_path_2);
+      Object.assign(it2, data[0]); it2.url = await photoUrl(it2); it2.url2 = await photoUrl2(it2);
+      paint(); $("#owner-msg").textContent = "Second photo saved.";
+    } catch (err) { msg.textContent = "Couldn't save that photo. " + (err.message || err); }
+    return;
+  }
   if (state.profile.id === "sample") return (msg.textContent = "This is a preview. Nothing is saved here.");
   const it = state.items.find((i) => i.id === e.target.closest("[data-id]").dataset.id);
   if (!it) return;
@@ -586,7 +615,7 @@ async function load() {
   const { data: items } = await sb.from("collection_items").select("*").eq("user_id", profile.id).order("section").order("position").order("created_at");
   const rows = (items || []).filter((i) => staff || i.status !== "removed");   // hidden entries show only to the museum's owner
   await loadRecuts();
-  await Promise.all(rows.map(async (i) => (i.url = await photoUrl(i))));
+  await Promise.all(rows.map(async (i) => { i.url = await photoUrl(i); i.url2 = i.image_path_2 ? await photoUrl2(i) : ""; }));
   state = { profile, items: rows, owner, staff, isAdmin, viewer: session?.user.id };
   paint();
 }

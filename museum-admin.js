@@ -34,6 +34,8 @@ const TYPES = {
             slug: (v, b) => `${v.name} ${v.color || ""} ${b}` },
   obstacles: { one: "obstacle", fields: [["brand_id", "Brand", "brand"], ["extra_brand_ids", "Second brand", "morebrands", "For collabs: shows as “first brand x second brand”."], ["name", "Obstacle name"], ["color", "Color", "text", "Primary color first, then secondary, joined with / (e.g. White/Black). Capitals are added for you."], ["material", "Material", "text", "e.g. Wood, Resin"], ["size", "Size", "text", "e.g. 4in"], ["release", "Release date", "release"], ["description", "Description", "textarea"]],
             slug: (v, b) => `${v.name} ${v.color || ""} ${b}` },
+  misc: { one: "misc object", fields: [["brand_id", "Brand", "brand"], ["extra_brand_ids", "Second brand", "morebrands", "For collabs: shows as “first brand x second brand”."], ["name", "Object name"], ["color", "Color", "text", "Primary color first, then secondary, joined with / (e.g. White/Black). Capitals are added for you."], ["material", "Material", "text", "e.g. Metal, Corduroy"], ["size", "Size", "text", "e.g. 4in"], ["release", "Release date", "release"], ["description", "Description", "textarea"]],
+            slug: (v, b) => `${v.name} ${v.color || ""} ${b}` },
   brands: { one: "brand", fields: [["name", "Brand name"], ["made_in", "Made in", "text", "e.g. Chicago, IL"], ["website", "Website"], ["notes", "Notes", "textarea"]],
             slug: (v) => v.name },
 };
@@ -365,7 +367,7 @@ async function mergeBrand() {
   if (!confirm(`Move everything from “${editing.name}” into “${target.name}” and remove “${editing.name}”? This can't be undone.`)) return;
   setStatus("Merging…");
   try {
-    for (const t of ["decks", "trucks", "wheels", "obstacles"]) {
+    for (const t of ["decks", "trucks", "wheels", "obstacles", "misc"]) {
       let r = await sb.from(t).update({ brand_id: to }).eq("brand_id", from).select("id");
       if (r.error) throw r.error;
       r = await sb.from(t).select("id,brand_id,extra_brand_ids").contains("extra_brand_ids", [from]);
@@ -409,7 +411,7 @@ function friendly(err) {
 // Every photo ends up the same size: decks match the collection deck photos (529×1200),
 // trucks and wheels are square. The photo is scaled evenly (never stretched) and centred in the frame.
 // Transparent PNGs are kept as they are; a solid backdrop (white sheet, grey card) is removed.
-const PHOTO_SIZE = { decks: [529, 1200], trucks: [800, 800], wheels: [800, 800], obstacles: [800, 800] };
+const PHOTO_SIZE = { decks: [529, 1200], trucks: [800, 800], wheels: [800, 800], obstacles: [800, 800], misc: [800, 800] };
 
 async function preparePhoto(file) {
   const head = new TextDecoder("latin1").decode(await file.slice(0, 6).arrayBuffer());
@@ -747,16 +749,17 @@ async function renderReview() {
   if (ci.error) throw ci.error;
   if (sub.error) throw sub.error;
   reviewItems = [...ci.data.map((r) => ({ kind: "item", r })), ...sub.data.map((r) => ({ kind: "sub", r }))];
-  const paths = reviewItems.map((x) => x.r.image_path).filter((p) => p && !/^https?:/.test(p));
+  const paths = reviewItems.flatMap((x) => [x.r.image_path, x.r.image_path_2]).filter((p) => p && !/^https?:/.test(p));
   const urls = {};
   if (paths.length) (await sb.storage.from("uploads").createSignedUrls(paths, 3600)).data?.forEach((u) => (urls[u.path] = u.signedUrl));
-  reviewItems.forEach((x) => (x.url = /^https?:/.test(x.r.image_path || "") ? x.r.image_path : urls[x.r.image_path] || ""));
+  reviewItems.forEach((x) => { x.url = /^https?:/.test(x.r.image_path || "") ? x.r.image_path : urls[x.r.image_path] || ""; x.url2 = /^https?:/.test(x.r.image_path_2 || "") ? x.r.image_path_2 : urls[x.r.image_path_2] || ""; });
+  await useRefinedCuts();
   setReviewBadge(reviewItems.length);
   app.innerHTML = `<p class="me-count">${reviewItems.length} waiting for review</p><div class="me-review">` + (reviewItems.map((x, i) => {
     const r = x.r, who = r.profiles?.username || "someone";
     const f = x.kind === "item" ? { section: r.section, name: r.name, ...r.details } : { section: r.section, ...r.fields };
     return `<div class="me-rv" data-i="${i}">
-      <div class="me-rv-img">${x.url ? `<img src="${esc(x.url)}" alt="">` : `<span>No photo</span>`}</div>
+      <div class="me-rv-img">${x.url ? `<img src="${esc(x.url)}" alt="">` : `<span>No photo</span>`}${x.url2 ? `<img src="${esc(x.url2)}" alt="" title="Second photo">` : ""}</div>
       <div class="me-rv-info">
         <b>${esc(f.name || "(no name)")}</b> <em>${x.kind === "item" ? "collection · " + esc(r.section) : "museum submission · " + esc(r.section)}</em>
         <span>by <a href="/u/${esc(who)}" target="_blank" rel="noopener">${esc(who)}</a></span>
@@ -764,6 +767,31 @@ async function renderReview() {
         <div class="me-rv-act"><button class="ad-btn ad-btn-dark" data-act="rv-ok">${x.kind === "sub" ? "Add to museum" : "Approve"}</button> <button class="ad-btn me-danger" data-act="rv-no">Reject</button></div>
       </div></div>`;
   }).join("") || `<p class="me-empty">Nothing waiting.</p>`) + `</div>`;
+}
+// A museum submission that came from someone's collection should show (and publish) the better re-cut of that photo, not the first quick one.
+async function useRefinedCuts() {
+  try {
+    const subs = reviewItems.filter((x) => x.kind === "sub" && x.r.image_path && !/^https?:/.test(x.r.image_path));
+    if (!subs.length) return;
+    const [items, index] = await Promise.all([
+      sb.from("collection_items").select("id,image_path,details").in("image_path", subs.map((x) => x.r.image_path)),
+      fetch("/user-cuts/index.json?" + Date.now()).then((r) => (r.ok ? r.json() : {})),
+    ]);
+    const byPath = new Map((items.data || []).map((i) => [i.image_path, i]));
+    subs.forEach((x) => {
+      const it = byPath.get(x.r.image_path), e = it && index[it.id];
+      if (e && e.file && !e.bad && it.details?.cut !== "quick") { x.cutUrl = "/" + e.file; x.url = x.cutUrl; }
+    });
+  } catch { /* the first photo is still there */ }
+}
+// What gets saved in the museum: the refined cut copied into our own storage, or the uploaded photo
+async function reviewPhoto(x) {
+  if (!x.cutUrl) return publishPhoto(x.r.image_path);
+  const blob = await (await fetch(x.cutUrl)).blob();
+  const path = `refined/${x.r.id}.webp`;
+  const up = await sb.storage.from("user-photos").upload(path, blob, { contentType: "image/webp", cacheControl: "31536000", upsert: true });
+  if (up.error) throw up.error;
+  return sb.storage.from("user-photos").getPublicUrl(path).data.publicUrl;
 }
 function setReviewBadge(n) { const b = $("#review-n"); if (b) { b.textContent = n; b.hidden = !n; } }
 
@@ -811,10 +839,13 @@ async function reviewAct(card, ok) {
       step = "finding or making the brand";
       const brand_id = await brandIdFor(f.brand || "Unknown");
       step = "copying the photo";
-      const row = { brand_id, name: f.name, color: f.color || null, image_path: await publishPhoto(r.image_path) };
+      const row = { brand_id, name: f.name, color: f.color || null, image_path: await reviewPhoto(x) };
       if (table === "decks") { row.size = f.size || null; row.molds = f.mold ? f.mold.split(",").map((m) => m.trim()).filter(Boolean) : []; row.shape = f.shape || null; row.attributes = { source: "Museum submission", submitted_by: r.profiles?.username || null }; }
       if (table === "trucks" || table === "obstacles") row.size = f.size || null;
-      if (table === "obstacles") row.material = f.material || null;
+      if (table === "obstacles" || table === "misc") row.material = f.material || null;
+      const yr = parseInt(String(f.year || "").slice(0, 4), 10);
+      if (yr > 1900 && yr < 2200) { row.release_date = `${yr}-01-01`; row.release_precision = "year"; }   // the year they typed
+      if (r.image_path_2) row.image_path_2 = await publishPhoto(r.image_path_2);   // the second photo comes along
       if (table === "wheels") { row.material = f.material || null; row.duro = f.duro || null; }
       step = `adding it to ${table}`;
       const made = await insertWithSlug(table, row, `${f.name} ${f.color || ""} ${f.brand || ""}`);

@@ -22,7 +22,7 @@
     fetch("/user-cuts/index.json", { cache: "no-cache" }).then((r) => (r.ok ? r.json() : {})).catch(() => ({})),
   ]);
   const name = new Map(profiles.map((p) => [p.id, p.username]));
-  const RANK = ["setups", "decks", "obstacles", "wheels", "trucks"];
+  const RANK = ["setups", "decks", "obstacles", "wheels", "trucks", "misc"];
   const first = new Map();   // username -> their first item to show
   items.forEach((i) => {
     const u = name.get(i.user_id);
