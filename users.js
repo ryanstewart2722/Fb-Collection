@@ -49,6 +49,7 @@
     urls.set(u, url);
     return url;
   }
+  [...first.keys()].forEach((u, n) => setTimeout(() => urlFor(u), n * 40));   // look up and start loading everyone's photo now, so hovering never waits
   const pv = document.createElement("img");
   pv.className = "preview" + (touch ? " u-touch" : ""); pv.alt = ""; pv.style.left = "50%";
   document.body.appendChild(pv);
@@ -59,9 +60,9 @@
     const url = await urlFor(u);
     if (current !== row) return;
     if (!url) { pv.classList.remove("show"); return; }
-    pv.onload = () => { if (current === row) pv.classList.add("show"); };
     pv.onerror = () => pv.classList.remove("show");
-    if (pv.src !== new URL(url, location.href).href) { pv.classList.remove("show"); pv.src = url; } else pv.classList.add("show");
+    if (pv.src !== new URL(url, location.href).href) pv.src = url;   // shown right away, like the museum list
+    pv.classList.add("show");
   }
   if (touch) {
     let href = "";
@@ -82,9 +83,9 @@
     const url = await urlFor(u);
     if (current !== row) return;   // moved on while it was loading
     if (!url) { pv.classList.remove("show"); return; }
-    pv.onload = () => { if (current === row) pv.classList.add("show"); };
     pv.onerror = () => pv.classList.remove("show");
-    if (pv.src !== new URL(url, location.href).href) { pv.classList.remove("show"); pv.src = url; } else pv.classList.add("show");
+    if (pv.src !== new URL(url, location.href).href) pv.src = url;   // shown right away, like the museum list
+    pv.classList.add("show");
   };
   const off = () => { current = null; pv.classList.remove("show"); box.querySelectorAll(".row.on").forEach((x) => x.classList.remove("on")); };
   box.addEventListener("mouseover", onRow);
