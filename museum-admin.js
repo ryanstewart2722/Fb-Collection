@@ -885,7 +885,9 @@ async function renderReview() {
   reviewItems.forEach((x) => { x.url = /^https?:/.test(x.r.image_path || "") ? x.r.image_path : urls[x.r.image_path] || ""; x.url2 = /^https?:/.test(x.r.image_path_2 || "") ? x.r.image_path_2 : urls[x.r.image_path_2] || ""; });
   await useRefinedCuts();
   setReviewBadge(reviewItems.length);
-  app.innerHTML = `<p class="me-count">${reviewItems.length} waiting for review</p><div class="me-review">` + (reviewItems.map((x, i) => {
+  const subCounts = {}; reviewItems.forEach((x) => { if (x.kind === "sub") subCounts[x.r.section] = (subCounts[x.r.section] || 0) + 1; });
+  const bulk = Object.entries(subCounts).map(([sec, n]) => `<button class="ad-btn" data-act="rv-all" data-section="${esc(sec)}">Add all ${esc(sec)} (${n})</button>`).join(" ");
+  app.innerHTML = `<p class="me-count">${reviewItems.length} waiting for review</p>${bulk ? `<p class="me-bulk">${bulk}</p>` : ""}<div class="me-review">` + (reviewItems.map((x, i) => {
     const r = x.r, who = r.profiles?.username || "someone";
     const f = x.kind === "item" ? { section: r.section, name: r.name, ...r.details } : { section: r.section, ...r.fields };
     return `<div class="me-rv" data-i="${i}">
@@ -949,6 +951,29 @@ function brandIdFor(name) {
   brandLock = run.catch(() => {});
   return run;
 }
+// Puts one waiting museum submission into the museum (brand found or made, photo published) and marks it approved.
+async function addSubmission(x, setStep = () => {}) {
+  const r = x.r, f = r.fields, table = r.section;
+  setStep("finding or making the brand");
+  const brand_id = await brandIdFor(f.brand || "Unknown");
+  setStep("copying the photo");
+  const row = { brand_id, name: f.name, color: f.color || null, image_path: await reviewPhoto(x) };
+  if (table === "decks") { row.size = f.size || null; row.molds = f.mold ? f.mold.split(",").map((m) => m.trim()).filter(Boolean) : []; row.shape = f.shape || null; row.attributes = { source: "Museum submission", submitted_by: r.profiles?.username || null }; }
+  if (table === "trucks" || table === "obstacles") row.size = f.size || null;
+  if (table === "obstacles" || table === "misc") row.material = f.material || null;
+  const yr = parseInt(String(f.year || "").slice(0, 4), 10);
+  const ym = String(f.year || "").match(/^(\d{4})-(\d{2})(?:-(\d{2}))?$/);   // 2022-09 or 2022-09-06 keeps the month (or day)
+  if (ym && +ym[2] >= 1 && +ym[2] <= 12) { row.release_date = `${ym[1]}-${ym[2]}-${ym[3] || "01"}`; row.release_precision = ym[3] ? "day" : "month"; }
+  else if (yr > 1900 && yr < 2200) { row.release_date = `${yr}-01-01`; row.release_precision = "year"; }   // the year they typed
+  if (r.image_path_2) row.image_path_2 = await publishPhoto(r.image_path_2);   // the second photo comes along
+  if (table === "wheels") { row.material = f.material || null; row.duro = f.duro || null; }
+  setStep(`adding it to ${table}`);
+  const made = await insertWithSlug(table, row, `${f.name} ${f.color || ""} ${f.brand || ""}`);
+  setStep("marking the submission approved");
+  const { error } = await sb.from("submissions").update({ status: "approved", review_note: "Added as " + made.slug }).eq("id", r.id);
+  if (error) throw error;
+  return made;
+}
 async function reviewAct(card, ok) {
   const x = reviewItems[card.dataset.i], r = x.r;
   card.querySelectorAll("button").forEach((b) => (b.disabled = true));
@@ -965,25 +990,8 @@ async function reviewAct(card, ok) {
         if (r.image_path && !/^https?:/.test(r.image_path)) await sb.storage.from("uploads").remove([r.image_path]).catch(() => {});
       }
     } else if (ok) {
-      const f = r.fields, table = r.section;
-      step = "finding or making the brand";
-      const brand_id = await brandIdFor(f.brand || "Unknown");
-      step = "copying the photo";
-      const row = { brand_id, name: f.name, color: f.color || null, image_path: await reviewPhoto(x) };
-      if (table === "decks") { row.size = f.size || null; row.molds = f.mold ? f.mold.split(",").map((m) => m.trim()).filter(Boolean) : []; row.shape = f.shape || null; row.attributes = { source: "Museum submission", submitted_by: r.profiles?.username || null }; }
-      if (table === "trucks" || table === "obstacles") row.size = f.size || null;
-      if (table === "obstacles" || table === "misc") row.material = f.material || null;
-      const yr = parseInt(String(f.year || "").slice(0, 4), 10);
-      const ym = String(f.year || "").match(/^(\d{4})-(\d{2})(?:-(\d{2}))?$/);   // 2022-09 or 2022-09-06 keeps the month (or day)
-      if (ym && +ym[2] >= 1 && +ym[2] <= 12) { row.release_date = `${ym[1]}-${ym[2]}-${ym[3] || "01"}`; row.release_precision = ym[3] ? "day" : "month"; }
-      else if (yr > 1900 && yr < 2200) { row.release_date = `${yr}-01-01`; row.release_precision = "year"; }   // the year they typed
-      if (r.image_path_2) row.image_path_2 = await publishPhoto(r.image_path_2);   // the second photo comes along
-      if (table === "wheels") { row.material = f.material || null; row.duro = f.duro || null; }
-      step = `adding it to ${table}`;
-      const made = await insertWithSlug(table, row, `${f.name} ${f.color || ""} ${f.brand || ""}`);
-      step = "marking the submission approved";
-      const { error } = await sb.from("submissions").update({ status: "approved", review_note: "Added as " + made.slug }).eq("id", r.id);
-      if (error) throw error;
+      const table = r.section;
+      const made = await addSubmission(x, (t) => (step = t));
       // straight into the editor for the new board, so the rest can be filled in
       reviewItems[card.dataset.i] = null;
       setReviewBadge(reviewItems.filter(Boolean).length);
@@ -1012,8 +1020,31 @@ async function reviewAct(card, ok) {
     console.error("review action failed", step, err);
   }
 }
+// "Add all obstacles": every waiting submission in one section goes into the museum, one at a time. Details can be filled in later from the editor.
+async function addAllSubmissions(section, btn) {
+  const todo = reviewItems.map((x, i) => ({ x, i })).filter(({ x }) => x && x.kind === "sub" && x.r.section === section);
+  if (!todo.length || !confirm(`Add all ${todo.length} waiting ${section} to the museum? Each one goes live as it is.`)) return;
+  document.querySelectorAll(".me-bulk button, .me-rv button").forEach((b) => (b.disabled = true));
+  let done = 0; const failed = [];
+  for (const { x, i } of todo) {
+    setStatus(`Adding ${section}… ${done + 1} of ${todo.length}`);
+    try {
+      await addSubmission(x);
+      done++;
+      reviewItems[i] = null;
+      document.querySelector(`.me-rv[data-i="${i}"]`)?.remove();
+    } catch (err) { failed.push(`${x.r.fields?.name || "(no name)"}: ${friendly(err)}`); console.error("bulk add failed", x.r.id, err); }
+  }
+  const left = reviewItems.filter(Boolean).length;
+  setReviewBadge(left);
+  const c = $(".me-count"); if (c) c.textContent = `${left} waiting for review`;
+  document.querySelectorAll(".me-bulk button, .me-rv button").forEach((b) => (b.disabled = false));
+  if (!left) await renderReview();
+  setStatus(`Added ${done} of ${todo.length} ${section} to the museum.` + (failed.length ? ` Couldn't add: ${failed.join("; ")}` : ""), !!failed.length);
+}
 app.addEventListener("click", (e) => {
   const a = e.target.closest("[data-act]")?.dataset.act;
+  if (a === "rv-all") return addAllSubmissions(e.target.closest("[data-act]").dataset.section).catch(fail("Couldn't add them all"));
   if (a === "rv-ok" || a === "rv-no") reviewAct(e.target.closest(".me-rv"), a === "rv-ok");
 });
 // Show how many are waiting as soon as the editor opens.

@@ -6,6 +6,7 @@
 .me-toolbar { display: flex; gap: 8px; margin-top: 28px; }
 .me-toolbar input { flex: 1; min-width: 0; border: 1px solid var(--line); padding: 8px 10px; font-size: 16px; }
 .me-count { color: #777; font-size: 11px; margin: 14px 0 6px; }
+.me-bulk { margin: 0 0 14px; display: flex; flex-wrap: wrap; gap: 8px; }
 
 .me-list { display: grid; border-top: 1px solid #000; margin-bottom: 16px; }
 .me-item {
