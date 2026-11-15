@@ -261,7 +261,8 @@ function applyMode() {
   else if (!favMode() && state.fav) { state.fav = false; Object.assign(state, state.keep); state.keep = null; }
 }
 function favTop() {   // the page title, in the same big text as the section titles
-  return `<h2 class="fav-title">${esc(state.profile.display_name || state.profile.username)}'s favorites</h2>`;
+  const back = view === "list" ? "list" : "image";   // the name takes you back to the collection
+  return `<h2 class="fav-title"><a href="#${back}">${esc(state.profile.display_name || state.profile.username)}</a>'s Favorites</h2>`;
 }
 // A favorite opens its museum page (on touch screens: first tap shows it, second tap opens it)
 document.addEventListener("click", (e) => {
