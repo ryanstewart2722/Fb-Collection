@@ -86,6 +86,7 @@
     pv.onerror = () => pv.classList.remove("show");
     if (pv.src !== new URL(url, location.href).href) { pv.classList.remove("show"); pv.src = url; } else pv.classList.add("show");
   };
+  const off = () => { current = null; pv.classList.remove("show"); box.querySelectorAll(".row.on").forEach((x) => x.classList.remove("on")); };
   box.addEventListener("mouseover", onRow);
   box.addEventListener("mouseenter", onRow, true);   // a narrow desktop window: the scrolling list activates rows with mouseenter (mobile-list.js)
   // Hover while scrolling, like the museum list: browsers don't fire mouseover when the page moves under a still pointer.
@@ -99,9 +100,9 @@
       const el = document.elementFromPoint(px, py)?.closest("a.row:not(.head)");
       if (el === current) return;
       if (el && box.contains(el)) el.dispatchEvent(new MouseEvent("mouseover", { bubbles: true }));
-      else if (current) { current = null; pv.classList.remove("show"); }
+      else if (current) off();
     });
   }, { passive: true });
-  box.addEventListener("mouseleave", () => { current = null; pv.classList.remove("show"); });
-  box.addEventListener("mouseout", (e) => { if (!e.relatedTarget || !e.relatedTarget.closest || !e.relatedTarget.closest("a.row:not(.head)")) { current = null; pv.classList.remove("show"); } });
+  box.addEventListener("mouseleave", off);
+  box.addEventListener("mouseout", (e) => { if (!e.relatedTarget || !e.relatedTarget.closest || !e.relatedTarget.closest("a.row:not(.head)")) off(); });
 })();
