@@ -153,7 +153,11 @@ async function itemPhoto(i) {
   const p = i.image_path;
   if (!p) return "";
   if (/^https?:/.test(p)) return p;
-  const { data } = await sb.storage.from("uploads").createSignedUrl(p, 3600);
+  let { data } = await sb.storage.from("uploads").createSignedUrl(p, 3600);
+  if (!data?.signedUrl && window.supabase) {            // a signed-in session that has just expired must not hide the photo: ask again as a visitor
+    if (!window.__anonSb) window.__anonSb = supabase.createClient(MOMS.url, MOMS.key, { auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false } });
+    ({ data } = await window.__anonSb.storage.from("uploads").createSignedUrl(p, 3600));
+  }
   return data?.signedUrl || "";
 }
 function trimEmpty(img) {
@@ -189,7 +193,7 @@ async function setupInUse(r) {
   const q = `collection_items?select=id,section,name,image_path,source_path,details,profiles!inner(username,display_name)&museum_type=eq.${type}&museum_id=eq.${r.id}&link_status=eq.approved&status=eq.approved&section=in.(${secs.join(",")})&order=created_at.desc&limit=24`;
   const res = await fetch(`${MOMS.url}/rest/v1/${q}`, { headers: { apikey: MOMS.key } });
   const items = res.ok ? await res.json() : [];
-  const withPhoto = (await Promise.all(items.map(async (i) => ({ ...i, url: await itemPhoto(i) })))).filter((i) => i.url);
+  const withPhoto = (await Promise.all(items.map(async (i) => ({ ...i, url: await itemPhoto(i).catch(() => "") })))).filter((i) => i.url);
   list.innerHTML = withPhoto.map((i) => {
     const who = i.profiles?.display_name || i.profiles?.username || "";
     return `<a href="/u/${encodeURIComponent(i.profiles.username)}" title="${esc(who)}${i.name ? " · " + esc(i.name) : ""}"><img src="${esc(i.url)}" alt="${esc(i.name)}" loading="lazy"></a>`;
