@@ -1,6 +1,6 @@
 # Link-preview pictures (what shows when someone shares a link): a screenshot of each page and of every public
 # collection, plus a small page at u/<username>/ that carries the preview tags. Every museum product gets one too
-# (p/<kind>/<name>/), a few hundred per morning until all are done. See scripts/make_og.mjs.
+# (p/<kind>/<name>/), the rest each morning. See scripts/make_og.mjs.
 name: Link preview pictures
 
 on:

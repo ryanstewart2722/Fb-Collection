@@ -91,7 +91,7 @@ for (const p of people) {
 }
 // ---------- museum products ----------
 const TYPES = ["decks", "wheels", "trucks", "obstacles", "misc"];
-const LIMIT = Number(process.env.PRODUCT_LIMIT || 700), CONC = 5;
+const LIMIT = Number(process.env.PRODUCT_LIMIT || 3000), CONC = 5;
 const NICE = { decks: "deck", wheels: "wheels", trucks: "trucks", obstacles: "obstacle", misc: "item" };
 const products = [];
 for (const t of TYPES) {
