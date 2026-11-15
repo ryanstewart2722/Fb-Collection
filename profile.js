@@ -247,6 +247,24 @@ function paintItems() {
     });
   }
 }
+/* Hover while scrolling: browsers don't fire mouseenter when the page moves under a still pointer,
+   so after each scroll re-check what is under the pointer and hover it (same as the museum list). */
+if (canHover) {
+  let px = -1, py = -1, ticking = false;
+  document.addEventListener("mousemove", (e) => { px = e.clientX; py = e.clientY; }, { passive: true });
+  window.addEventListener("scroll", () => {
+    if (ticking || px < 0) return;
+    ticking = true;
+    requestAnimationFrame(() => {
+      ticking = false;
+      const el = document.elementFromPoint(px, py)?.closest("#items .row:not(.head):not(.el-row), #items .item");
+      const cur = document.querySelector("#items .row.on, #items .item.on");
+      if (el === cur) return;
+      if (el) el.dispatchEvent(new MouseEvent("mouseenter"));
+      else if (cur) cur.dispatchEvent(new MouseEvent("mouseleave"));
+    });
+  }, { passive: true });
+}
 window.addEventListener("hashchange", () => { view = viewOf(); if (state) { applyMode(); paintNow(); window.scrollTo({ top: 0, behavior: "instant" }); } });   // a different view starts at the top
 
 /* ---------- favorites: the museum products a person has starred, shown like a collection ---------- */
