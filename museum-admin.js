@@ -844,7 +844,9 @@ async function reviewAct(card, ok) {
       if (table === "trucks" || table === "obstacles") row.size = f.size || null;
       if (table === "obstacles" || table === "misc") row.material = f.material || null;
       const yr = parseInt(String(f.year || "").slice(0, 4), 10);
-      if (yr > 1900 && yr < 2200) { row.release_date = `${yr}-01-01`; row.release_precision = "year"; }   // the year they typed
+      const ym = String(f.year || "").match(/^(\d{4})-(\d{2})(?:-(\d{2}))?$/);   // 2022-09 or 2022-09-06 keeps the month (or day)
+      if (ym && +ym[2] >= 1 && +ym[2] <= 12) { row.release_date = `${ym[1]}-${ym[2]}-${ym[3] || "01"}`; row.release_precision = ym[3] ? "day" : "month"; }
+      else if (yr > 1900 && yr < 2200) { row.release_date = `${yr}-01-01`; row.release_precision = "year"; }   // the year they typed
       if (r.image_path_2) row.image_path_2 = await publishPhoto(r.image_path_2);   // the second photo comes along
       if (table === "wheels") { row.material = f.material || null; row.duro = f.duro || null; }
       step = `adding it to ${table}`;
