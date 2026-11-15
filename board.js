@@ -51,18 +51,23 @@ async function load() {
     root.innerHTML = `<div class="board-info"><h1>Not found</h1><p><a href="./">Back to the museum</a></p></div>`;
     return;
   }
-  // The brand's other photos, shown below.
-  // A random handful from the same brand: count them, read a window at a random place, shuffle it.
+  // More by the same brand: its decks, wheels, trucks, obstacles and misc. together, a random handful of each, mixed.
   let more = [];
   if (r.brand_id) {
-    const q = `${type}?select=id,name,slug,image_path&brand_id=eq.${r.brand_id}&id=neq.${r.id}&image_path=not.is.null&order=id.asc`;
-    const { total } = await momsFetch(`${q}&limit=1`, { count: true });
-    const win = Math.min(total || 0, 120);
-    if (win) {
-      const { rows } = await momsFetch(`${q}&limit=${win}&offset=${Math.floor(Math.random() * (total - win + 1))}`);
-      for (let i = rows.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [rows[i], rows[j]] = [rows[j], rows[i]]; }
-      more = rows.slice(0, 8);
-    }
+    const shuffle = (a) => { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+    const perType = await Promise.all(Object.keys(TYPES).map(async (t) => {
+      try {
+        const q = `${t}?select=id,name,slug,image_path&brand_id=eq.${r.brand_id}${t === type ? `&id=neq.${r.id}` : ""}&image_path=not.is.null&order=id.asc`;
+        const { total } = await momsFetch(`${q}&limit=1`, { count: true });
+        const win = Math.min(total || 0, 60);
+        if (!win) return [];
+        const { rows } = await momsFetch(`${q}&limit=${win}&offset=${Math.floor(Math.random() * (total - win + 1))}`);
+        return shuffle(rows).slice(0, 8).map((x) => ({ ...x, t }));
+      } catch (e) { return []; }
+    }));
+    // take turns between the kinds so one big kind doesn't fill the row
+    for (let i = 0; more.length < 8 && perType.some((l) => i < l.length); i++) perType.forEach((l) => { if (i < l.length && more.length < 8) more.push(l[i]); });
+    more = shuffle(more);
   }
   const photo = r.image_path || "";
 
@@ -102,13 +107,13 @@ async function load() {
         <div class="board-use-list"></div></div>` : ""}
       <div class="board-brand${USE[type] ? "" : " push"}">
         ${r.brand_id ? `<span class="board-more-head">More by ${[r.brands, ...extras].filter((x) => x && x.name).map((x) => `<a class="board-brand-link" href="./?brand=${x.id}">${esc(x.name)}</a>`).join(" x ")}</span>` : ""}
-        <div class="board-more${type === "decks" ? "" : " square"}"></div>
+        <div class="board-more"></div>
       </div>
     </div>`;
 
   if (matchMedia("(max-width: 1100px)").matches) more = more.slice(0, 6);   // phones and tablets: six suggestions
   root.querySelector(".board-more").innerHTML = more.map((m) =>
-    `<a href="board.html?type=${type}&slug=${encodeURIComponent(m.slug)}" title="${esc(m.name)}"><img src="${esc(m.image_path)}" alt="${esc(m.name)}" loading="lazy"></a>`).join("");
+    `<a${m.t === "decks" ? "" : ' class="sq"'} href="board.html?type=${m.t}&slug=${encodeURIComponent(m.slug)}" title="${esc(m.name)}"><img src="${esc(m.image_path)}" alt="${esc(m.name)}" loading="lazy"></a>`).join("");
   setupFavorite(r);
   if (USE[type]) setupInUse(r);
 }
