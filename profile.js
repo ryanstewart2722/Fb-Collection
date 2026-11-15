@@ -110,7 +110,7 @@ function sections() {
 function headHtml() {
   const { profile, owner } = state;
   return `<section class="p-head">
-    <p class="p-user">museumofminiskateboards.org/u/${esc(profile.username)}${profile.is_private ? ` · <b>Private</b>` : ""}${state.fav ? "" : ` · <a class="p-fav-link" href="#favorites">Favorites${state.favItems ? ` (${state.favItems.length})` : ""}</a>`}</p>
+    <p class="p-user">museumofminiskateboards.org/u/${esc(profile.username)}${profile.is_private ? ` · <b>Private</b>` : ""}${state.fav ? ` · <a class="p-fav-link" href="#${view === "list" ? "list" : "image"}">← Back to collection</a>` : ` · <a class="p-fav-link" href="#favorites">Favorites${state.favItems ? ` (${state.favItems.length})` : ""}</a>`}</p>
     ${owner ? ownerBar() : ""}
   </section>`;
 }
@@ -260,9 +260,8 @@ function applyMode() {
   if (favMode() && !state.fav) { state.fav = true; state.keep = { items: state.items, owner: state.owner, edit: state.edit, draft: state.draft }; state.items = state.favItems || []; state.owner = false; state.edit = false; state.draft = null; }
   else if (!favMode() && state.fav) { state.fav = false; Object.assign(state, state.keep); state.keep = null; }
 }
-function favTop() {   /* (body.fav-mode is set in applyMode) */
-  const who = state.profile.display_name || state.profile.username;
-  return `<div class="fav-top"><a class="fav-back" href="#${view === "list" ? "list" : "image"}">← Back to ${esc(who)}'s collection</a><h1>Favorites</h1></div>`;
+function favTop() {   // the page title, in the same big text as the section titles
+  return `<h2 class="fav-title">Favorites</h2>`;
 }
 // A favorite opens its museum page (on touch screens: first tap shows it, second tap opens it)
 document.addEventListener("click", (e) => {

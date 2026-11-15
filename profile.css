@@ -163,9 +163,6 @@
 .el-new .el-tcell { gap: 0; }
 
 /* favorites */
-.fav-top { padding: 22px var(--gutter) 6px; display: flex; flex-direction: column; gap: 14px; }
-.fav-top h1 { margin: 0; font-size: 30px; font-weight: 500; letter-spacing: -0.03em; }
-.fav-back { align-self: flex-start; font-size: 15px; text-decoration: underline; text-underline-offset: 3px; color: #000; }
-.fav-back:hover { opacity: 0.6; }
+.fav-title { margin-bottom: 40px; }
 .p-fav-link { color: inherit; text-decoration: underline; text-underline-offset: 3px; }
 body.fav-mode #items [data-id] { cursor: pointer; }
