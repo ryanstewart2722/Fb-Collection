@@ -41,7 +41,10 @@ const TYPES = {
 };
 
 let brands = [];
-let tab = "decks";
+const TAB_KEY = "moms-editor-tab";   // the page you were on comes back after a refresh
+const savedTab = () => { try { const t = localStorage.getItem(TAB_KEY); return document.querySelector(`.ad-tabs [data-tab="${t}"]`) ? t : "decks"; } catch { return "decks"; } };
+const rememberTab = (t) => { try { localStorage.setItem(TAB_KEY, t); } catch { /* private window */ } };
+let tab = savedTab();
 let list = { rows: [], total: 0, search: "", brand: "", photo: "", tab: "", sort: (() => { try { return localStorage.getItem("me-sort") === "added" ? "added" : "release"; } catch { return "release"; } })() };
 let fromReview = false;   // the entry being edited was just added from the Review tab
 let editing = null;   // row being edited ({} for a new one), or null when showing the list
@@ -385,7 +388,7 @@ async function save() {
     if (fromReview) {   // finished reviewing this one: straight back to the Review page
       fromReview = false; editing = null; photo = null; photo2 = null; drop2 = false;
       document.querySelectorAll(".ad-tabs button").forEach((b) => b.classList.toggle("active", b.dataset.tab === "review"));
-      tab = "review"; window.scrollTo({ top: 0, behavior: "instant" });
+      tab = "review"; rememberTab(tab); window.scrollTo({ top: 0, behavior: "instant" });
       await renderReview().catch(fail("Couldn't load the review list"));
       return setStatus("Saved ✓ It's live on the museum now.");
     }
@@ -672,7 +675,7 @@ app.addEventListener("click", async (e) => {
   if ((act === "next-review" || (act === "back" && fromReview)) && leaveForm()) {
     fromReview = false; editing = null; photo = null; photo2 = null; drop2 = false; setStatus("");
     document.querySelectorAll(".ad-tabs button").forEach((b) => b.classList.toggle("active", b.dataset.tab === "review"));
-    tab = "review"; renderReview().catch(fail("Couldn't load the review list")); window.scrollTo({ top: 0, behavior: "instant" });
+    tab = "review"; rememberTab(tab); renderReview().catch(fail("Couldn't load the review list")); window.scrollTo({ top: 0, behavior: "instant" });
     return;
   }
   if (act === "back" && leaveForm()) { editing = null; photo = null; photo2 = null; drop2 = false; setStatus(""); await loadList().catch(fail("Couldn't load")); renderList(); }
@@ -696,7 +699,7 @@ app.addEventListener("click", async (e) => {
 
 document.querySelectorAll(".ad-tabs button").forEach((b) => b.addEventListener("click", async () => {
   if (!leaveForm()) return;
-  tab = b.dataset.tab; fromReview = false;
+  tab = b.dataset.tab; fromReview = false; rememberTab(tab);
   editing = null; photo = null; list.search = ""; list.brand = ""; list.photo = "";
   document.querySelectorAll(".ad-tabs button").forEach((x) => x.classList.toggle("active", x === b));
   setStatus("");
@@ -1038,6 +1041,9 @@ async function enter(session) {
   show("editor");
   document.querySelector(`.ad-tabs [data-tab="${tab}"]`).classList.add("active");
   await loadBrands();
+  if (tab === "review") return renderReview().catch(fail("Couldn't load the review list"));
+  if (tab === "links") return renderLinks().catch(fail("Couldn't load the product links"));
+  if (tab === "molds") return renderMolds().catch(fail("Couldn't load the molds"));
   await loadList();
   renderList();
 }
