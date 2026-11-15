@@ -100,6 +100,14 @@ async function loadAll() {
   app.classList.add("loading");
   if (!BRANDS.size) { try { (await momsFetch("brands?select=id,name&limit=2000")).rows.forEach((b) => BRANDS.set(b.id, b.name)); } catch (e) { /* names of extra brands just won't show */ } }
   await Promise.all(SECTIONS.map((s) => loadSection(s, true)));
+  // "Show more" / "View all" are remembered, so coming back to the list shows as many boards as you had opened
+  const sig = sort + "|" + SECTIONS.map((s) => filterParams(s) || "").join("|");
+  let kept = null;
+  try { const m = JSON.parse(sessionStorage.getItem("moms-loaded") || "null"); if (m && m.sig === sig) kept = m.n; } catch (e) {}
+  if (kept) await Promise.all(SECTIONS.map(async (s) => {
+    let before = -1;
+    while (s.rows.length < Math.min(kept[s.type] || 0, s.total) && s.rows.length !== before) { before = s.rows.length; await loadSection(s, false); }
+  }));
   if (mine !== loadSeq) return;
   render();
   if (!app.children.length) {
@@ -436,8 +444,15 @@ app.addEventListener("click", async (e) => {
     let before = -1;
     while (s.rows.length < s.total && s.rows.length !== before) { before = s.rows.length; await loadSection(s, false); }
   } else await loadSection(s, false);
+  rememberLoaded();
   render();
 });
+function rememberLoaded() {
+  try {
+    const n = {}; SECTIONS.forEach((x) => (n[x.type] = x.rows.length));
+    sessionStorage.setItem("moms-loaded", JSON.stringify({ sig: sort + "|" + SECTIONS.map((x) => filterParams(x) || "").join("|"), n }));
+  } catch (e) {}
+}
 
 loadAll().catch((err) => {
   app.innerHTML = `<p class="load-error">Couldn't load the archive. Please refresh the page.</p>`;
