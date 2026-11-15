@@ -17,7 +17,8 @@ if (topBack) topBack.href = backHref;   // "Back" in the header goes where you c
 const brandBullet = (r, extras) => {
   const list = [r.brands, ...extras].filter((b) => b && b.name);
   if (!list.length) return "";
-  const one = (b) => /^https?:\/\//i.test(b.website || "") ? `<a class="board-brand-link" href="${esc(b.website)}" target="_blank" rel="noopener">${esc(b.name)}</a>` : esc(b.name);
+  // each brand links on its own: to its website when it has one, otherwise to that brand's boards in the museum
+  const one = (b) => /^https?:\/\//i.test(b.website || "") ? `<a class="board-brand-link" href="${esc(b.website)}" target="_blank" rel="noopener">${esc(b.name)}</a>` : `<a class="board-brand-link" href="./?brand=${b.id}">${esc(b.name)}</a>`;
   return `Manufacturer: ${list.map(one).join(" x ")}`;
 };
 function specs(r, extras) {
@@ -100,7 +101,7 @@ async function load() {
         <form class="board-use-form" hidden><select aria-label="Choose one of your items"></select> <button type="submit">Send for review</button> <span class="board-use-msg" aria-live="polite"></span></form>
         <div class="board-use-list"></div></div>` : ""}
       <div class="board-brand${USE[type] ? "" : " push"}">
-        ${r.brand_id ? `<a class="board-more-head" href="./?brand=${r.brand_id}">More by ${esc(brand)}</a>` : ""}
+        ${r.brand_id ? `<span class="board-more-head">More by ${[r.brands, ...extras].filter((x) => x && x.name).map((x) => `<a class="board-brand-link" href="./?brand=${x.id}">${esc(x.name)}</a>`).join(" x ")}</span>` : ""}
         <div class="board-more${type === "decks" ? "" : " square"}"></div>
       </div>
     </div>`;
