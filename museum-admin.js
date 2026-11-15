@@ -646,11 +646,65 @@ document.querySelectorAll(".ad-tabs button").forEach((b) => b.addEventListener("
   document.querySelectorAll(".ad-tabs button").forEach((x) => x.classList.toggle("active", x === b));
   setStatus("");
   if (tab === "review") return renderReview().catch(fail("Couldn't load the review list"));
+  if (tab === "links") return renderLinks().catch(fail("Couldn't load the product links"));
   if (tab === "molds") return renderMolds().catch(fail("Couldn't load the molds"));
   await loadList().catch(fail("Couldn't load"));
   renderListNow(); listY = 0; window.scrollTo({ top: 0, behavior: "instant" });   // a different tab starts at the top
 }));
 
+
+/* ---------- Product links: "this item in my collection is that museum product" (kept apart from Review) ---------- */
+let linkItems = [];
+const setLinksBadge = (n) => { const b = $("#links-n"); if (b) { b.textContent = n; b.hidden = !n; } };
+async function renderLinks() {
+  app.innerHTML = `<p class="me-count">Loading…</p>`;
+  const { data, error } = await sb.from("collection_items").select("id,section,name,image_path,source_path,details,museum_type,museum_id,created_at,profiles(username)").eq("link_status", "pending").order("created_at");
+  if (error) throw error;
+  linkItems = data || [];
+  const byType = {};
+  linkItems.forEach((i) => (byType[i.museum_type] ||= new Set()).add(i.museum_id));
+  const prods = {};
+  await Promise.all(Object.entries(byType).map(async ([t, ids]) => {
+    const { data: rows } = await sb.from(t).select("id,name,slug,image_path,color,brands(name)").in("id", [...ids]);
+    (rows || []).forEach((r) => (prods[t + ":" + r.id] = r));
+  }));
+  const paths = linkItems.map((i) => i.image_path).filter((p) => p && !/^https?:/.test(p));
+  const urls = {};
+  if (paths.length) (await sb.storage.from("uploads").createSignedUrls(paths, 3600)).data?.forEach((u) => (urls[u.path] = u.signedUrl));
+  let index = {};
+  try { const r = await fetch("/user-cuts/index.json?" + Date.now()); if (r.ok) index = await r.json(); } catch { /* quick cuts only */ }
+  linkItems.forEach((i) => {
+    const e = index[i.id];
+    i.url = e && e.file && !e.bad && i.source_path && e.src === i.source_path && i.details?.cut !== "quick" ? "/" + e.file : /^https?:/.test(i.image_path || "") ? i.image_path : urls[i.image_path] || "";
+    i.prod = prods[i.museum_type + ":" + i.museum_id];
+  });
+  setLinksBadge(linkItems.length);
+  const kind = { decks: "deck", setups: "setup" };
+  app.innerHTML = `<p class="me-count">${linkItems.length} product link${linkItems.length === 1 ? "" : "s"} waiting</p><div class="me-review">` + (linkItems.map((i, n) => {
+    const who = i.profiles?.username || "someone", p = i.prod;
+    return `<div class="me-rv" data-i="${n}">
+      <div class="me-rv-img">${i.url ? `<img src="${esc(i.url)}" alt="">` : `<span>No photo</span>`}${p?.image_path ? `<img src="${esc(p.image_path)}" alt="" title="The museum product">` : ""}</div>
+      <div class="me-rv-info">
+        <b>${esc(i.name)}</b> <em>${esc(kind[i.section] || i.section)} in <a href="/u/${esc(who)}" target="_blank" rel="noopener">${esc(who)}</a>'s collection</em>
+        <span>says it is: <a href="board.html?type=${esc(i.museum_type)}&slug=${esc(p?.slug || "")}" target="_blank" rel="noopener">${esc(p ? [p.brands?.name, p.name, p.color].filter(Boolean).join(" · ") : "(product not found)")}</a> <em>${esc(i.museum_type)}</em></span>
+        <div class="me-rv-act"><button class="ad-btn ad-btn-dark" data-act="lk-ok">Approve link</button> <button class="ad-btn me-danger" data-act="lk-no">Reject</button></div>
+      </div></div>`;
+  }).join("") || `<p class="me-empty">No product links waiting.</p>`) + `</div>`;
+}
+document.addEventListener("click", async (e) => {
+  const b = e.target.closest("[data-act='lk-ok'],[data-act='lk-no']");
+  if (!b) return;
+  const card = b.closest(".me-rv"), it = linkItems[card.dataset.i];
+  if (!it) return;
+  b.disabled = true;
+  const ok = b.dataset.act === "lk-ok";
+  const patch = ok ? { link_status: "approved" } : { museum_type: null, museum_id: null, link_status: null };
+  const { error } = await sb.from("collection_items").update(patch).eq("id", it.id);
+  if (error) { b.disabled = false; return setStatus("Couldn't save that: " + error.message); }
+  linkItems[card.dataset.i] = null; card.remove();
+  setLinksBadge(linkItems.filter(Boolean).length);
+  setStatus(ok ? "Link approved. It now shows under the product." : "Link rejected.");
+});
 
 /* ---------- Molds: every mold name in use, to rename or merge ---------- */
 // Molds are plain text on each deck (museum decks keep a list, collection decks one name), so this gathers them all,
@@ -895,6 +949,8 @@ app.addEventListener("click", (e) => {
     sb.from("submissions").select("id", { count: "exact", head: true }).in("status", ["pending", "flagged"]),
   ]);
   setReviewBadge((a.count || 0) + (b.count || 0));
+  const l = await sb.from("collection_items").select("id", { count: "exact", head: true }).eq("link_status", "pending");
+  setLinksBadge(l.count || 0);
 })();
 
 window.addEventListener("beforeunload", (e) => { if (editing && (formDirty || photo)) e.preventDefault(); });

@@ -40,7 +40,9 @@ const SAMPLE = {
   ].map(([section, name, brand, size, color, f], n) => ({ id: "s" + n, section, name, details: { maker: brand, size, color, ...(section === "setups" ? { trucks: "Independent 32mm Silver", wheels: "Joycult Classic 3.0 Tan" } : { mold: color ? "Freshwater" : "" }) }, image_path: D(f), status: "approved" })),
 };
 
-let view = location.hash === "#list" ? "list" : "image";   // collection pages open on the image view
+const viewOf = () => /list$/.test(location.hash) ? "list" : "image";
+const favMode = () => location.hash.startsWith("#favorites");   // #favorites and #favorites-list: the person's favorite museum products
+let view = viewOf();   // collection pages open on the image view
 let state = null;   // { profile, items, owner }
 
 function showPreview(src) { if (!src) return hidePreview(); preview.src = src; preview.classList.add("show"); }
@@ -108,7 +110,7 @@ function sections() {
 function headHtml() {
   const { profile, owner } = state;
   return `<section class="p-head">
-    <p class="p-user">museumofminiskateboards.org/u/${esc(profile.username)}${profile.is_private ? ` · <b>Private</b>` : ""}</p>
+    <p class="p-user">museumofminiskateboards.org/u/${esc(profile.username)}${profile.is_private ? ` · <b>Private</b>` : ""}${state.fav ? "" : ` · <a class="p-fav-link" href="#favorites">Favorites${state.favItems ? ` (${state.favItems.length})` : ""}</a>`}</p>
     ${owner ? ownerBar() : ""}
   </section>`;
 }
@@ -192,10 +194,10 @@ function paintItems() {
   const box = $("#items");
   if (state.owner && !state.items.length) view = "list";   // nothing to show as pictures yet
   clearActive();
-  document.querySelectorAll("#views a").forEach((a) => a.classList.toggle("active", a.dataset.view === view));
+  document.querySelectorAll("#views a").forEach((a) => { a.classList.toggle("active", a.dataset.view === view); a.setAttribute("href", (state.fav ? "#favorites" : "#") + (state.fav ? (a.dataset.view === "list" ? "-list" : "") : a.dataset.view)); });
   document.body.classList.toggle("list-view", view === "list");
   if (!state.items.length && !state.owner) {
-    box.innerHTML = `<p class="p-empty">${state.owner ? "You haven't added anything yet." : "Nothing here yet."}</p>`;
+    box.innerHTML = `<p class="p-empty">${state.fav ? "No favorites yet." : state.owner ? "You haven't added anything yet." : "Nothing here yet."}</p>`;
     return;
   }
   const editing = state.edit && state.owner;
@@ -225,7 +227,50 @@ function paintItems() {
     });
   }
 }
-window.addEventListener("hashchange", () => { view = location.hash === "#list" ? "list" : "image"; if (state) { paintNow(); window.scrollTo({ top: 0, behavior: "instant" }); } });   // a different view starts at the top
+window.addEventListener("hashchange", () => { view = viewOf(); if (state) { applyMode(); paintNow(); window.scrollTo({ top: 0, behavior: "instant" }); } });   // a different view starts at the top
+
+/* ---------- favorites: the museum products a person has starred, shown like a collection ---------- */
+const FAV_SEL = { decks: "id,name,slug,image_path,color,size,molds,drop_no,drop_title,mold_code,release_date,brands(name)", wheels: "id,name,slug,image_path,color,material,duro,release_date,brands(name)", trucks: "id,name,slug,image_path,color,size,release_date,brands(name)", obstacles: "id,name,slug,image_path,material,release_date,brands(name)", misc: "id,name,slug,image_path,material,release_date,brands(name)" };
+async function loadFavs() {
+  state.favItems = [];
+  try {
+    const { data: favs } = await sb.from("favorites").select("museum_type,museum_id,created_at").eq("user_id", state.profile.id).order("created_at", { ascending: false });
+    const by = {};
+    (favs || []).forEach((f) => (by[f.museum_type] ||= []).push(f.museum_id));
+    const out = [];
+    await Promise.all(Object.entries(by).map(async ([t, ids]) => {
+      if (!FAV_SEL[t]) return;
+      const { data: rows } = await sb.from(t).select(FAV_SEL[t]).in("id", ids);
+      (rows || []).forEach((r) => {
+        const brand = r.brands?.name || "", yr = r.release_date ? String(r.release_date).slice(0, 4) : "";
+        const nm = t === "decks" ? (window.momsDeckName ? window.momsDeckName(r) : r.name) : t === "wheels" || t === "trucks" ? [brand, r.name].filter(Boolean).join(" ") : r.name;
+        out.push({ id: t + ":" + r.id, section: t, name: nm, status: "approved", url: r.image_path || "", url2: "", link: `/board.html?type=${t}&slug=${encodeURIComponent(r.slug)}`,
+          at: (favs.find((f) => f.museum_type === t && f.museum_id === r.id) || {}).created_at || "",
+          details: { maker: brand, mold: (r.molds || []).join(", "), size: r.size || "", color: r.color || "", material: r.material || "", duro: r.duro || "", year: yr } });
+      });
+    }));
+    out.sort((a, b) => String(b.at).localeCompare(String(a.at)));
+    state.favItems = out;
+  } catch (e) { console.error(e); }
+}
+// Swap the page between the collection and the favorites list (same list and image views for both).
+function applyMode() {
+  if (!state) return;
+  document.body.classList.toggle("fav-mode", favMode());
+  if (favMode() && !state.fav) { state.fav = true; state.keep = { items: state.items, owner: state.owner, edit: state.edit, draft: state.draft }; state.items = state.favItems || []; state.owner = false; state.edit = false; state.draft = null; }
+  else if (!favMode() && state.fav) { state.fav = false; Object.assign(state, state.keep); state.keep = null; }
+}
+function favTop() {   /* (body.fav-mode is set in applyMode) */
+  const who = state.profile.display_name || state.profile.username;
+  return `<div class="fav-top"><a class="fav-back" href="#${view === "list" ? "list" : "image"}">← Back to ${esc(who)}'s collection</a><h1>Favorites</h1></div>`;
+}
+// A favorite opens its museum page (on touch screens: first tap shows it, second tap opens it)
+document.addEventListener("click", (e) => {
+  const el = e.target.closest("#items [data-id]");
+  if (!el || !state || !state.fav) return;
+  const it = state.items.find((i) => i.id === el.dataset.id);
+  if (it && it.link && (canHover || el.classList.contains("on"))) location.href = it.link;
+}, true);
 
 /* ---------- page ---------- */
 function syncEditHeader() {
@@ -241,9 +286,11 @@ function keep(box, fn, anchor) { return window.momsKeepScroll ? window.momsKeepS
 function paint(anchor) { keep(app, () => paintNow(), anchor); }   // redraw without the page jumping
 function paintNow() {
   document.title = `${state.profile.display_name || state.profile.username} · MoMS`;
+  applyMode();
   $("#views").hidden = !state.items.length && !state.owner;
   $("#views-gap").hidden = !!state.items.length || state.owner;
-  app.innerHTML = `<div id="items"></div>` + headHtml();   // the link and owner links sit at the bottom of the page
+  applyMode();
+  app.innerHTML = (state.fav ? favTop() : "") + `<div id="items"></div>` + headHtml();   // the link and owner links sit at the bottom of the page
   paintItems();
   syncEditHeader();
 }
@@ -617,6 +664,7 @@ async function load() {
   await loadRecuts();
   await Promise.all(rows.map(async (i) => { i.url = await photoUrl(i); i.url2 = i.image_path_2 ? await photoUrl2(i) : ""; }));
   state = { profile, items: rows, owner, staff, isAdmin, viewer: session?.user.id };
+  await loadFavs();
   paint();
 }
 
