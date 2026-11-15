@@ -180,8 +180,8 @@ async function setupInUse(r) {
     e.preventDefault();
     const sel = form.querySelector("select"), msg = form.querySelector(".board-use-msg");
     if (!sel.value) return (msg.textContent = "Choose one first.");
-    const { error } = await sb.from("collection_items").update({ museum_type: type, museum_id: r.id }).eq("id", sel.value);
-    msg.textContent = error ? "Couldn't send that. " + error.message : "Sent. It shows here once it's approved.";
+    const { data, error } = await sb.from("collection_items").update({ museum_type: type, museum_id: r.id }).eq("id", sel.value).select("link_status").maybeSingle();
+    msg.textContent = error ? "Couldn't send that. " + error.message : data?.link_status === "approved" ? "Added. Refresh to see it." : "Sent. It shows here once it's approved.";   // the museum's owner skips the review
     if (!error) sel.querySelector(`option[value="${sel.value}"]`)?.remove();
   });
 }
