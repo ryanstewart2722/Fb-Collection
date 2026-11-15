@@ -101,6 +101,14 @@ window.momsKeepScroll = function (box, fn, anchor) {
   try { history.scrollRestoration = "manual"; } catch (e) {}
   var nav = performance.getEntriesByType && performance.getEntriesByType("navigation")[0];
   var again = nav && (nav.type === "reload" || nav.type === "back_forward");
+  // "Back" / "Close" on a board page are ordinary links, so the browser treats the trip as a new visit. They leave a note
+  // saying where they go, and the page they land on then returns to where you were.
+  try { if (sessionStorage.getItem("moms-return") === KEY) { again = true; sessionStorage.removeItem("moms-return"); } } catch (e) {}
+  addEventListener("click", function (e) {
+    var a = e.target.closest && e.target.closest("a.board-close, #top-back");
+    if (!a || !a.href) return;
+    try { var u = new URL(a.href, location.href); if (u.origin === location.origin) sessionStorage.setItem("moms-return", "moms-scroll:" + u.pathname + u.search); } catch (x) {}
+  }, true);
   var target = 0;
   try { target = again ? parseInt(sessionStorage.getItem(KEY) || "0", 10) || 0 : 0; } catch (e) {}
   var stop = false, saving = false;
