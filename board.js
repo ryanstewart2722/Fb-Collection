@@ -99,8 +99,8 @@ async function load() {
     <a class="board-close" href="${esc(backHref)}">Close</a>
     ${prev ? `<a class="board-nav prev" href="${esc(link(prev))}">Previous</a><a class="board-nav next" href="${esc(link(next))}">Next</a>` : ""}
     <div class="board-info">
-      <button class="board-fav" type="button" hidden></button>
       <h1>${esc(title)}</h1>
+      <button class="board-fav" type="button" hidden></button>
       <div class="board-specs">${specs(r, extras)}</div>
       ${USE[type] ? `<div class="board-use"><p class="board-use-head">In Use <button type="button" class="board-submit">Submit yours</button></p>
         <form class="board-use-form" hidden><select aria-label="Choose one of your items"></select> <button type="submit">Send for review</button> <span class="board-use-msg" aria-live="polite"></span></form>
@@ -190,7 +190,7 @@ async function setupInUse(r) {
   const box = root.querySelector(".board-use"), list = box.querySelector(".board-use-list"), form = box.querySelector(".board-use-form");
   const secs = USE[type];
   try { const rc = await fetch("/user-cuts/index.json", { cache: "no-cache" }); if (rc.ok) RECUTS = await rc.json(); } catch (e) {}
-  const q = `collection_items?select=id,section,name,image_path,source_path,details,profiles!inner(username,display_name)&museum_type=eq.${type}&museum_id=eq.${r.id}&link_status=eq.approved&status=eq.approved&section=in.(${secs.join(",")})&order=created_at.desc&limit=24`;
+  const q = `collection_items?select=id,section,name,image_path,source_path,details,profiles!inner(username,display_name),links:collection_item_links!inner(museum_type,museum_id,link_status)&links.museum_type=eq.${type}&links.museum_id=eq.${r.id}&links.link_status=eq.approved&status=eq.approved&section=in.(${secs.join(",")})&order=created_at.desc&limit=24`;
   const res = await fetch(`${MOMS.url}/rest/v1/${q}`, { headers: { apikey: MOMS.key } });
   const items = res.ok ? await res.json() : [];
   const withPhoto = (await Promise.all(items.map(async (i) => ({ ...i, url: await itemPhoto(i).catch(() => "") })))).filter((i) => i.url);
@@ -207,9 +207,9 @@ async function setupInUse(r) {
     if (!form.hidden) return (form.hidden = true);
     const msg = form.querySelector(".board-use-msg"), sel = form.querySelector("select");
     msg.textContent = "";
-    const { data: mine } = await sb.from("collection_items").select("id,section,name,museum_type,museum_id,link_status").eq("user_id", session.user.id).in("section", secs).neq("status", "removed").order("section").order("name");
+    const { data: mine } = await sb.from("collection_items").select("id,section,name,links:collection_item_links(museum_type,museum_id)").eq("user_id", session.user.id).in("section", secs).neq("status", "removed").order("section").order("name");
     const names = { decks: "Deck", setups: "Setup" };
-    const opts = (mine || []).filter((m) => !(m.museum_type === type && m.museum_id === r.id));
+    const opts = (mine || []).filter((m) => !(m.links || []).some((l) => l.museum_type === type && l.museum_id === r.id));
     sel.innerHTML = opts.length ? `<option value="">Choose from your collection…</option>` + opts.map((m) => `<option value="${esc(m.id)}">${secs.length > 1 ? esc(names[m.section]) + " · " : ""}${esc(m.name)}</option>`).join("") : `<option value="">You have nothing to choose from yet</option>`;
     form.hidden = false;
   });
@@ -217,7 +217,7 @@ async function setupInUse(r) {
     e.preventDefault();
     const sel = form.querySelector("select"), msg = form.querySelector(".board-use-msg");
     if (!sel.value) return (msg.textContent = "Choose one first.");
-    const { data, error } = await sb.from("collection_items").update({ museum_type: type, museum_id: r.id }).eq("id", sel.value).select("link_status").maybeSingle();
+    const { data, error } = await sb.from("collection_item_links").insert({ item_id: sel.value, museum_type: type, museum_id: r.id }).select("link_status").maybeSingle();
     msg.textContent = error ? "Couldn't send that. " + error.message : data?.link_status === "approved" ? "Added. Refresh to see it." : "Sent. It shows here once it's approved.";   // the museum's owner skips the review
     if (!error) sel.querySelector(`option[value="${sel.value}"]`)?.remove();
   });

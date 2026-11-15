@@ -245,8 +245,9 @@ async function loadInUse() {
   let box = document.getElementById("inuse");
   if (!box) { box = document.createElement("section"); box.id = "inuse"; box.className = "me-inuse"; app.appendChild(box); }
   box.innerHTML = `<h3>In use</h3><p class="me-count">Loading…</p>`;
-  const { data: items, error } = await sb.from("collection_items").select("id,section,name,image_path,link_status,profiles(username)").eq("museum_type", type).eq("museum_id", id).order("created_at");
+  const { data: rows, error } = await sb.from("collection_item_links").select("link_status,created_at,item:collection_items!inner(id,section,name,image_path,profiles(username))").eq("museum_type", type).eq("museum_id", id).order("created_at");
   if (error) throw error;
+  const items = (rows || []).filter((l) => l.item).map((l) => ({ ...l.item, link_status: l.link_status }));
   if (tab !== type || editing?.id !== id) return;   // moved on while loading
   const paths = (items || []).map((i) => i.image_path).filter((p) => p && !/^https?:/.test(p));
   const urls = {};
@@ -270,9 +271,9 @@ document.addEventListener("change", async (e) => {
   const item = $("#iu-item"), add = document.querySelector("[data-act='iu-add']");
   item.hidden = add.hidden = true;
   if (!e.target.value) return;
-  const { data } = await sb.from("collection_items").select("id,section,name,museum_type,museum_id").eq("user_id", e.target.value).in("section", USE_SECS[tab]).neq("status", "removed").order("section").order("name");
+  const { data } = await sb.from("collection_items").select("id,section,name,links:collection_item_links(museum_type,museum_id)").eq("user_id", e.target.value).in("section", USE_SECS[tab]).neq("status", "removed").order("section").order("name");
   const names = { decks: "Deck", setups: "Setup" };
-  const opts = (data || []).filter((m) => !(m.museum_type === tab && m.museum_id === editing.id));
+  const opts = (data || []).filter((m) => !(m.links || []).some((l) => l.museum_type === tab && l.museum_id === editing.id));
   item.innerHTML = opts.length ? opts.map((m) => `<option value="${esc(m.id)}">${USE_SECS[tab].length > 1 ? esc(names[m.section]) + " · " : ""}${esc(m.name)}</option>`).join("") : `<option value="">Nothing to add</option>`;
   item.hidden = false; add.hidden = !opts.length;
 });
@@ -283,8 +284,9 @@ document.addEventListener("click", async (e) => {
   const rm = b.dataset.act === "iu-rm";
   const id = rm ? b.closest(".me-inuse-item").dataset.id : $("#iu-item").value;
   if (!id) return (b.disabled = false);
-  const patch = rm ? { museum_type: null, museum_id: null, link_status: null } : { museum_type: tab, museum_id: editing.id };   // the museum's staff skip the review
-  const { error } = await sb.from("collection_items").update(patch).eq("id", id);
+  const { error } = rm   // the museum's staff skip the review
+    ? await sb.from("collection_item_links").delete().eq("item_id", id).eq("museum_type", tab).eq("museum_id", editing.id)
+    : await sb.from("collection_item_links").insert({ item_id: id, museum_type: tab, museum_id: editing.id });
   b.disabled = false;
   if (error) return setStatus("Couldn't save that: " + error.message, true);
   setStatus(rm ? "Removed." : "Added. It shows under “In Use” on the product page.");
@@ -716,9 +718,9 @@ let linkItems = [];
 const setLinksBadge = (n) => { const b = $("#links-n"); if (b) { b.textContent = n; b.hidden = !n; } };
 async function renderLinks() {
   app.innerHTML = `<p class="me-count">Loading…</p>`;
-  const { data, error } = await sb.from("collection_items").select("id,section,name,image_path,source_path,details,museum_type,museum_id,created_at,profiles(username)").eq("link_status", "pending").order("created_at");
+  const { data, error } = await sb.from("collection_item_links").select("museum_type,museum_id,created_at,item:collection_items!inner(id,section,name,image_path,source_path,details,created_at,profiles(username))").eq("link_status", "pending").order("created_at");
   if (error) throw error;
-  linkItems = data || [];
+  linkItems = (data || []).filter((l) => l.item).map((l) => ({ ...l.item, museum_type: l.museum_type, museum_id: l.museum_id }));
   const byType = {};
   linkItems.forEach((i) => (byType[i.museum_type] ||= new Set()).add(i.museum_id));
   const prods = {};
@@ -772,8 +774,8 @@ document.addEventListener("click", async (e) => {
   if (!it) return;
   b.disabled = true;
   const ok = b.dataset.act === "lk-ok";
-  const patch = ok ? { link_status: "approved" } : { museum_type: null, museum_id: null, link_status: null };
-  const { error } = await sb.from("collection_items").update(patch).eq("id", it.id);
+  const link = sb.from("collection_item_links");
+  const { error } = await (ok ? link.update({ link_status: "approved" }) : link.delete()).eq("item_id", it.id).eq("museum_type", it.museum_type).eq("museum_id", it.museum_id);
   if (error) { b.disabled = false; return setStatus("Couldn't save that: " + error.message); }
   linkItems[card.dataset.i] = null; card.remove();
   setLinksBadge(linkItems.filter(Boolean).length);
@@ -1023,7 +1025,7 @@ app.addEventListener("click", (e) => {
     sb.from("submissions").select("id", { count: "exact", head: true }).in("status", ["pending", "flagged"]),
   ]);
   setReviewBadge((a.count || 0) + (b.count || 0));
-  const l = await sb.from("collection_items").select("id", { count: "exact", head: true }).eq("link_status", "pending");
+  const l = await sb.from("collection_item_links").select("item_id", { count: "exact", head: true }).eq("link_status", "pending");
   setLinksBadge(l.count || 0);
 })();
 
