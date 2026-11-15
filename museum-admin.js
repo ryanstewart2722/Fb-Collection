@@ -231,7 +231,62 @@ function renderForm() {
     </div>` : ""}`;
   formDirty = false;
   window.scrollTo(0, 0);
+  if (!isNew && USE_SECS[tab]) loadInUse().catch(fail("Couldn't load who uses this"));
 }
+
+/* ---------- In use: the collection items (setups, decks) shown on this product's page; add or remove them here ---------- */
+const USE_SECS = { decks: ["decks", "setups"], wheels: ["setups"], trucks: ["setups"] };
+let inusePeople = null;
+async function loadInUse() {
+  const type = tab, id = editing.id, secs = USE_SECS[type];
+  let box = document.getElementById("inuse");
+  if (!box) { box = document.createElement("section"); box.id = "inuse"; box.className = "me-inuse"; app.appendChild(box); }
+  box.innerHTML = `<h3>In use</h3><p class="me-count">Loading…</p>`;
+  const { data: items, error } = await sb.from("collection_items").select("id,section,name,image_path,link_status,profiles(username)").eq("museum_type", type).eq("museum_id", id).order("created_at");
+  if (error) throw error;
+  if (tab !== type || editing?.id !== id) return;   // moved on while loading
+  const paths = (items || []).map((i) => i.image_path).filter((p) => p && !/^https?:/.test(p));
+  const urls = {};
+  if (paths.length) (await sb.storage.from("uploads").createSignedUrls(paths, 3600)).data?.forEach((u) => (urls[u.path] = u.signedUrl));
+  if (!inusePeople) inusePeople = (await sb.from("profiles").select("id,username").order("username")).data || [];
+  const label = { decks: "Deck", setups: "Setup" };
+  box.innerHTML = `<h3>In use</h3>
+    <p class="me-hint">Decks${secs.includes("decks") ? " and setups" : "'s setups"} from people's collections that show under this product's “In Use”. Add one yourself (no review needed) or remove one.</p>
+    <div class="me-inuse-list">${(items || []).map((i) => `<div class="me-inuse-item" data-id="${esc(i.id)}">
+      <div class="me-lk-img">${(/^https?:/.test(i.image_path || "") ? i.image_path : urls[i.image_path]) ? `<img src="${esc(/^https?:/.test(i.image_path || "") ? i.image_path : urls[i.image_path])}" alt="">` : "<span>No photo</span>"}</div>
+      <b>${esc(i.name)}</b><span>${esc(label[i.section] || i.section)} · <a href="/u/${esc(i.profiles?.username || "")}" target="_blank" rel="noopener">${esc(i.profiles?.username || "?")}</a>${i.link_status === "pending" ? " · <em>waiting for approval</em>" : ""}</span>
+      <button class="ad-btn me-danger" data-act="iu-rm">Remove</button></div>`).join("") || `<p class="me-empty">Nobody has added this yet.</p>`}</div>
+    <div class="me-inuse-add">
+      <select id="iu-person"><option value="">Add from someone's collection…</option>${inusePeople.map((p) => `<option value="${esc(p.id)}">${esc(p.username)}</option>`).join("")}</select>
+      <select id="iu-item" hidden></select>
+      <button class="ad-btn ad-btn-dark" data-act="iu-add" hidden>Add to this product</button>
+    </div>`;
+}
+document.addEventListener("change", async (e) => {
+  if (e.target.id !== "iu-person") return;
+  const item = $("#iu-item"), add = document.querySelector("[data-act='iu-add']");
+  item.hidden = add.hidden = true;
+  if (!e.target.value) return;
+  const { data } = await sb.from("collection_items").select("id,section,name,museum_type,museum_id").eq("user_id", e.target.value).in("section", USE_SECS[tab]).neq("status", "removed").order("section").order("name");
+  const names = { decks: "Deck", setups: "Setup" };
+  const opts = (data || []).filter((m) => !(m.museum_type === tab && m.museum_id === editing.id));
+  item.innerHTML = opts.length ? opts.map((m) => `<option value="${esc(m.id)}">${USE_SECS[tab].length > 1 ? esc(names[m.section]) + " · " : ""}${esc(m.name)}</option>`).join("") : `<option value="">Nothing to add</option>`;
+  item.hidden = false; add.hidden = !opts.length;
+});
+document.addEventListener("click", async (e) => {
+  const b = e.target.closest("[data-act='iu-add'],[data-act='iu-rm']");
+  if (!b || !editing?.id) return;
+  b.disabled = true;
+  const rm = b.dataset.act === "iu-rm";
+  const id = rm ? b.closest(".me-inuse-item").dataset.id : $("#iu-item").value;
+  if (!id) return (b.disabled = false);
+  const patch = rm ? { museum_type: null, museum_id: null, link_status: null } : { museum_type: tab, museum_id: editing.id };   // the museum's staff skip the review
+  const { error } = await sb.from("collection_items").update(patch).eq("id", id);
+  b.disabled = false;
+  if (error) return setStatus("Couldn't save that: " + error.message, true);
+  setStatus(rm ? "Removed." : "Added. It shows under “In Use” on the product page.");
+  loadInUse().catch(fail("Couldn't reload"));
+});
 
 function readForm() {
   const v = {};

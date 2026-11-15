@@ -117,3 +117,14 @@
 .me-lk-facts a { margin-top: 4px; }
 .me-lk-act { display: flex; gap: 10px; margin-top: 16px; }
 @media (max-width: 720px) { .me-lk-boxes { grid-template-columns: 1fr; } }
+
+/* In use (editor, under a product) */
+.me-inuse { margin-top: 36px; padding-top: 20px; border-top: 1px solid #000; max-width: 960px; }
+.me-inuse h3 { margin: 0 0 6px; font-size: 16px; font-weight: 500; }
+.me-hint { margin: 0 0 14px; font-size: 13px; color: #555; }
+.me-inuse-list { display: flex; flex-wrap: wrap; gap: 14px; margin-bottom: 18px; }
+.me-inuse-item { width: 170px; border: 1px solid #d6d6d6; padding: 10px; display: flex; flex-direction: column; gap: 6px; font-size: 13px; }
+.me-inuse-item .me-lk-img { height: 150px; }
+.me-inuse-item b { font-weight: 500; overflow-wrap: anywhere; }
+.me-inuse-add { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.me-inuse-add select { font: inherit; font-size: 14px; padding: 6px 8px; max-width: 320px; }
