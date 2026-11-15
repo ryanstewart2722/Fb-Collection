@@ -100,3 +100,20 @@
 .me-step { display: flex; gap: 14px; align-items: baseline; font-size: 13px; }
 .me-pos { color: #777; }
 .me-off { color: #bbb; }
+
+/* Product links: the museum product and the collection item side by side, each in its own box */
+.me-lk-list { display: flex; flex-direction: column; gap: 28px; }
+.me-lk { border: 1px solid #000; padding: 18px; max-width: 960px; }
+.me-lk-boxes { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+.me-lk-box { border: 1px solid #d6d6d6; padding: 14px; display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.me-lk-box h3 { margin: 0; font-size: 12px; font-weight: 500; letter-spacing: 0.02em; text-transform: uppercase; color: #555; }
+.me-lk-img { height: 260px; display: flex; align-items: center; justify-content: center; background: #f4f4f4; overflow: hidden; }
+.me-lk-img img { max-width: 100%; max-height: 100%; object-fit: contain; display: block; }
+.me-lk-img span { color: #777; font-size: 13px; }
+.me-lk-facts { display: flex; flex-direction: column; gap: 6px; font-size: 14px; }
+.me-lk-row { display: grid; grid-template-columns: 96px 1fr; gap: 10px; }
+.me-lk-row span { color: #777; }
+.me-lk-row b { font-weight: 500; overflow-wrap: anywhere; }
+.me-lk-facts a { margin-top: 4px; }
+.me-lk-act { display: flex; gap: 10px; margin-top: 16px; }
+@media (max-width: 720px) { .me-lk-boxes { grid-template-columns: 1fr; } }

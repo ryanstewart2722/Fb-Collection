@@ -665,7 +665,7 @@ async function renderLinks() {
   linkItems.forEach((i) => (byType[i.museum_type] ||= new Set()).add(i.museum_id));
   const prods = {};
   await Promise.all(Object.entries(byType).map(async ([t, ids]) => {
-    const { data: rows } = await sb.from(t).select("id,name,slug,image_path,color,brands(name)").in("id", [...ids]);
+    const { data: rows } = await sb.from(t).select("*,brands(name)").in("id", [...ids]);
     (rows || []).forEach((r) => (prods[t + ":" + r.id] = r));
   }));
   const paths = linkItems.map((i) => i.image_path).filter((p) => p && !/^https?:/.test(p));
@@ -679,22 +679,38 @@ async function renderLinks() {
     i.prod = prods[i.museum_type + ":" + i.museum_id];
   });
   setLinksBadge(linkItems.length);
-  const kind = { decks: "deck", setups: "setup" };
-  app.innerHTML = `<p class="me-count">${linkItems.length} product link${linkItems.length === 1 ? "" : "s"} waiting</p><div class="me-review">` + (linkItems.map((i, n) => {
+  const kind = { decks: "Deck", setups: "Setup" };
+  const LABEL = { trucks: "Trucks", wheels: "Wheels", maker: "Manufacturer", mold: "Mold", size: "Size", color: "Color", material: "Material", duro: "Duro", year: "Year" };
+  const facts = (rows) => rows.filter(([, v]) => v).map(([k, v]) => `<div class="me-lk-row"><span>${esc(k)}</span><b>${esc(v)}</b></div>`).join("");
+  app.innerHTML = `<p class="me-count">${linkItems.length} product link${linkItems.length === 1 ? "" : "s"} waiting</p><div class="me-lk-list">` + (linkItems.map((i, n) => {
     const who = i.profiles?.username || "someone", p = i.prod;
-    return `<div class="me-rv" data-i="${n}">
-      <div class="me-rv-img">${i.url ? `<img src="${esc(i.url)}" alt="">` : `<span>No photo</span>`}${p?.image_path ? `<img src="${esc(p.image_path)}" alt="" title="The museum product">` : ""}</div>
-      <div class="me-rv-info">
-        <b>${esc(i.name)}</b> <em>${esc(kind[i.section] || i.section)} in <a href="/u/${esc(who)}" target="_blank" rel="noopener">${esc(who)}</a>'s collection</em>
-        <span>says it is: <a href="board.html?type=${esc(i.museum_type)}&slug=${esc(p?.slug || "")}" target="_blank" rel="noopener">${esc(p ? [p.brands?.name, p.name, p.color].filter(Boolean).join(" · ") : "(product not found)")}</a> <em>${esc(i.museum_type)}</em></span>
-        <div class="me-rv-act"><button class="ad-btn ad-btn-dark" data-act="lk-ok">Approve link</button> <button class="ad-btn me-danger" data-act="lk-no">Reject</button></div>
-      </div></div>`;
+    const when = p?.release_date ? String(p.release_date).slice(0, p.release_precision === "year" ? 4 : 7) : "";
+    const prodName = p ? [p.brands?.name, p.name].filter(Boolean).join(" · ") : "(product not found)";
+    const mine = i.section === "setups"
+      ? facts([["Deck", i.name], ...["trucks", "wheels"].map((k) => [LABEL[k], i.details?.[k]]), ["Size", i.details?.size]])
+      : facts([["Name", i.name], ...["maker", "mold", "size", "color"].map((k) => [LABEL[k], i.details?.[k]])]);
+    return `<article class="me-lk" data-i="${n}">
+      <div class="me-lk-boxes">
+        <section class="me-lk-box">
+          <h3>The ${esc({ decks: "deck", wheels: "wheels", trucks: "trucks" }[i.museum_type] || "product")} in the museum</h3>
+          <div class="me-lk-img">${p?.image_path ? `<img src="${esc(p.image_path)}" alt="">` : "<span>No photo</span>"}</div>
+          <div class="me-lk-facts">${facts([["Name", prodName], ["Color", p?.color], ["Shape", p?.shape], ["Size", p?.size], ["Released", when]])}
+            ${p ? `<a href="board.html?type=${esc(i.museum_type)}&slug=${esc(p.slug)}" target="_blank" rel="noopener">Open its museum page ↗</a>` : ""}</div>
+        </section>
+        <section class="me-lk-box">
+          <h3>${esc(kind[i.section] || i.section)} from <a href="/u/${esc(who)}" target="_blank" rel="noopener">${esc(who)}</a>'s collection</h3>
+          <div class="me-lk-img">${i.url ? `<img src="${esc(i.url)}" alt="">` : "<span>No photo</span>"}</div>
+          <div class="me-lk-facts">${mine}</div>
+        </section>
+      </div>
+      <div class="me-lk-act"><button class="ad-btn ad-btn-dark" data-act="lk-ok">Approve link</button> <button class="ad-btn me-danger" data-act="lk-no">Reject</button></div>
+    </article>`;
   }).join("") || `<p class="me-empty">No product links waiting.</p>`) + `</div>`;
 }
 document.addEventListener("click", async (e) => {
   const b = e.target.closest("[data-act='lk-ok'],[data-act='lk-no']");
   if (!b) return;
-  const card = b.closest(".me-rv"), it = linkItems[card.dataset.i];
+  const card = b.closest(".me-lk"), it = card && linkItems[card.dataset.i];
   if (!it) return;
   b.disabled = true;
   const ok = b.dataset.act === "lk-ok";
