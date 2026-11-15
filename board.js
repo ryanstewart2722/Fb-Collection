@@ -156,6 +156,32 @@ async function itemPhoto(i) {
   const { data } = await sb.storage.from("uploads").createSignedUrl(p, 3600);
   return data?.signedUrl || "";
 }
+function trimEmpty(img) {
+  const probe = new Image(); probe.crossOrigin = "anonymous";
+  const go = () => {
+    try {
+      const w = probe.naturalWidth, h = probe.naturalHeight; if (!w || !h) return;
+      const c = document.createElement("canvas"); const k = Math.min(1, 400 / h);
+      c.width = Math.round(w * k); c.height = Math.round(h * k);
+      const x = c.getContext("2d"); x.drawImage(probe, 0, 0, c.width, c.height);
+      const d = x.getImageData(0, 0, c.width, c.height).data;
+      let t = c.height, b = -1, l = c.width, r = -1;
+      for (let y = 0; y < c.height; y++) for (let xx = 0; xx < c.width; xx++) if (d[(y * c.width + xx) * 4 + 3] > 20) { if (y < t) t = y; if (y > b) b = y; if (xx < l) l = xx; if (xx > r) r = xx; }
+      if (b < 0) return;
+      const bh = b - t + 1, bw = r - l + 1;
+      if (bh > c.height * 0.97) return;
+      const f = 110 / bh;                                  // same tall box the suggestions use
+      img.style.height = Math.round(h * k * f) + "px";
+      img.style.marginTop = img.style.marginBottom = "0";
+      const wrap = img.parentElement; wrap.style.display = "block"; wrap.style.overflow = "hidden";
+      wrap.style.height = "110px"; wrap.style.width = Math.round(bw * f) + "px";
+      img.style.marginLeft = -Math.round(l * f) + "px"; img.style.marginTop = -Math.round(t * f) + "px";
+      img.style.maxWidth = "none";
+    } catch (e) {}
+  };
+  probe.onload = go; probe.src = img.src;
+}
+
 async function setupInUse(r) {
   const box = root.querySelector(".board-use"), list = box.querySelector(".board-use-list"), form = box.querySelector(".board-use-form");
   const secs = USE[type];
@@ -168,6 +194,7 @@ async function setupInUse(r) {
     const who = i.profiles?.display_name || i.profiles?.username || "";
     return `<a href="/u/${encodeURIComponent(i.profiles.username)}" title="${esc(who)}${i.name ? " · " + esc(i.name) : ""}"><img src="${esc(i.url)}" alt="${esc(i.name)}" loading="lazy"></a>`;
   }).join("");
+  list.querySelectorAll("img").forEach(trimEmpty);   // user cuts carry some empty margin: trim it so they stand as tall as the suggestions
 
   // Submit yours: pick one of your own items from a dropdown (no new photo)
   box.querySelector(".board-submit").addEventListener("click", async () => {
