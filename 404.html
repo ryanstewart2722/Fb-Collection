@@ -21,6 +21,9 @@
     // GitHub Pages serves this file for any address it doesn't have. /u/<name> is a collection page.
     var m = location.pathname.match(/^\/u\/([^\/]+)\/?$/);
     if (m) location.replace("/profile.html?u=" + encodeURIComponent(m[1]) + location.hash);
+    // /p/<kind>/<name> is a museum product page (its own little page carries the preview picture once one has been made)
+    var p = location.pathname.match(/^\/p\/(decks|wheels|trucks|obstacles|misc)\/([^\/]+)\/?$/);
+    if (p) location.replace("/board.html?type=" + p[1] + "&slug=" + p[2] + location.hash);
   </script>
 </head>
 <body>

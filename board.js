@@ -9,7 +9,7 @@ const slug = params.get("slug") || "";
 
 // "Close" goes back to where you came from in the museum, or to the museum home.
 const topBack = document.getElementById("top-back");
-const backHref = document.referrer.startsWith(location.origin) && !document.referrer.includes("board.html") ? document.referrer : "./";
+const backHref = document.referrer.startsWith(location.origin) && !document.referrer.includes("board.html") && !document.referrer.includes("/p/") ? document.referrer : "./";
 if (topBack) topBack.href = backHref;   // "Back" in the header goes where you came from
 
 // Left and right spec columns; empty values are skipped. The brand (or brands, for a collab) is the first bullet and
@@ -93,6 +93,7 @@ async function load() {
   const brand = [r.brands?.name, ...extras.map((b) => b.name)].filter(Boolean).join(" x ");
   const title = momsDeckName(r);   // the brand now sits in the first bullet, not in the heading
   document.title = `${brand ? `${title} - ${brand}` : title} · The Museum of Mini Skateboards`;
+  try { history.replaceState(null, "", `/p/${type}/${encodeURIComponent(r.slug)}/` + location.hash); } catch (e) {}   // the address people share: its preview picture is this page
 
   root.innerHTML = `
     <div class="board-img">${photo ? `<img${/\.gif($|\?)/i.test(photo) ? ' class="gif"' : ""} src="${esc(photo)}" alt="${esc(title)}">` : ""}${r.image_path_2 ? `<img class="second${/\.gif($|\?)/i.test(r.image_path_2) ? " gif" : ""}" src="${esc(r.image_path_2)}" alt="${esc(title)} (2)">` : ""}</div>

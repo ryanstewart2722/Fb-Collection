@@ -4,7 +4,11 @@
 // - every public collection gets its own picture (og/<username>.jpg) and a small page at u/<username>/ that holds
 //   the preview tags and then sends the visitor on to the real collection page. (A static site can't make the
 //   preview depend on the address any other way: link previews don't run the site's code.)
-// Pictures are re-taken when someone's number of entries changes, or after a week.
+// - every museum product (deck, wheels, truck, obstacle, misc.) gets a screenshot of its own page (og/p/<type>-<id>.jpg) and a
+//   small page at p/<type>/<slug>/ with the preview tags, which then sends the visitor on to board.html. Products are
+//   taken PRODUCT_LIMIT at a time (new and changed ones first), so the first runs fill in the backlog.
+// Pictures are re-taken when someone's number of entries changes, or after a week (products: when they change).
+//   OG_ONLY=products node scripts/make_og.mjs   (just the products)
 import { chromium } from "playwright-core";
 import fs from "node:fs";
 import path from "node:path";
@@ -20,7 +24,8 @@ const index = fs.existsSync(INDEX) ? JSON.parse(fs.readFileSync(INDEX, "utf8")) 
 const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
 fs.mkdirSync(OG, { recursive: true });
 
-const res = await fetch(`${URL_}/rest/v1/rpc/list_public_profiles`, { method: "POST", headers: { apikey: KEY, "Content-Type": "application/json" }, body: "{}" });
+const ONLY_PRODUCTS = process.env.OG_ONLY === "products";
+const res = ONLY_PRODUCTS ? { json: async () => [] } : await fetch(`${URL_}/rest/v1/rpc/list_public_profiles`, { method: "POST", headers: { apikey: KEY, "Content-Type": "application/json" }, body: "{}" });
 const people = (await res.json()).filter((p) => /^[a-z0-9_]+$/.test(p.username) && Number(p.items) > 0);
 
 const browser = await chromium.launch(process.env.OG_CHROME ? { executablePath: process.env.OG_CHROME } : { channel: "chrome" });
@@ -38,7 +43,7 @@ async function shoot(url, file, waitFor) {
 const stale = (key, sig) => !index[key] || index[key].sig !== sig || Date.now() - index[key].at > WEEK;
 
 // the pages that are the same for everyone
-for (const [key, url, wait] of [
+for (const [key, url, wait] of ONLY_PRODUCTS ? [] : [
   ["home", `${SITE}/?view=image`, "#app .item img"],
   ["users", `${SITE}/users.html`, "#users .row:not(.head)"],
   ["submit", `${SITE}/submit.html`, null],
@@ -84,11 +89,84 @@ for (const p of people) {
 </html>
 `);
 }
+// ---------- museum products ----------
+const TYPES = ["decks", "wheels", "trucks", "obstacles", "misc"];
+const LIMIT = Number(process.env.PRODUCT_LIMIT || 700), CONC = 5;
+const NICE = { decks: "deck", wheels: "wheels", trucks: "trucks", obstacles: "obstacle", misc: "item" };
+const products = [];
+for (const t of TYPES) {
+  for (let from = 0; ; from += 1000) {
+    const r = await fetch(`${URL_}/rest/v1/${t}?select=id,slug,name,image_path,image_path_2,release_date,brands(name)&order=id.asc&limit=1000&offset=${from}`, { headers: { apikey: KEY } });
+    if (!r.ok) break;
+    const rows = await r.json();
+    products.push(...rows.filter((x) => x.slug && /^[A-Za-z0-9._-]+$/.test(x.slug)).map((x) => ({ ...x, t })));
+    if (rows.length < 1000) break;
+  }
+}
+const hash = (x) => [...(`${x.name}|${x.image_path}|${x.image_path_2 || ""}|${x.release_date || ""}|${x.brands?.name || ""}|v2`)].reduce((h, c) => (h * 31 + c.charCodeAt(0)) >>> 0, 7).toString(36);
+const pkey = (x) => `p:${x.t}:${x.id}`;
+const todo = products.filter((x) => !index[pkey(x)] || index[pkey(x)].sig !== hash(x)).sort((a, b) => b.id - a.id).slice(0, LIMIT);
+fs.mkdirSync(path.join(OG, "p"), { recursive: true });
+function stub(x, at) {
+  const brand = x.brands?.name, title = [x.name, brand && !String(x.name).includes(brand) ? brand : ""].filter(Boolean).join(" · ");
+  const dir = path.join(ROOT, "p", x.t, x.slug); fs.mkdirSync(dir, { recursive: true });
+  fs.writeFileSync(path.join(dir, "index.html"), `<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>${esc(title)} · MoMS</title>
+  <meta name="description" content="${esc(x.name)}${brand ? ` by ${esc(brand)}` : ""}, a fingerboard ${NICE[x.t]} in the Museum of Mini Skateboards.">
+  <meta property="og:site_name" content="The Museum of Mini Skateboards">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="${esc(title)} · MoMS">
+  <meta property="og:description" content="An archive of fingerboard decks, trucks and wheels.">
+  <meta property="og:url" content="${SITE}/p/${x.t}/${x.slug}/">
+  <meta property="og:image" content="${SITE}/og/p/${x.t}-${x.id}.jpg?v=${at}">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta name="twitter:card" content="summary_large_image">
+  <script>location.replace("/board.html?type=${x.t}&slug=${encodeURIComponent(x.slug)}" + location.hash);</script>
+</head>
+<body></body>
+</html>
+`);
+}
+async function worker() {
+  const pg = await browser.newPage({ viewport: { width: 1200, height: 630 } });
+  while (todo.length) {
+    const x = todo.shift();
+    try {
+      await pg.goto(`${SITE}/board.html?type=${x.t}&slug=${encodeURIComponent(x.slug)}`, { waitUntil: "networkidle", timeout: 45000 });
+      await pg.waitForSelector(".board-info h1", { timeout: 20000 });
+      await pg.waitForFunction(() => [...document.querySelectorAll(".board-img img")].every((i) => i.complete), null, { timeout: 20000 }).catch(() => {});
+      await pg.waitForTimeout(1300);   // the page fades in
+      const file = path.join(OG, "p", `${x.t}-${x.id}.jpg`);
+      await pg.screenshot({ path: file, type: "jpeg", quality: 62 });
+      const at = Date.now();
+      stub(x, at);
+      index[pkey(x)] = { sig: hash(x), at };
+    } catch (e) { console.log(`skipped ${x.t}/${x.slug}: ${e.message.split("\n")[0]}`); }
+  }
+  await pg.close();
+}
+const total = todo.length;
+await Promise.all(Array.from({ length: CONC }, worker));
+console.log(`products: ${total} taken, ${products.filter((x) => !index[pkey(x)]).length} still waiting`);
+// products that are gone
+const live = new Set(products.map(pkey));
+for (const k of Object.keys(index)) {
+  if (k.startsWith("p:") && !live.has(k)) {
+    const [, t, id] = k.split(":");
+    fs.rmSync(path.join(OG, "p", `${t}-${id}.jpg`), { force: true });
+    delete index[k];   // (the little page is left; it still redirects)
+  }
+}
 await browser.close();
 
 // tidy: collections that are gone, private, or empty
 for (const k of Object.keys(index)) {
-  if (k.startsWith("u:") && !now.has(k.slice(2))) {
+  if (k.startsWith("u:") && !now.has(k.slice(2)) && !ONLY_PRODUCTS) {
     const u = k.slice(2);
     for (const f of [path.join(OG, `${u}.jpg`), path.join(ROOT, "u", u, "index.html")]) fs.rmSync(f, { force: true });
     fs.rmSync(path.join(ROOT, "u", u), { recursive: true, force: true });

@@ -1,5 +1,6 @@
 # Link-preview pictures (what shows when someone shares a link): a screenshot of each page and of every public
-# collection, plus a small page at u/<username>/ that carries the preview tags. See scripts/make_og.mjs.
+# collection, plus a small page at u/<username>/ that carries the preview tags. Every museum product gets one too
+# (p/<kind>/<name>/), a few hundred per morning until all are done. See scripts/make_og.mjs.
 name: Link preview pictures
 
 on:
@@ -18,7 +19,7 @@ concurrency:
 jobs:
   og:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 150
     steps:
       - uses: actions/checkout@v4
         with:
@@ -38,7 +39,7 @@ jobs:
         run: |
           git config user.name "moms-og"
           git config user.email "moms-og@users.noreply.github.com"
-          git add og u
+          git add og u p
           if git diff --cached --quiet; then echo "nothing changed"; exit 0; fi
           git commit -qm "Link preview pictures"
           for i in 1 2 3; do git pull --rebase -q -X theirs origin main && git push -q origin HEAD:main && break; git rebase --abort 2>/dev/null; sleep 5; done
