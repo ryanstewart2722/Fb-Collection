@@ -155,11 +155,34 @@ const PLY = { decks: ["Photo 1: bottom ply (the graphic side)", "Photo 2: top pl
 function elThumb(i, sec) { return `<label class="el-thumb" title="${esc((PLY[sec] || ["Photo"])[0])}">${i && i.url ? `<img src="${esc(i.url)}" alt="">` : "+"}<input class="ed-file" type="file" accept="image/*"></label>`; }
 // an optional second photo: for decks the first is the bottom ply and this one is the top ply
 function elThumb2(i, sec) { return `<label class="el-thumb el-thumb2" title="${esc((PLY[sec] || ["", "A second photo (optional)"])[1])}">${i && i.url2 ? `<img src="${esc(i.url2)}" alt="">` : "2"}<input class="ed-file ed-file2" type="file" accept="image/*"></label>`; }
+// Typing suggestions on desktop: the museum's brands (plus ones people added), and the sizes, molds and colors already in use. Anything else can still be typed.
+const SUGGEST_KIND = { maker: "brand", mold: "mold", size: "dsize", color: "color", material: "material" };
+let suggestReady = null;
+function loadSuggestions() {
+  return (suggestReady ||= (async () => {
+    const top = (arr) => { const c = new Map(); arr.forEach((v) => { v = String(v ?? "").trim(); if (v && v.length <= 40) c.set(v, (c.get(v) || 0) + 1); }); return [...c].sort((a, b) => b[1] - a[1]).map((x) => x[0]).slice(0, 150); };
+    const get = async (t, cols) => { const { data } = await sb.from(t).select(cols).limit(3000); return data || []; };
+    const [brands, decks, trucks, wheels, terms] = await Promise.all([get("brands", "name"), get("decks", "molds,size,color"), get("trucks", "size,color"), get("wheels", "color,material"), get("user_terms", "kind,name")]);
+    const names = new Map();
+    [...brands.map((b) => b.name), ...terms.filter((t) => t.kind === "brand").map((t) => t.name)].filter(Boolean).forEach((n) => { const k = tkey(n); if (k && !names.has(k)) names.set(k, n); });
+    const lists = {
+      brand: [...names.values()].sort((a, b) => a.localeCompare(b)),
+      dsize: top(decks.map((d) => d.size)), mold: top([...decks.flatMap((d) => d.molds || []), ...terms.filter((t) => t.kind === "mold").map((t) => t.name)]),
+      color: top([...decks, ...trucks, ...wheels].map((x) => x.color)), material: top(wheels.map((w) => w.material)),
+    };
+    document.getElementById("dl-box")?.remove();
+    const box = document.createElement("div"); box.id = "dl-box"; box.hidden = true;
+    box.innerHTML = Object.entries(lists).map(([k, vals]) => `<datalist id="dl-${k}">${vals.map((v) => `<option value="${esc(v)}">`).join("")}</datalist>`).join("");
+    document.body.appendChild(box);
+  })().catch(() => {}));
+}
 function elInputs(sec, i) {
+  const desktop = !matchMedia("(max-width: 760px)").matches;   // phones: no suggestion list
   return `<span class="el-fields">${SCHEMA[sec].fields.map(([k, h, ph]) =>
-    `<input class="el-in" data-k="${k}" type="text" autocomplete="off" value="${esc(i ? val(i, k) : "")}" placeholder="${esc(ph)}" maxlength="${k === "name" ? 120 : 60}" aria-label="${esc(h)}">`).join("")}</span>`;
+    `<input class="el-in" data-k="${k}" type="text" autocomplete="off"${desktop && SUGGEST_KIND[k] ? ` list="dl-${SUGGEST_KIND[k]}"` : ""} value="${esc(i ? val(i, k) : "")}" placeholder="${esc(ph)}" maxlength="${k === "name" ? 120 : 60}" aria-label="${esc(h)}">`).join("")}</span>`;
 }
 function renderListEdit() {
+  loadSuggestions();
   return sections().map((s) => `<section class="list-section">
     <h2>${esc(s.title)}</h2>
     <div class="list-wrap"><div class="list el-list el-n${SCHEMA[s.id].fields.length}${s.items.length || state.draft === s.id ? "" : " is-empty"}" data-s="${s.id}" style="--cols:${colsFor(SCHEMA[s.id].fields.length)}">
