@@ -103,12 +103,14 @@ async function load() {
       <h1>${esc(title)}</h1>
       <button class="board-fav" type="button" hidden></button>
       <div class="board-specs">${specs(r, extras)}</div>
+      <div class="board-dock">
       ${USE[type] ? `<div class="board-use"><p class="board-use-head">In Use <button type="button" class="board-submit">Submit yours</button></p>
         <form class="board-use-form" hidden><select aria-label="Choose one of your items"></select> <button type="submit">Send for review</button> <span class="board-use-msg" aria-live="polite"></span></form>
         <div class="board-use-list"></div></div>` : ""}
       <div class="board-brand${USE[type] ? "" : " push"}">
         ${r.brand_id ? `<span class="board-more-head">More by ${[r.brands, ...extras].filter((x) => x && x.name).map((x) => `<a class="board-brand-link" href="./?brand=${x.id}">${esc(x.name)}</a>`).join(" x ")}</span>` : ""}
         <div class="board-more"></div>
+      </div>
       </div>
     </div>`;
 
@@ -175,11 +177,11 @@ function trimEmpty(img) {
       if (b < 0) return;
       const bh = b - t + 1, bw = r - l + 1;
       if (bh > c.height * 0.97) return;
-      const f = 110 / bh;                                  // same tall box the suggestions use
+      const f = 126 / bh;                                  // same tall box the suggestions use
       img.style.height = Math.round(h * k * f) + "px";
       img.style.marginTop = img.style.marginBottom = "0";
       const wrap = img.parentElement; wrap.style.display = "block"; wrap.style.overflow = "hidden";
-      wrap.style.height = "110px"; wrap.style.width = Math.round(bw * f) + "px";
+      wrap.style.height = "126px"; wrap.style.width = Math.round(bw * f) + "px";
       img.style.marginLeft = -Math.round(l * f) + "px"; img.style.marginTop = -Math.round(t * f) + "px";
       img.style.maxWidth = "none";
     } catch (e) {}

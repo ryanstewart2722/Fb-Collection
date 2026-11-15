@@ -193,7 +193,7 @@ h2 {
 .board-img img { max-height: min(950px, 78vh); max-width: 100%; }
 /* with a second photo: the title, specs, Close and Previous/Next stay put while the photos scroll */
 .board-img:has(img.second) { flex-direction: column; justify-content: flex-start; gap: 60px; }
-.board:has(img.second) .board-info { position: sticky; top: calc(var(--bar-h) + 10px); align-self: start; max-height: calc(100vh - var(--bar-h) - 20px); }
+.board:has(img.second) .board-info { position: sticky; top: calc(var(--bar-h) + 10px); align-self: start; height: calc(100vh - var(--bar-h) - 20px); }   /* as tall as the window, so In Use and More by sit at its bottom */
 /* Close sits on the right edge, vertically centred, on every page and screen size, exactly like the Refine tab */
 .board-close { position: fixed; top: 50%; right: 7px; transform: translateY(-50%); z-index: 22; writing-mode: vertical-rl; font-size: 11.5px; color: #555; padding: 14px 3px; }
 .board-close:hover { color: #000; }
@@ -208,7 +208,7 @@ h2 {
 .board-specs div { display: flex; flex-direction: column; }
 .board-desc { font-size: 30px; line-height: 1.2; margin: 60px 0 0; max-width: 34em; }
 .board-brand { margin-top: 44px; font-size: 15px; }
-.board-brand.push { margin-top: auto; padding-top: 60px; }
+.board-brand.push { margin-top: 0; }
 .board-more-head { color: inherit; }
 .board-more-head:hover { text-decoration: underline; text-underline-offset: 3px; }
 .board-info { position: relative; }
@@ -217,7 +217,10 @@ h2 {
 .board-fav .star { font-size: 13px; line-height: 1; }
 .board-fav:hover { opacity: 0.6; }
 .board-fav[hidden], .board-use-form[hidden] { display: none; }
-.board-use { margin-top: auto; padding-top: 60px; font-size: 15px; }
+.board-dock { margin-top: auto; padding-top: 60px; }
+/* In Use and More by stay pinned to the bottom of the window while you scroll, until the footer comes up */
+@media (min-width: 761px) { .board-dock { position: sticky; bottom: 24px; background: #fff; } }
+.board-use { font-size: 15px; }
 .board-use-head { margin: 0; }
 .board-submit { font: inherit; background: none; border: 0; padding: 0; margin-left: 10px; color: inherit; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
 .board-use-form { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 10px; font-size: 14px; }
@@ -225,11 +228,11 @@ h2 {
 .board-use-form button { cursor: pointer; }
 .board-use-msg { color: #555; }
 .board-use-list { display: flex; gap: 18px; margin-top: 14px; flex-wrap: wrap; align-items: flex-end; }
-.board-use-list img { height: 110px; width: auto; display: block; }
+.board-use-list img { height: 126px; width: auto; display: block; }
 .board-use-list a:hover img { opacity: 0.6; }
 .board-more { display: flex; gap: 18px; margin-top: 14px; flex-wrap: wrap; align-items: flex-end; }
-.board-more img { height: 110px; width: auto; display: block; }
-.board-more a.sq img { height: 70px; }   /* wheels, trucks, obstacles and misc. are smaller than decks */
+.board-more img { height: 126px; width: auto; display: block; }
+.board-more a.sq img { height: 80px; }   /* wheels, trucks, obstacles and misc. are smaller than decks */
 .board-more a:hover img { opacity: 0.6; }
 
 /* ---------- Small screens ---------- */
