@@ -5,7 +5,7 @@
   var pending = false;
   function enabled() {
     var b = document.body;
-    return b.classList.contains("list-view") && (!canHover || narrow.matches) && !b.classList.contains("rf-open");
+    return (b.classList.contains("list-view") || !!document.getElementById("users")) && (!canHover || narrow.matches) && !b.classList.contains("rf-open");
   }
   function update() {
     pending = false;

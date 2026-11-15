@@ -227,7 +227,11 @@ function paintItems() {
   const find = (id) => state.items.find((i) => i.id === id);
   if (view === "list") {
     box.querySelectorAll(".row:not(.head)").forEach((row) => {
-      bindItem(row, () => { clearActive(); row.classList.add("on"); showPreview(find(row.dataset.id).url); });
+      bindItem(row, () => {
+        clearActive(); row.classList.add("on"); showPreview(find(row.dataset.id).url);
+        const rows = [...row.parentNode.querySelectorAll(".row:not(.head)")], i = rows.indexOf(row);   // fetch the neighbours now so scrolling down or up never waits
+        for (let k = -3; k <= 6; k++) { const u = rows[i + k] && find(rows[i + k].dataset.id)?.url; if (u) new Image().src = u; }
+      });
       if (canHover) row.addEventListener("mouseleave", clearActive);
     });
   } else {
