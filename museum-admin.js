@@ -238,7 +238,7 @@ function renderForm() {
 }
 
 /* ---------- In use: the collection items (setups, decks) shown on this product's page; add or remove them here ---------- */
-const USE_SECS = { decks: ["decks", "setups"], wheels: ["setups"], trucks: ["setups"] };
+const USE_SECS = { decks: ["decks", "setups"], wheels: ["wheels", "setups"], trucks: ["trucks", "setups"], obstacles: ["obstacles"], misc: ["misc"] };
 let inusePeople = null;
 async function loadInUse() {
   const type = tab, id = editing.id, secs = USE_SECS[type];
@@ -253,7 +253,7 @@ async function loadInUse() {
   const urls = {};
   if (paths.length) (await sb.storage.from("uploads").createSignedUrls(paths, 3600)).data?.forEach((u) => (urls[u.path] = u.signedUrl));
   if (!inusePeople) inusePeople = (await sb.from("profiles").select("id,username").order("username")).data || [];
-  const label = { decks: "Deck", setups: "Setup" };
+  const label = { decks: "Deck", setups: "Setup", wheels: "Wheels", trucks: "Trucks", obstacles: "Obstacle", misc: "Misc." };
   box.innerHTML = `<h3>In use</h3>
     <p class="me-hint">Decks${secs.includes("decks") ? " and setups" : "'s setups"} from people's collections that show under this product's “In Use”. Add one yourself (no review needed) or remove one.</p>
     <div class="me-inuse-list">${(items || []).map((i) => `<div class="me-inuse-item" data-id="${esc(i.id)}">
@@ -272,7 +272,7 @@ document.addEventListener("change", async (e) => {
   item.hidden = add.hidden = true;
   if (!e.target.value) return;
   const { data } = await sb.from("collection_items").select("id,section,name,links:collection_item_links(museum_type,museum_id)").eq("user_id", e.target.value).in("section", USE_SECS[tab]).neq("status", "removed").order("section").order("name");
-  const names = { decks: "Deck", setups: "Setup" };
+  const names = { decks: "Deck", setups: "Setup", wheels: "Wheels", trucks: "Trucks", obstacles: "Obstacle", misc: "Misc." };
   const opts = (data || []).filter((m) => !(m.links || []).some((l) => l.museum_type === tab && l.museum_id === editing.id));
   item.innerHTML = opts.length ? opts.map((m) => `<option value="${esc(m.id)}">${USE_SECS[tab].length > 1 ? esc(names[m.section]) + " · " : ""}${esc(m.name)}</option>`).join("") : `<option value="">Nothing to add</option>`;
   item.hidden = false; add.hidden = !opts.length;
@@ -739,7 +739,7 @@ async function renderLinks() {
     i.prod = prods[i.museum_type + ":" + i.museum_id];
   });
   setLinksBadge(linkItems.length);
-  const kind = { decks: "Deck", setups: "Setup" };
+  const kind = { decks: "Deck", setups: "Setup", wheels: "Wheels", trucks: "Trucks", obstacles: "Obstacle", misc: "Misc." };
   const LABEL = { trucks: "Trucks", wheels: "Wheels", maker: "Manufacturer", mold: "Mold", size: "Size", color: "Color", material: "Material", duro: "Duro", year: "Year" };
   const facts = (rows) => rows.filter(([, v]) => v).map(([k, v]) => `<div class="me-lk-row"><span>${esc(k)}</span><b>${esc(v)}</b></div>`).join("");
   app.innerHTML = `<p class="me-count">${linkItems.length} product link${linkItems.length === 1 ? "" : "s"} waiting</p><div class="me-lk-list">` + (linkItems.map((i, n) => {
@@ -752,7 +752,7 @@ async function renderLinks() {
     return `<article class="me-lk" data-i="${n}">
       <div class="me-lk-boxes">
         <section class="me-lk-box">
-          <h3>The ${esc({ decks: "deck", wheels: "wheels", trucks: "trucks" }[i.museum_type] || "product")} in the museum</h3>
+          <h3>The ${esc({ decks: "deck", wheels: "wheels", trucks: "trucks", obstacles: "obstacle", misc: "item" }[i.museum_type] || "product")} in the museum</h3>
           <div class="me-lk-img">${p?.image_path ? `<img src="${esc(p.image_path)}" alt="">` : "<span>No photo</span>"}</div>
           <div class="me-lk-facts">${facts([["Name", prodName], ["Color", p?.color], ["Shape", p?.shape], ["Size", p?.size], ["Released", when]])}
             ${p ? `<a href="board.html?type=${esc(i.museum_type)}&slug=${esc(p.slug)}" target="_blank" rel="noopener">Open its museum page ↗</a>` : ""}</div>

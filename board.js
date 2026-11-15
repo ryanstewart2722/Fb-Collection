@@ -148,7 +148,7 @@ async function setupFavorite(r) {
 
 /* ---------- in use: other people's decks and setups that are this product ---------- */
 // decks list decks and setups; wheels and trucks list setups only
-const USE = { decks: ["decks", "setups"], wheels: ["setups"], trucks: ["setups"] };
+const USE = { decks: ["decks", "setups"], wheels: ["wheels", "setups"], trucks: ["trucks", "setups"], obstacles: ["obstacles"], misc: ["misc"] };
 let RECUTS = {};
 async function itemPhoto(i) {
   const rc = RECUTS[i.id], pick = i.details?.cut;
@@ -211,7 +211,7 @@ async function setupInUse(r) {
     const msg = form.querySelector(".board-use-msg"), sel = form.querySelector("select");
     msg.textContent = "";
     const { data: mine } = await sb.from("collection_items").select("id,section,name,links:collection_item_links(museum_type,museum_id)").eq("user_id", session.user.id).in("section", secs).neq("status", "removed").order("section").order("name");
-    const names = { decks: "Deck", setups: "Setup" };
+    const names = { decks: "Deck", setups: "Setup", wheels: "Wheels", trucks: "Trucks", obstacles: "Obstacle", misc: "Misc." };
     const opts = (mine || []).filter((m) => !(m.links || []).some((l) => l.museum_type === type && l.museum_id === r.id));
     sel.innerHTML = opts.length ? `<option value="">Choose from your collection…</option>` + opts.map((m) => `<option value="${esc(m.id)}">${secs.length > 1 ? esc(names[m.section]) + " · " : ""}${esc(m.name)}</option>`).join("") : `<option value="">You have nothing to choose from yet</option>`;
     form.hidden = false;
