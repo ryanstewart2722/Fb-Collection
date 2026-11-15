@@ -79,6 +79,7 @@
   const onRow = async (e) => {
     const row = e.target.closest("a.row"); if (!row || row === current || row.classList.contains("head")) return;
     current = row;
+    box.querySelectorAll(".row.on").forEach((x) => x.classList.remove("on")); row.classList.add("on");   // the black bar is the active row, like the museum list
     const u = decodeURIComponent((row.getAttribute("href") || "").replace(/^\/u\//, ""));
     const url = await urlFor(u);
     if (current !== row) return;   // moved on while it was loading
