@@ -6,7 +6,7 @@ const canHover = matchMedia("(hover: hover)").matches;
 const narrow = matchMedia("(max-width: 760px)");
 const isMobile = () => !canHover || narrow.matches;
 const PAGE = 100; // rows loaded per section at a time
-const PAGE_FOR = { trucks: 48, wheels: 48, obstacles: 48 };   // the square-photo sections start smaller, so they get Show more / Show all too
+const PAGE_FOR = { trucks: 48, wheels: 48, obstacles: 48, misc: 48 };   // the square-photo sections start smaller, so they get Show more / Show all too
 const pageSize = (s) => PAGE_FOR[s.type] || PAGE;
 
 const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
