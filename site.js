@@ -21,23 +21,28 @@ window.momsKeepScroll = function (box, fn, anchor) {
 (function () {
   if (!window.matchMedia || !matchMedia("(hover: hover) and (pointer: fine) and (min-width: 761px)").matches) return;
   var running = new Map();   // span -> {raf, timer}
+  var GAP = "\u00A0\u00A0\u00A0\u2022\u00A0\u00A0\u00A0";   // between the end of the text and its repeat
   function stop(el) {
     var r = running.get(el); if (!r) return;
     cancelAnimationFrame(r.raf); clearTimeout(r.timer); running.delete(el);
-    el.scrollLeft = 0; el.style.textOverflow = "";
+    el.textContent = r.orig; el.scrollLeft = 0; el.style.textOverflow = "";
   }
+  // The text slides slowly and keeps going: a second copy follows it, so when the first copy has left the
+  // second sits exactly where the first began and the loop is seamless (no jump back).
   function go(el) {
     if (running.has(el) || el.scrollWidth <= el.clientWidth + 1) return;
-    var r = { raf: 0, timer: 0 }; running.set(el, r);
+    if (el.children.length || el.childNodes.length !== 1 || el.firstChild.nodeType !== 3) return;   // plain text only
+    var orig = el.textContent, r = { raf: 0, timer: 0, orig: orig }; running.set(el, r);
     el.style.textOverflow = "clip";
-    var max = el.scrollWidth - el.clientWidth + 14, last = 0;
+    el.textContent = orig + GAP + orig;
+    var rg = document.createRange(); rg.setStart(el.firstChild, 0); rg.setEnd(el.firstChild, orig.length + GAP.length);
+    var period = rg.getBoundingClientRect().width, pos = 0, last = 0;
+    if (!(period > 0)) { stop(el); return; }
     function step(t) {
       if (!last) last = t;
-      el.scrollLeft += 0.1 * (t - last); last = t;
-      if (el.scrollLeft >= max - 1) {   // reached the end: hold a moment, jump back to the start, play again
-        r.timer = setTimeout(function () { el.scrollLeft = 0; last = 0; r.timer = setTimeout(function () { r.raf = requestAnimationFrame(step); }, 600); }, 700);
-        return;
-      }
+      pos += 0.04 * (t - last); last = t;
+      if (pos >= period) pos -= period;
+      el.scrollLeft = pos;
       r.raf = requestAnimationFrame(step);
     }
     r.timer = setTimeout(function () { r.raf = requestAnimationFrame(step); }, 350);
