@@ -6,6 +6,8 @@ const canHover = matchMedia("(hover: hover)").matches;
 const narrow = matchMedia("(max-width: 760px)");
 const isMobile = () => !canHover || narrow.matches;
 const PAGE = 100; // rows loaded per section at a time
+const PAGE_FOR = { trucks: 48, wheels: 48, obstacles: 48 };   // the square-photo sections start smaller, so they get Show more / Show all too
+const pageSize = (s) => PAGE_FOR[s.type] || PAGE;
 
 const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
 const spans = (list) => list.map((c) => `<span>${esc(c)}</span>`).join("");
@@ -90,7 +92,7 @@ async function loadSection(s, reset) {
   const fp = filterParams(s);
   if (fp === null) { s.rows = []; s.total = 0; return; }
   const { rows, total } = await momsFetch(
-    `${s.type}?select=${s.select}&order=${orderBy()}&limit=${PAGE}&offset=${s.rows.length}${fp ? "&" + fp : ""}`, { count: true });
+    `${s.type}?select=${s.select}&order=${orderBy()}&limit=${pageSize(s)}&offset=${s.rows.length}${fp ? "&" + fp : ""}`, { count: true });
   s.rows.push(...rows);
   s.total = total;
 }
@@ -281,7 +283,7 @@ if (canHover) {
 }
 
 const moreButton = (s, si) => s.rows.length < s.total
-  ? `<button class="more" data-s="${si}">Show more ${esc(s.title.toLowerCase())} (${s.total - s.rows.length})</button><button class="more all" data-s="${si}" data-all>View all</button>` : "";
+  ? `<button class="more" data-s="${si}">Show more ${esc(s.title.toLowerCase())} (${s.total - s.rows.length})</button><button class="more all" data-s="${si}" data-all>Show all</button>` : "";
 
 /* ---------- List view ---------- */
 function renderList() {
