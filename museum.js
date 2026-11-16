@@ -95,14 +95,6 @@ async function loadSection(s, reset) {
   s.total = total;
 }
 
-// Image view shows every wheel and truck right away (no Show more); the other sections still start with a page.
-const ALL_IN_IMAGE = ["wheels", "trucks"];
-async function fillAllForImage() {
-  await Promise.all(SECTIONS.filter((s) => ALL_IN_IMAGE.includes(s.type)).map(async (s) => {
-    let before = -1;
-    while (s.rows.length < s.total && s.rows.length !== before) { before = s.rows.length; await loadSection(s, false); }
-  }));
-}
 let loadSeq = 0;
 async function loadAll() {
   const mine = ++loadSeq;                 // ignore a slow older request if filters changed again
@@ -117,7 +109,6 @@ async function loadAll() {
     let before = -1;
     while (s.rows.length < Math.min(kept[s.type] || 0, s.total) && s.rows.length !== before) { before = s.rows.length; await loadSection(s, false); }
   }));
-  if (view === "image") await fillAllForImage();
   if (mine !== loadSeq) return;
   render();
   if (!app.children.length) {
@@ -435,11 +426,9 @@ function saveState() {
   history.replaceState(null, "", p.toString() ? `?${p}` : location.pathname);
 }
 
-document.querySelectorAll("[data-view]").forEach((a) => a.addEventListener("click", async (e) => {
+document.querySelectorAll("[data-view]").forEach((a) => a.addEventListener("click", (e) => {
   e.preventDefault();
-  view = a.dataset.view; saveState();
-  if (view === "image") await fillAllForImage().catch(() => {});
-  render();
+  view = a.dataset.view; saveState(); render();
 }));
 document.querySelectorAll("[data-sort]").forEach((a) => a.addEventListener("click", (e) => {
   e.preventDefault();
