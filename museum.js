@@ -5,9 +5,7 @@ const canHover = matchMedia("(hover: hover)").matches;
 // "Mobile" = a touch screen or a narrow window: the image view then follows your scrolling instead of hovering.
 const narrow = matchMedia("(max-width: 760px)");
 const isMobile = () => !canHover || narrow.matches;
-const PAGE = 100; // rows loaded per section at a time
-const PAGE_FOR = { trucks: 48, wheels: 48, obstacles: 48, misc: 48 };   // the square-photo sections start smaller, so they get Show more / Show all too
-const pageSize = (s) => PAGE_FOR[s.type] || PAGE;
+const PAGE = 50; // rows loaded per section at a time
 
 const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
 const spans = (list) => list.map((c) => `<span>${esc(c)}</span>`).join("");
@@ -92,7 +90,7 @@ async function loadSection(s, reset) {
   const fp = filterParams(s);
   if (fp === null) { s.rows = []; s.total = 0; return; }
   const { rows, total } = await momsFetch(
-    `${s.type}?select=${s.select}&order=${orderBy()}&limit=${pageSize(s)}&offset=${s.rows.length}${fp ? "&" + fp : ""}`, { count: true });
+    `${s.type}?select=${s.select}&order=${orderBy()}&limit=${PAGE}&offset=${s.rows.length}${fp ? "&" + fp : ""}`, { count: true });
   s.rows.push(...rows);
   s.total = total;
 }
