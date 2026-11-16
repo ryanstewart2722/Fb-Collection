@@ -48,7 +48,7 @@ const F = { brand: [], mold: [], shape: [], color: [], year: [], size: ["", ""],
   const sz = (params.get("size") || "").split("-");
   F.size = [/^\d+(\.\d+)?$/.test(sz[0] || "") ? sz[0] : "", /^\d+(\.\d+)?$/.test(sz[1] || "") ? sz[1] : ""];
   F.year = params.getAll("year").filter((y) => /^\d{4}$/.test(y));
-  F.order = ["new", "old"].includes(params.get("order")) ? params.get("order") : "";
+  F.order = ["new", "old", "added"].includes(params.get("order")) ? params.get("order") : "";
 })();
 const filterCount = () => F.brand.length + F.mold.length + F.shape.length + F.color.length + (F.size[0] || F.size[1] ? 1 : 0) + F.year.length;
 
@@ -77,11 +77,12 @@ function filterParams(s) {
 const releaseDir = () => (F.order === "old" ? "asc" : F.order === "new" ? "desc" : F.year.length ? "asc" : "desc");
 const chronological = () => releaseDir() === "asc";
 const orderBy = () => {
+  if (F.order === "added") return "created_at.desc,id.desc";   // Refine > "Recently uploaded": newest uploads first, in every section
   const dir = releaseDir();
   return (sort === "brand" ? "brands(name).asc," : "") + `release_date.${dir}.nullslast,id.${dir}`;
 };
 // A line goes between two rows only when the brand changes (in both Newest and Brand order).
-const groupKey = (r) => r.brands?.slug;
+const groupKey = (r) => (F.order === "added" ? "" : r.brands?.slug);   // no brand dividers when ordered by upload
 const boardUrl = (s, r) => `board.html?type=${s.type}&slug=${encodeURIComponent(r.slug)}`;
 
 async function loadSection(s, reset) {
@@ -408,7 +409,7 @@ function render() {
   document.querySelectorAll("[data-view]").forEach((a) => a.classList.toggle("active", a.dataset.view === view));
   document.querySelectorAll("[data-sort]").forEach((a) => a.classList.toggle("active", a.dataset.sort === sort));
   const newestLink = document.querySelector('[data-sort="newest"]');
-  if (newestLink) newestLink.textContent = F.order === "old" ? "Oldest" : chronological() ? "Chronological" : "Newest";
+  if (newestLink) newestLink.textContent = F.order === "added" ? "Recent uploads" : F.order === "old" ? "Oldest" : chronological() ? "Chronological" : "Newest";
   const draw = () => (view === "list" ? renderList() : renderGrid());
   window.momsKeepScroll ? window.momsKeepScroll(app, draw) : draw();   // redraw without the page jumping (e.g. after "Show more")
 }
