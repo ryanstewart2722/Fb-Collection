@@ -179,7 +179,7 @@ h2 {
 .museum h2 { margin-top: 6px; }
 .museum .list-section + .list-section { margin-top: 160px; }
 .row.link, .item.link { cursor: pointer; }
-.more { margin-top: 18px; border: 1px solid var(--line); background: #fff; padding: 7px 14px; font: inherit; font-size: 11px; cursor: pointer; }
+.more { margin-top: 18px; border: 1px solid var(--line); background: #fff; color: #000; -webkit-text-fill-color: #000; -webkit-appearance: none; appearance: none; border-radius: 0; padding: 7px 14px; font: inherit; font-size: 11px; cursor: pointer; }
 .more:hover { border-color: #000; }
 .more + .more { margin-left: 8px; }
 .load-error { margin-top: 40px; }
