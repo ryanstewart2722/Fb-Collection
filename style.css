@@ -83,7 +83,7 @@ h2 {
   width: 100%;
   height: 100%;
   object-fit: contain;
-  transition: opacity var(--ease);
+  transition: none;   /* hover dimming is instant, like the list rows */
 }
 .grid.hovering .item:not(.on) img { opacity: var(--fade); }
 /* a photo wider than a board takes as many cells as it needs (set in museum.js), starting at a column edge */
@@ -107,7 +107,7 @@ h2 {
   align-items: center;
   opacity: 0;
   pointer-events: none;
-  transition: opacity var(--ease);
+  transition: none;   /* the info bar appears instantly */
   z-index: 3; /* sits on top of the big image */
 }
 .bar.show { opacity: 1; }
