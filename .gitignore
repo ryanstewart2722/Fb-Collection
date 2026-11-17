@@ -4,3 +4,5 @@
 Images/*.png
 # Source photos as delivered; the site uses the renamed copies in Images/museum/decks
 Images/museum/knife/
+staging/test-accounts.txt
+staging/dist/
