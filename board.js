@@ -46,6 +46,7 @@ function specs(r, extras) {
 
 // the re-cut list is asked for the moment the page starts, so it is already here when the In Use row needs it
 const recutsP = USE_RECUTS();
+const tightP = fetch("/user-cuts/tight.json", { cache: "no-cache" }).then((r) => (r.ok ? r.json() : {})).catch(() => ({}));   // the small trimmed copies, asked for at page start too
 async function load() {
   const { rows } = await momsFetch(`${type}?select=*,brands(id,name,slug,made_in,website)&slug=eq.${encodeURIComponent(slug)}&limit=1`);
   const r = rows[0];
@@ -155,9 +156,17 @@ async function setupFavorite(r) {
 const USE = { decks: ["decks", "setups"], wheels: ["wheels", "setups"], trucks: ["trucks", "setups"], obstacles: ["obstacles"], misc: ["misc"] };
 let RECUTS = {};
 function USE_RECUTS() { return fetch("/user-cuts/index.json", { cache: "no-cache" }).then((rc) => (rc.ok ? rc.json() : {})).catch(() => ({})); }
+let TIGHT = { quick: {}, sizes: {} };
+const SHOW_H = 145;
 async function itemPhoto(i) {
   const rc = RECUTS[i.id], pick = i.details?.cut;
-  if (rc && rc.file && rc.src === (i.source_path || i.image_path) && pick !== "quick" && (!rc.bad || pick === "refined")) return "/" + rc.file + "?c=1";
+  if (rc && rc.file && i.source_path && rc.src === i.source_path && pick !== "quick" && (!rc.bad || pick === "refined")) {   // the second cut, exactly as the other pages choose it
+    const sz = TIGHT.sizes?.[rc.file];
+    i.size = sz ? [sz[0], sz[1]] : null;
+    return "/" + rc.file + "?c=1";
+  }
+  const q = TIGHT.quick?.[i.id];   // otherwise the first cut: its small trimmed copy is already made, so nothing is measured
+  if (q && q.file && q.src === i.image_path && q.w && q.h) { i.size = [q.w, q.h]; return "/" + q.file; }
   const p = i.image_path;
   if (!p) return "";
   if (/^https?:/.test(p)) return p;
@@ -197,10 +206,11 @@ function trimEmpty(img, done) {
 async function loadInUse(r) {
   const secs = USE[type];
   const q = `collection_items?select=id,section,name,image_path,source_path,details,profiles!inner(username,display_name),links:collection_item_links!inner(museum_type,museum_id,link_status)&links.museum_type=eq.${type}&links.museum_id=eq.${r.id}&links.link_status=eq.approved&status=eq.approved&section=in.(${secs.join(",")})&order=created_at.desc&limit=24`;
-  const [res, recuts] = await Promise.all([fetch(`${MOMS.url}/rest/v1/${q}`, { headers: { apikey: MOMS.key } }), recutsP]);
+  const [res, recuts, tight] = await Promise.all([fetch(`${MOMS.url}/rest/v1/${q}`, { headers: { apikey: MOMS.key } }), recutsP, tightP]);
   RECUTS = recuts || {};
+  TIGHT = { quick: tight?.quick || {}, sizes: tight?.sizes || {} };
   const items = res.ok ? await res.json() : [];
-  const withPhoto = (await Promise.all(items.map(async (i) => ({ ...i, url: await itemPhoto(i).catch(() => "") })))).filter((i) => i.url);
+  const withPhoto = (await Promise.all(items.map(async (i) => { const url = await itemPhoto(i).catch(() => ""); return { ...i, url }; }))).filter((i) => i.url);
   withPhoto.forEach((i) => { const p = new Image(); p.src = i.url; });   // photos start downloading now, before the row is drawn
   return withPhoto;
 }
@@ -211,7 +221,9 @@ async function setupInUse(r, inUseP) {
   const withPhoto = await inUseP;
   list.innerHTML = withPhoto.map((i) => {
     const who = i.profiles?.display_name || i.profiles?.username || "";
-    return `<a href="/u/${encodeURIComponent(i.profiles.username)}" title="${esc(who)}${i.name ? " \u00b7 " + esc(i.name) : ""}"><img${i.url.startsWith("/user-cuts/") ? ' class="cut"' : ""} src="${esc(i.url)}" alt="${esc(i.name)}" loading="lazy" decoding="async"></a>`;
+    const sized = i.size && i.size[0] && i.size[1];   // a finished, trimmed picture of known size: its exact space is held from the start
+    const style = sized ? ` style="width:${Math.round(i.size[0] * SHOW_H / i.size[1])}px;height:${SHOW_H}px"` : "";
+    return `<a href="/u/${encodeURIComponent(i.profiles.username)}" title="${esc(who)}${i.name ? " \u00b7 " + esc(i.name) : ""}"><img${sized ? ' class="cut"' : ""}${style} src="${esc(i.url)}" alt="${esc(i.name)}" loading="lazy" decoding="async"></a>`;
   }).join("");
   if (!withPhoto.length) list.innerHTML = `<span class="board-use-empty">No one has added this yet.</span>`;
   // Live re-cut photos are already tight, so they show right away with no measuring. Only raw photos (no re-cut yet) are trimmed, and each stays hidden until it is.

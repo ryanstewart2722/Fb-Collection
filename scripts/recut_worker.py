@@ -176,6 +176,89 @@ def cut(data, section, sess):
     return o
 
 
+# ---- small finished copies of each photo's first cut ("quick" cut), trimmed to the thing itself, so pages never have to measure them ----
+TIGHT = OUT / "tight"
+TIGHT_INDEX = OUT / "tight.json"          # {"quick": {item id: {src, file, w, h}}, "sizes": {re-cut file: [w, h]}}
+TIGHT_H = 600                             # tall enough for sharp pictures on big screens (they show about 145px tall)
+TIGHT_LIMIT = int(os.environ.get("TIGHT_LIMIT", "400"))
+
+
+def load_tight():
+    t = json.loads(TIGHT_INDEX.read_text()) if TIGHT_INDEX.exists() else {}
+    t.setdefault("quick", {}); t.setdefault("sizes", {})
+    return t
+
+
+def tight_todo(items, t):
+    todo = [i for i in items.values() if i.get("image_path") and t["quick"].get(i["id"], {}).get("src") != i["image_path"]]
+    stale = [k for k, v in t["quick"].items() if k not in items or v.get("src") != items[k].get("image_path")]
+    return todo, stale
+
+
+def make_tight(data):
+    """First-cut photo -> same picture trimmed to the thing itself (PIL image), or None if it is not a cut-out."""
+    import numpy as np
+    from PIL import Image, ImageOps
+    im = Image.open(io.BytesIO(data))
+    if getattr(im, "is_animated", False):
+        return None
+    im = ImageOps.exif_transpose(im).convert("RGBA")
+    a = np.asarray(im.getchannel("A"))
+    if (a < 250).mean() < 0.02:                                      # no see-through background: not a cut-out
+        return None
+    ys, xs = np.nonzero(a > 20)
+    if not len(xs):
+        return None
+    im = im.crop((int(xs.min()), int(ys.min()), int(xs.max()) + 1, int(ys.max()) + 1))
+    if im.height > TIGHT_H:
+        k = TIGHT_H / im.height
+        im = im.resize((max(1, round(im.width * k)), TIGHT_H), Image.LANCZOS)
+    return im
+
+
+def run_tight(items):
+    from PIL import Image
+    t = load_tight(); q = t["quick"]
+    TIGHT.mkdir(parents=True, exist_ok=True)
+    todo, stale = tight_todo(items, t)
+    for k in stale:
+        f = ROOT / q[k].get("file", "")
+        if q[k].get("file") and f.is_file():
+            f.unlink()
+        del q[k]
+    made = 0
+    for it in todo[:TIGHT_LIMIT]:
+        entry = {"src": it["image_path"]}
+        try:
+            img = make_tight(fetch_source(it["image_path"]))
+            if img is None:
+                entry["skip"] = "not a cut-out"
+            else:
+                name = f"user-cuts/tight/{it['id']}-{hashlib.sha1(it['image_path'].encode()).hexdigest()[:8]}.webp"
+                old = q.get(it["id"], {}).get("file")
+                if old and old != name and (ROOT / old).is_file():
+                    (ROOT / old).unlink()
+                img.save(ROOT / name, "WEBP", quality=92, method=6)
+                entry.update(file=name, w=img.width, h=img.height)
+                made += 1
+        except Exception as e:                                       # one bad photo must not stop the rest
+            print(f"::warning::tight {it['id']}: {e}")
+            continue
+        q[it["id"]] = entry
+    index = load_index()                                              # sizes of the re-cut files too, so every picture can reserve its exact space
+    keep = {e["file"] for e in index.values() if e.get("file")}
+    t["sizes"] = {f: v for f, v in t["sizes"].items() if f in keep}
+    for f in keep:
+        if f not in t["sizes"] and (ROOT / f).is_file():
+            try:
+                with Image.open(ROOT / f) as im:
+                    t["sizes"][f] = [im.width, im.height]
+            except Exception:
+                pass
+    TIGHT_INDEX.write_text(json.dumps(t, indent=0, sort_keys=True) + "\n")
+    print(f"trimmed copies: made {made}, removed {len(stale)}, still waiting {max(0, len(todo) - TIGHT_LIMIT)}")
+
+
 def run():
     items, index, todo, stale = plan()
     OUT.mkdir(exist_ok=True)
@@ -213,15 +296,19 @@ def run():
     # entries without a file (or marked bad) are remembered so they are not retried; the page keeps the quick cut for them
     INDEX.write_text(json.dumps(index, indent=0, sort_keys=True) + "\n")
     print(f"re-cut {done}, removed {len(stale)}, still waiting {max(0, len(todo) - LIMIT)}")
+    run_tight(items)
 
 
 if __name__ == "__main__":
     mode = sys.argv[1] if len(sys.argv) > 1 else "plan"
     if mode == "plan":
-        _, _, todo, stale = plan()
-        print(f"{len(todo)} photo(s) to re-cut, {len(stale)} old one(s) to remove")
+        items, _, todo, stale = plan()
+        t_todo, t_stale = tight_todo(items, load_tight())
+        print(f"{len(todo)} photo(s) to re-cut, {len(stale)} old one(s) to remove; {len(t_todo)} trimmed copy(ies) to make, {len(t_stale)} to remove")
         if os.environ.get("GITHUB_OUTPUT"):
             with open(os.environ["GITHUB_OUTPUT"], "a") as f:
-                f.write(f"work={'yes' if (todo or stale) else 'no'}\ncut={'yes' if todo else 'no'}\n")
+                f.write(f"work={'yes' if (todo or stale or t_todo or t_stale) else 'no'}\ncut={'yes' if (todo or t_todo) else 'no'}\n")
+    elif mode == "tight":                                            # by hand: only the trimmed copies
+        run_tight({i["id"]: i for i in visible_items()})
     else:
         run()
