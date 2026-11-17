@@ -34,8 +34,11 @@ def http(url, data=None, headers=None):
 
 
 def visible_items():
-    q = "select=id,section,source_path&source_path=not.is.null&status=eq.approved&limit=5000"
-    return json.loads(http(f"{URL}/rest/v1/collection_items?{q}"))
+    q = "select=id,section,source_path,image_path&image_path=not.is.null&status=eq.approved&limit=5000"
+    rows = json.loads(http(f"{URL}/rest/v1/collection_items?{q}"))
+    for r in rows:                                                   # a photo saved without a separate original is cut from the photo itself
+        r["source_path"] = r["source_path"] or r["image_path"]
+    return rows
 
 
 def fetch_source(path):

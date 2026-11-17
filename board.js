@@ -157,7 +157,7 @@ let RECUTS = {};
 function USE_RECUTS() { return fetch("/user-cuts/index.json", { cache: "no-cache" }).then((rc) => (rc.ok ? rc.json() : {})).catch(() => ({})); }
 async function itemPhoto(i) {
   const rc = RECUTS[i.id], pick = i.details?.cut;
-  if (rc && rc.file && i.source_path && rc.src === i.source_path && pick !== "quick" && (!rc.bad || pick === "refined")) return "/" + rc.file + "?c=1";
+  if (rc && rc.file && rc.src === (i.source_path || i.image_path) && pick !== "quick" && (!rc.bad || pick === "refined")) return "/" + rc.file + "?c=1";
   const p = i.image_path;
   if (!p) return "";
   if (/^https?:/.test(p)) return p;
