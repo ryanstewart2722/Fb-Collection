@@ -177,11 +177,11 @@ function trimEmpty(img, done) {
       if (b < 0) return;
       const bh = b - t + 1, bw = r - l + 1;
       if (bh > c.height * 0.97) return;
-      const f = 126 / bh;                                  // same tall box the suggestions use
+      const f = 145 / bh;                                  // same tall box the suggestions use
       img.style.height = Math.round(h * k * f) + "px";
       img.style.marginTop = img.style.marginBottom = "0";
       const wrap = img.parentElement; wrap.style.display = "block"; wrap.style.overflow = "hidden";
-      wrap.style.height = "126px"; wrap.style.width = Math.round(bw * f) + "px";
+      wrap.style.height = "145px"; wrap.style.width = Math.round(bw * f) + "px";
       img.style.marginLeft = -Math.round(l * f) + "px"; img.style.marginTop = -Math.round(t * f) + "px";
       img.style.maxWidth = "none";
     } catch (e) {}
@@ -192,9 +192,10 @@ function trimEmpty(img, done) {
 async function setupInUse(r) {
   const box = root.querySelector(".board-use"), list = box.querySelector(".board-use-list"), form = box.querySelector(".board-use-form");
   const secs = USE[type];
-  try { const rc = await fetch("/user-cuts/index.json", { cache: "no-cache" }); if (rc.ok) RECUTS = await rc.json(); } catch (e) {}
+  const recutsP = fetch("/user-cuts/index.json", { cache: "no-cache" }).then((rc) => (rc.ok ? rc.json() : {})).catch(() => ({}));   // asked at the same time as the list, not before it
   const q = `collection_items?select=id,section,name,image_path,source_path,details,profiles!inner(username,display_name),links:collection_item_links!inner(museum_type,museum_id,link_status)&links.museum_type=eq.${type}&links.museum_id=eq.${r.id}&links.link_status=eq.approved&status=eq.approved&section=in.(${secs.join(",")})&order=created_at.desc&limit=24`;
-  const res = await fetch(`${MOMS.url}/rest/v1/${q}`, { headers: { apikey: MOMS.key } });
+  const [res, recuts] = await Promise.all([fetch(`${MOMS.url}/rest/v1/${q}`, { headers: { apikey: MOMS.key } }), recutsP]);
+  RECUTS = recuts || {};
   const items = res.ok ? await res.json() : [];
   const withPhoto = (await Promise.all(items.map(async (i) => ({ ...i, url: await itemPhoto(i).catch(() => "") })))).filter((i) => i.url);
   list.innerHTML = withPhoto.map((i) => {
@@ -207,11 +208,10 @@ async function setupInUse(r) {
   let left = thumbs.length, shown = false;
   const reveal = () => {
     if (shown) return; shown = true;
-    list.style.maxHeight = list.scrollHeight + "px";
     list.querySelectorAll("a").forEach((a) => a.classList.add("ready"));
-    setTimeout(() => { list.style.maxHeight = "none"; }, 700);
   };
-  thumbs.forEach((im) => trimEmpty(im, () => { if (--left <= 0) reveal(); }));
+  if (!thumbs.length) list.innerHTML = `<span class="board-use-empty">No one has added this yet.</span>`;
+  thumbs.forEach((im) => trimEmpty(im, () => { im.closest("a")?.classList.add("ready"); if (--left <= 0) reveal(); }));   // each one appears the moment it is ready
   setTimeout(reveal, 4000);   // never leave them hidden if a photo is slow to answer
 
   // Submit yours: pick one of your own items from a dropdown (no new photo)
