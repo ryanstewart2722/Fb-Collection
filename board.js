@@ -200,25 +200,14 @@ async function setupInUse(r) {
   const withPhoto = (await Promise.all(items.map(async (i) => ({ ...i, url: await itemPhoto(i).catch(() => "") })))).filter((i) => i.url);
   list.innerHTML = withPhoto.map((i) => {
     const who = i.profiles?.display_name || i.profiles?.username || "";
-    return `<a href="/u/${encodeURIComponent(i.profiles.username)}" title="${esc(who)}${i.name ? " · " + esc(i.name) : ""}"><img src="${esc(i.url)}" alt="${esc(i.name)}" loading="lazy"></a>`;
+    return `<a href="/u/${encodeURIComponent(i.profiles.username)}" title="${esc(who)}${i.name ? " \u00b7 " + esc(i.name) : ""}"><img${i.url.startsWith("/user-cuts/") ? ' class="cut"' : ""} src="${esc(i.url)}" alt="${esc(i.name)}" loading="lazy" decoding="async"></a>`;
   }).join("");
-  // User cuts carry some empty margin: trim it so they stand as tall as the suggestions. They stay hidden until every one is trimmed,
-  // then the row eases open and fades in, so nothing starts small and jumps.
-  const thumbs = [...list.querySelectorAll("img")];
-  let left = thumbs.length, shown = false;
-  const reveal = () => {
-    if (shown) return; shown = true;
-    list.querySelectorAll("a").forEach((a) => a.classList.add("ready"));
-  };
-  if (!thumbs.length) list.innerHTML = `<span class="board-use-empty">No one has added this yet.</span>`;
-  // They appear left to right, each only once every photo before it is trimmed, so a photo that changes width can never push one you can already see.
-  const done = new Array(thumbs.length).fill(false); let next = 0;
-  thumbs.forEach((im, i) => trimEmpty(im, () => {
-    done[i] = true;
-    while (next < done.length && done[next]) { thumbs[next].closest("a")?.classList.add("ready"); next++; }
-    if (--left <= 0) reveal();
-  }));
-  setTimeout(reveal, 4000);   // never leave them hidden if a photo is slow to answer
+  if (!withPhoto.length) list.innerHTML = `<span class="board-use-empty">No one has added this yet.</span>`;
+  // Live re-cut photos are already tight, so they show right away with no measuring. Only raw photos (no re-cut yet) are trimmed, and each stays hidden until it is.
+  list.querySelectorAll("img:not(.cut)").forEach((im) => {
+    const show = () => im.closest("a")?.classList.add("ready");
+    trimEmpty(im, show); setTimeout(show, 4000);
+  });
 
   // Submit yours: pick one of your own items from a dropdown (no new photo)
   box.querySelector(".board-submit").addEventListener("click", async () => {

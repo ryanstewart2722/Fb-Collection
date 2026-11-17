@@ -232,10 +232,10 @@ h2 {
 .board-use-list a:hover img { opacity: 0.6; }
 /* the In Use row eases open and fades in once its photos are trimmed (board.js adds .ready), instead of starting small and jumping */
 .board-use-list { min-height: 145px; }   /* the row's space is there from the first moment (like More by), so nothing grows or shifts */
-.board-use-list a { opacity: 0; transition: opacity 0.25s ease; }
-.board-use-list a.ready { opacity: 1; }
+.board-use-list img.cut { aspect-ratio: auto 530 / 1200; }
+.board-use-list a:has(img:not(.cut)) { opacity: 0; transition: opacity 0.25s ease; }   /* raw photos wait until trimmed */
+.board-use-list a.ready { opacity: 1; }   /* the cut photos are all this shape, so each one holds its width before it loads (its real shape takes over once it has) */
 .board-use-empty { color: #777; font-size: 14px; align-self: center; }
-@media (prefers-reduced-motion: reduce) { .board-use-list a { transition: none; } }
 .board-more { display: flex; gap: 18px; margin-top: 14px; flex-wrap: wrap; align-items: flex-end; }
 .board-more img { height: 145px; width: auto; display: block; }
 .board-more a.sq img { height: 92px; }   /* wheels, trucks, obstacles and misc. are smaller than decks */
