@@ -1066,6 +1066,12 @@
 "src": "ab869fa3-7d27-476b-8794-5c2952b538df/a0fe2a6d-ebf3-47fb-bca4-f8060bbbbf61.png",
 "w": 232
 },
+"43f5bcae-c1ea-4d53-b42d-3c14690bdb75": {
+"file": "user-cuts/tight/43f5bcae-c1ea-4d53-b42d-3c14690bdb75-cedd3098.webp",
+"h": 600,
+"src": "8776a561-1fa6-443e-a0fb-23dffbaf19ad/54d6b5a1-8b5d-4883-8f69-ca611814eb63.png",
+"w": 265
+},
 "44af6958-9dc1-40b4-8450-e7b0962ed656": {
 "file": "user-cuts/tight/44af6958-9dc1-40b4-8450-e7b0962ed656-7a12c2cb.webp",
 "h": 600,
@@ -1144,6 +1150,12 @@
 "src": "4288eb2a-cb61-4f42-bd3d-d863223cb883/5224392f-0ac6-473b-8fbc-77e7019f6675.png",
 "w": 223
 },
+"49238086-115e-426d-ab7f-4d18673e7bbf": {
+"file": "user-cuts/tight/49238086-115e-426d-ab7f-4d18673e7bbf-e91670d5.webp",
+"h": 600,
+"src": "cec99bb6-82fe-4c37-9769-697933698218/fcd0acf0-85a3-4150-9f56-62a21c5e27b1.png",
+"w": 222
+},
 "498dcef3-f2bb-4167-beb3-994735f28be7": {
 "skip": "not a cut-out",
 "src": "833410b9-6f3b-4c66-ad05-77e1b0c82c5f/fb32989b-200e-451f-a605-62aaa67bba56.jpg"
@@ -1203,6 +1215,12 @@
 "4daa22b1-81dc-4132-a012-36de5460ec89": {
 "skip": "not a cut-out",
 "src": "833410b9-6f3b-4c66-ad05-77e1b0c82c5f/dbaced8a-4005-4a7d-91ea-3fbaf9bd8d6b.jpg"
+},
+"4de48cda-88ea-4bda-9b20-8e9f62425a11": {
+"file": "user-cuts/tight/4de48cda-88ea-4bda-9b20-8e9f62425a11-821b1156.webp",
+"h": 600,
+"src": "cec99bb6-82fe-4c37-9769-697933698218/bc3dd9a6-1dd4-48da-b958-95dadaa0f2c4.png",
+"w": 231
 },
 "4df0a512-f4ea-461e-9e00-23a6cbbc8776": {
 "file": "user-cuts/tight/4df0a512-f4ea-461e-9e00-23a6cbbc8776-ae95edb5.webp",
@@ -4878,6 +4896,10 @@
 530,
 1200
 ],
+"user-cuts/43f5bcae-c1ea-4d53-b42d-3c14690bdb75-513ecfa9-v2.webp": [
+530,
+1200
+],
 "user-cuts/44af6958-9dc1-40b4-8450-e7b0962ed656-c45f4a25-v2.webp": [
 530,
 1200
@@ -4930,6 +4952,10 @@
 530,
 1200
 ],
+"user-cuts/49238086-115e-426d-ab7f-4d18673e7bbf-e91670d5-v2.webp": [
+530,
+1200
+],
 "user-cuts/498dcef3-f2bb-4167-beb3-994735f28be7-15aa075b-v4.webp": [
 800,
 800
@@ -4973,6 +4999,10 @@
 "user-cuts/4daa22b1-81dc-4132-a012-36de5460ec89-5941a3db-v4.webp": [
 800,
 800
+],
+"user-cuts/4de48cda-88ea-4bda-9b20-8e9f62425a11-821b1156-v2.webp": [
+530,
+1200
 ],
 "user-cuts/4df0a512-f4ea-461e-9e00-23a6cbbc8776-2875471e-v2.webp": [
 530,
