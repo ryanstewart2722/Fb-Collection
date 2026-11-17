@@ -211,7 +211,13 @@ async function setupInUse(r) {
     list.querySelectorAll("a").forEach((a) => a.classList.add("ready"));
   };
   if (!thumbs.length) list.innerHTML = `<span class="board-use-empty">No one has added this yet.</span>`;
-  thumbs.forEach((im) => trimEmpty(im, () => { im.closest("a")?.classList.add("ready"); if (--left <= 0) reveal(); }));   // each one appears the moment it is ready
+  // They appear left to right, each only once every photo before it is trimmed, so a photo that changes width can never push one you can already see.
+  const done = new Array(thumbs.length).fill(false); let next = 0;
+  thumbs.forEach((im, i) => trimEmpty(im, () => {
+    done[i] = true;
+    while (next < done.length && done[next]) { thumbs[next].closest("a")?.classList.add("ready"); next++; }
+    if (--left <= 0) reveal();
+  }));
   setTimeout(reveal, 4000);   // never leave them hidden if a photo is slow to answer
 
   // Submit yours: pick one of your own items from a dropdown (no new photo)
