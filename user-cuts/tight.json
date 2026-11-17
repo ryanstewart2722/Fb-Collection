@@ -330,6 +330,12 @@
 "src": "71dfc2aa-aec1-4f48-b91e-99967540ff62/3f81867b-d9c0-48c4-b18a-417ec05b774d.png",
 "w": 192
 },
+"14918d67-dfa3-44f6-b017-faf2353038b0": {
+"file": "user-cuts/tight/14918d67-dfa3-44f6-b017-faf2353038b0-dd815787.webp",
+"h": 600,
+"src": "cec99bb6-82fe-4c37-9769-697933698218/ddb09c73-ff73-4804-9fca-c57f0299b4c9.png",
+"w": 210
+},
 "1492b042-8218-4bee-bfc7-29f9102055a7": {
 "file": "user-cuts/tight/1492b042-8218-4bee-bfc7-29f9102055a7-91b0a5e2.webp",
 "h": 600,
@@ -2777,10 +2783,10 @@
 "w": 220
 },
 "af1042cf-152f-4ff6-a812-f8f43c64424f": {
-"file": "user-cuts/tight/af1042cf-152f-4ff6-a812-f8f43c64424f-1ec174ee.webp",
+"file": "user-cuts/tight/af1042cf-152f-4ff6-a812-f8f43c64424f-feb366eb.webp",
 "h": 600,
-"src": "d00a99b0-245b-466c-843d-a67a2dd25a64/0c5e95bc-edf6-41fc-9f6c-893df840409c.png",
-"w": 231
+"src": "d00a99b0-245b-466c-843d-a67a2dd25a64/9ab6f25a-36cb-45f6-824d-e7a9b6fcb04e.png",
+"w": 260
 },
 "af193282-f3f2-497c-a20e-afc748bbf359": {
 "file": "user-cuts/tight/af193282-f3f2-497c-a20e-afc748bbf359-4ba70a4e.webp",
@@ -3309,6 +3315,12 @@
 "h": 600,
 "src": "c920cabb-916c-44aa-a13d-a9c33a9264a9/5e34b1c8-fc91-4e5f-b997-4db6a8cf3bf6.png",
 "w": 205
+},
+"ce380c02-2aac-4e51-a62b-3d41a7c8619d": {
+"file": "user-cuts/tight/ce380c02-2aac-4e51-a62b-3d41a7c8619d-c379baac.webp",
+"h": 600,
+"src": "cec99bb6-82fe-4c37-9769-697933698218/1c87450e-f9e7-448a-b732-c2626e9466ad.png",
+"w": 227
 },
 "ce3b863d-8ddb-4f6d-971a-f127f2bc850c": {
 "file": "user-cuts/tight/ce3b863d-8ddb-4f6d-971a-f127f2bc850c-e58ba29e.webp",
@@ -4333,6 +4345,10 @@
 1200
 ],
 "user-cuts/143d56f6-664c-43c8-9b18-e2e9d9a9604c-bbafc0dc-v2.webp": [
+530,
+1200
+],
+"user-cuts/14918d67-dfa3-44f6-b017-faf2353038b0-dd815787-v2.webp": [
 530,
 1200
 ],
@@ -5996,7 +6012,7 @@
 530,
 1200
 ],
-"user-cuts/af1042cf-152f-4ff6-a812-f8f43c64424f-404d7daf-v2.webp": [
+"user-cuts/af1042cf-152f-4ff6-a812-f8f43c64424f-a0560623-v2.webp": [
 530,
 1200
 ],
@@ -6349,6 +6365,10 @@
 800
 ],
 "user-cuts/cdbee620-428f-4559-881e-7714d060539d-43c03eef-v2.webp": [
+530,
+1200
+],
+"user-cuts/ce380c02-2aac-4e51-a62b-3d41a7c8619d-c379baac-v2.webp": [
 530,
 1200
 ],
