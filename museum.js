@@ -359,8 +359,6 @@ function renderGrid() {
       bar.classList.add("show");
       activeUrl = boardUrl(s, r);
       showPreview(photoFor(s, r));
-      const at = els.indexOf(el);
-      for (let k = -2; k <= 4; k++) if (els[at + k]) warm(photoFor(s, s.rows[els[at + k].dataset.i]));   // the next few hovers are already loaded
     };
 
     if (mobile) {
@@ -372,39 +370,7 @@ function renderGrid() {
       if (canHover) grid.addEventListener("mouseleave", clearActive);
     }
   });
-  warmVisible();
   scrubUpdate();
-}
-
-// The grid shows small copies, so quietly fetch the full photo of each tile once it is on screen (a few at a time,
-// after its small copy has loaded). Hovering or tapping it then opens the big photo right away.
-let warmObserver = null, warmQueue = [], warmBusy = 0;
-function warmPump() {
-  while (warmBusy < 3 && warmQueue.length) {
-    const src = warmQueue.shift();
-    if (warmed.has(src)) continue;
-    warmed.add(src); warmBusy++;
-    const im = new Image();
-    im.onload = im.onerror = () => { warmBusy--; warmPump(); };
-    im.src = src;
-    measureGif(src);
-  }
-}
-function warmVisible() {
-  if (warmObserver) warmObserver.disconnect();
-  warmQueue = [];
-  if (!("IntersectionObserver" in window)) return;
-  warmObserver = new IntersectionObserver((entries) => {
-    entries.forEach((e) => {
-      if (!e.isIntersecting) return;
-      warmObserver.unobserve(e.target);
-      const img = e.target.querySelector("img"), full = img && img.dataset.full;
-      if (!full || full === img.src) return;   // not resized, so it is already the full photo
-      const go = () => { warmQueue.push(full); warmPump(); };
-      img.complete ? go() : img.addEventListener("load", go, { once: true });
-    });
-  }, { rootMargin: "200px" });
-  app.querySelectorAll(".grid .item").forEach((it) => warmObserver.observe(it));
 }
 
 // Mobile image view: the board at a fixed line on the screen (a bit above the middle) is the active one.
