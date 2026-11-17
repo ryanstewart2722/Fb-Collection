@@ -44,6 +44,8 @@ function specs(r, extras) {
   return col(left) + col(right);
 }
 
+// the re-cut list is asked for the moment the page starts, so it is already here when the In Use row needs it
+const recutsP = USE_RECUTS();
 async function load() {
   const { rows } = await momsFetch(`${type}?select=*,brands(id,name,slug,made_in,website)&slug=eq.${encodeURIComponent(slug)}&limit=1`);
   const r = rows[0];
@@ -51,6 +53,7 @@ async function load() {
     root.innerHTML = `<div class="board-info"><h1>Not found</h1><p><a href="./">Back to the museum</a></p></div>`;
     return;
   }
+  const inUseP = USE[type] ? loadInUse(r).catch(() => []) : null;   // starts now, alongside More by, so both land together
   // More by the same brand: its decks, wheels, trucks, obstacles and misc. together, a random handful of each, mixed.
   let more = [];
   if (r.brand_id) {
@@ -118,7 +121,7 @@ async function load() {
   root.querySelector(".board-more").innerHTML = more.map((m) =>
     `<a${m.t === "decks" ? "" : ' class="sq"'} href="board.html?type=${m.t}&slug=${encodeURIComponent(m.slug)}" title="${esc(m.name)}"><img src="${esc(m.image_path)}" alt="${esc(m.name)}" loading="lazy"></a>`).join("");
   setupFavorite(r);
-  if (USE[type]) setupInUse(r);
+  if (USE[type]) setupInUse(r, inUseP);
 }
 
 /* ---------- favorites ---------- */
@@ -150,6 +153,7 @@ async function setupFavorite(r) {
 // decks list decks and setups; wheels and trucks list setups only
 const USE = { decks: ["decks", "setups"], wheels: ["wheels", "setups"], trucks: ["trucks", "setups"], obstacles: ["obstacles"], misc: ["misc"] };
 let RECUTS = {};
+function USE_RECUTS() { return fetch("/user-cuts/index.json", { cache: "no-cache" }).then((rc) => (rc.ok ? rc.json() : {})).catch(() => ({})); }
 async function itemPhoto(i) {
   const rc = RECUTS[i.id], pick = i.details?.cut;
   if (rc && rc.file && i.source_path && rc.src === i.source_path && pick !== "quick" && (!rc.bad || pick === "refined")) return "/" + rc.file + "?c=1";
@@ -189,15 +193,21 @@ function trimEmpty(img, done) {
   probe.onload = () => { go(); if (done) done(); }; probe.onerror = () => { if (done) done(); }; probe.src = img.src;
 }
 
-async function setupInUse(r) {
-  const box = root.querySelector(".board-use"), list = box.querySelector(".board-use-list"), form = box.querySelector(".board-use-form");
+async function loadInUse(r) {
   const secs = USE[type];
-  const recutsP = fetch("/user-cuts/index.json", { cache: "no-cache" }).then((rc) => (rc.ok ? rc.json() : {})).catch(() => ({}));   // asked at the same time as the list, not before it
   const q = `collection_items?select=id,section,name,image_path,source_path,details,profiles!inner(username,display_name),links:collection_item_links!inner(museum_type,museum_id,link_status)&links.museum_type=eq.${type}&links.museum_id=eq.${r.id}&links.link_status=eq.approved&status=eq.approved&section=in.(${secs.join(",")})&order=created_at.desc&limit=24`;
   const [res, recuts] = await Promise.all([fetch(`${MOMS.url}/rest/v1/${q}`, { headers: { apikey: MOMS.key } }), recutsP]);
   RECUTS = recuts || {};
   const items = res.ok ? await res.json() : [];
   const withPhoto = (await Promise.all(items.map(async (i) => ({ ...i, url: await itemPhoto(i).catch(() => "") })))).filter((i) => i.url);
+  withPhoto.forEach((i) => { const p = new Image(); p.src = i.url; });   // photos start downloading now, before the row is drawn
+  return withPhoto;
+}
+
+async function setupInUse(r, inUseP) {
+  const box = root.querySelector(".board-use"), list = box.querySelector(".board-use-list"), form = box.querySelector(".board-use-form");
+  const secs = USE[type];
+  const withPhoto = await inUseP;
   list.innerHTML = withPhoto.map((i) => {
     const who = i.profiles?.display_name || i.profiles?.username || "";
     return `<a href="/u/${encodeURIComponent(i.profiles.username)}" title="${esc(who)}${i.name ? " \u00b7 " + esc(i.name) : ""}"><img${i.url.startsWith("/user-cuts/") ? ' class="cut"' : ""} src="${esc(i.url)}" alt="${esc(i.name)}" loading="lazy" decoding="async"></a>`;
