@@ -163,7 +163,7 @@ async function itemPhoto(i) {
   }
   return data?.signedUrl || "";
 }
-function trimEmpty(img) {
+function trimEmpty(img, done) {
   const probe = new Image(); probe.crossOrigin = "anonymous";
   const go = () => {
     try {
@@ -186,7 +186,7 @@ function trimEmpty(img) {
       img.style.maxWidth = "none";
     } catch (e) {}
   };
-  probe.onload = go; probe.src = img.src;
+  probe.onload = () => { go(); if (done) done(); }; probe.onerror = () => { if (done) done(); }; probe.src = img.src;
 }
 
 async function setupInUse(r) {
@@ -201,7 +201,18 @@ async function setupInUse(r) {
     const who = i.profiles?.display_name || i.profiles?.username || "";
     return `<a href="/u/${encodeURIComponent(i.profiles.username)}" title="${esc(who)}${i.name ? " · " + esc(i.name) : ""}"><img src="${esc(i.url)}" alt="${esc(i.name)}" loading="lazy"></a>`;
   }).join("");
-  list.querySelectorAll("img").forEach(trimEmpty);   // user cuts carry some empty margin: trim it so they stand as tall as the suggestions
+  // User cuts carry some empty margin: trim it so they stand as tall as the suggestions. They stay hidden until every one is trimmed,
+  // then the row eases open and fades in, so nothing starts small and jumps.
+  const thumbs = [...list.querySelectorAll("img")];
+  let left = thumbs.length, shown = false;
+  const reveal = () => {
+    if (shown) return; shown = true;
+    list.style.maxHeight = list.scrollHeight + "px";
+    list.querySelectorAll("a").forEach((a) => a.classList.add("ready"));
+    setTimeout(() => { list.style.maxHeight = "none"; }, 700);
+  };
+  thumbs.forEach((im) => trimEmpty(im, () => { if (--left <= 0) reveal(); }));
+  setTimeout(reveal, 4000);   // never leave them hidden if a photo is slow to answer
 
   // Submit yours: pick one of your own items from a dropdown (no new photo)
   box.querySelector(".board-submit").addEventListener("click", async () => {

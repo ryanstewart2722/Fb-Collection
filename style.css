@@ -230,6 +230,11 @@ h2 {
 .board-use-list { display: flex; gap: 18px; margin-top: 14px; flex-wrap: wrap; align-items: flex-end; }
 .board-use-list img { height: 126px; width: auto; display: block; }
 .board-use-list a:hover img { opacity: 0.6; }
+/* the In Use row eases open and fades in once its photos are trimmed (board.js adds .ready), instead of starting small and jumping */
+.board-use-list { overflow: hidden; max-height: 0; transition: max-height 0.45s cubic-bezier(0.22, 0.61, 0.36, 1); }
+.board-use-list a { opacity: 0; transition: opacity 0.4s ease 0.1s; }
+.board-use-list a.ready { opacity: 1; }
+@media (prefers-reduced-motion: reduce) { .board-use-list, .board-use-list a { transition: none; } }
 .board-more { display: flex; gap: 18px; margin-top: 14px; flex-wrap: wrap; align-items: flex-end; }
 .board-more img { height: 126px; width: auto; display: block; }
 .board-more a.sq img { height: 80px; }   /* wheels, trucks, obstacles and misc. are smaller than decks */
