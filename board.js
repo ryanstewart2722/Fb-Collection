@@ -98,6 +98,7 @@ async function load() {
   document.title = `${brand ? `${title} - ${brand}` : title} · The Museum of Mini Skateboards`;
   try { history.replaceState(null, "", `/p/${type}/${encodeURIComponent(r.slug)}/` + location.hash); } catch (e) {}   // the address people share: its preview picture is this page
 
+  if (inUseP) await Promise.race([inUseP, new Promise((ok) => setTimeout(ok, 2500))]);   // draw In Use in the same moment as More by (never wait more than 2.5 s for it)
   root.innerHTML = `
     <div class="board-img">${photo ? `<img${/\.gif($|\?)/i.test(photo) ? ' class="gif"' : ""} src="${esc(photo)}" alt="${esc(title)}">` : ""}${r.image_path_2 ? `<img class="second${/\.gif($|\?)/i.test(r.image_path_2) ? " gif" : ""}" src="${esc(r.image_path_2)}" alt="${esc(title)} (2)">` : ""}</div>
     <a class="board-close" href="${esc(backHref)}">Close</a>
