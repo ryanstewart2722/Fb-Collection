@@ -266,6 +266,7 @@ if (!canHover) {
 if (canHover) {
   let px = -1, py = -1, ticking = false;
   document.addEventListener("mousemove", (e) => { px = e.clientX; py = e.clientY; }, { passive: true });
+  document.addEventListener("wheel", (e) => { px = e.clientX; py = e.clientY; }, { passive: true });   // scrolling without moving the mouse (e.g. right after a refresh) still knows where the pointer is
   window.addEventListener("scroll", () => {
     if (ticking || px < 0) return;
     ticking = true;
@@ -459,3 +460,19 @@ loadAll().catch((err) => {
   app.innerHTML = `<p class="load-error">Couldn't load the archive. Please refresh the page.</p>`;
   console.error(err);
 });
+
+// Add ?debug=1 to the address to see where the loading time goes (for troubleshooting only; nothing changes without it).
+if (/[?&]debug=1/.test(location.search)) {
+  const box = document.createElement("pre");
+  box.style.cssText = "position:fixed;left:8px;bottom:8px;z-index:99999;background:#000;color:#0f0;font:11px/1.35 monospace;padding:8px;max-width:96vw;max-height:60vh;overflow:auto;white-space:pre-wrap";
+  document.body.appendChild(box);
+  const show = () => {
+    const n = performance.getEntriesByType("navigation")[0] || {}, r = performance.getEntriesByType("resource");
+    const f = (e) => Math.round(e);
+    const lines = [`now ${f(performance.now())}ms  navType ${n.type}  html done ${f(n.responseEnd)}  DOMready ${f(n.domContentLoadedEventEnd)}  load ${f(n.loadEventEnd)}`,
+      `rows drawn: ${document.querySelectorAll(".row:not(.head), .item").length}   loading class: ${app.classList.contains("loading")}`,
+      ...r.filter((e) => /rest\/v1|\.js|\.css|\.ttf|\.woff/.test(e.name)).map((e) => `${f(e.startTime)}→${f(e.responseEnd)}  (${f(e.duration)}ms) ${e.name.replace(/https?:\/\/[^/]+/, "").slice(0, 60)}`)];
+    box.textContent = lines.join("\n");
+  };
+  show(); setInterval(show, 1000);
+}
