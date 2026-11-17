@@ -34,6 +34,10 @@ SECTIONS.forEach((s) => Object.assign(s, { rows: [], total: 0 }));
 
 // A board's own photo, or nothing (boards without one are left out of the image view).
 const photoFor = (s, r) => r.image_path || "";
+// Grid tiles load a small copy (about 480px tall) from a free resize cache; hover and the detail view still use the full original.
+// If the cache is ever down, the tile falls back to the original by itself.
+const thumbFor = (src) => /(\.supabase\.co\/storage\/v1\/object\/public\/|^https:\/\/museumofminiskateboards\.org\/Images\/)/.test(src) && !/\.(gif|svg)($|\?)/i.test(src)
+  ? "https://images.weserv.nl/?url=" + encodeURIComponent(src.replace(/^https?:\/\//, "")) + "&h=480&fit=inside&output=webp&q=78" : src;
 
 // View and sort live in the address (?view=image&sort=brand) so they can be shared.
 const params = new URLSearchParams(location.search);
@@ -321,7 +325,7 @@ function renderGrid() {
     return `<section class="grid-section">
       <h2>${esc(s.title)}</h2>
       <div class="grid${s.square ? " square" : ""}" data-s="${si}">
-        ${rows.map((r) => `<div class="item link" data-i="${s.rows.indexOf(r)}"><img src="${esc(photoFor(s, r))}" alt="${esc(r.name)}" loading="lazy"${s.square ? ' crossorigin="anonymous"' : ""} onload="markWide(this)"></div>`).join("")}
+        ${rows.map((r) => `<div class="item link" data-i="${s.rows.indexOf(r)}"><img src="${esc(thumbFor(photoFor(s, r)))}" data-full="${esc(photoFor(s, r))}" onerror="if(this.dataset.full&&this.src!==this.dataset.full)this.src=this.dataset.full" decoding="async" alt="${esc(r.name)}" loading="lazy"${s.square ? ' crossorigin="anonymous"' : ""} onload="markWide(this)"></div>`).join("")}
         <div class="bar"></div>
       </div>
       ${moreButton(s, si)}
