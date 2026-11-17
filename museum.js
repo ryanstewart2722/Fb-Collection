@@ -315,23 +315,6 @@ function renderList() {
       if (canHover) row.addEventListener("mouseleave", clearActive);
     });
   });
-  warmRows();
-}
-
-// List view: quietly fetch the photo of each row that is on screen (a few at a time), so hovering a row opens it right away.
-function warmRows() {
-  if (warmObserver) warmObserver.disconnect();
-  warmQueue = [];
-  if (!("IntersectionObserver" in window)) return;
-  warmObserver = new IntersectionObserver((entries) => {
-    entries.forEach((e) => {
-      if (!e.isIntersecting) return;
-      warmObserver.unobserve(e.target);
-      const sec = SECTIONS[e.target.parentElement.dataset.s], src = sec && photoFor(sec, sec.rows[e.target.dataset.i]);
-      if (src) { warmQueue.push(src); warmPump(); }
-    });
-  }, { rootMargin: "300px" });
-  app.querySelectorAll(".list .row:not(.head)").forEach((row) => warmObserver.observe(row));
 }
 
 /* ---------- Image view ---------- */
