@@ -18,6 +18,12 @@
 "src": "https://museumofminiskateboards.org/Images/web/black-bench-mwausnbr.png",
 "w": 706
 },
+"01fa2227-ee38-4187-b7c7-171b68144ec2": {
+"file": "user-cuts/tight/01fa2227-ee38-4187-b7c7-171b68144ec2-ac33b78d.webp",
+"h": 600,
+"src": "833410b9-6f3b-4c66-ad05-77e1b0c82c5f/a1c4d5a9-6ebe-4f81-bcfc-39e56ab649f5.png",
+"w": 208
+},
 "0245921e-6f57-46fc-9733-2111da3d865a": {
 "file": "user-cuts/tight/0245921e-6f57-46fc-9733-2111da3d865a-ebcbcee0.webp",
 "h": 600,
@@ -4657,6 +4663,10 @@
 "user-cuts/00d43e5f-d44f-4fa7-9180-b6b9cb711c46-6970da35-v2.webp": [
 800,
 800
+],
+"user-cuts/01fa2227-ee38-4187-b7c7-171b68144ec2-45c423fc-v2.webp": [
+530,
+1200
 ],
 "user-cuts/0245921e-6f57-46fc-9733-2111da3d865a-e92c8afe-v2.webp": [
 530,
