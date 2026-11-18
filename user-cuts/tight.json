@@ -126,6 +126,12 @@
 "src": "03f6314a-a918-4446-9b71-b6972bea3ba4/ca57c342-c26a-495d-982a-c2e97373bea8.png",
 "w": 215
 },
+"053cf3cc-6f0f-408d-a7c5-500e37651d62": {
+"file": "user-cuts/tight/053cf3cc-6f0f-408d-a7c5-500e37651d62-55823fda.webp",
+"h": 600,
+"src": "833410b9-6f3b-4c66-ad05-77e1b0c82c5f/e8b4a1c5-0eb0-48af-a842-0322dd9fba62.png",
+"w": 199
+},
 "06b60c3e-ff6a-4ed8-914e-cad9837dee29": {
 "file": "user-cuts/tight/06b60c3e-ff6a-4ed8-914e-cad9837dee29-08d55aa9.webp",
 "h": 600,
@@ -467,6 +473,12 @@
 "h": 600,
 "src": "6bcb6a7d-5518-45e9-9db6-1ac8b4e9d347/d7ccdbdc-92d8-40e5-ab68-a3c32618d4aa.png",
 "w": 189
+},
+"170458a9-ab91-430e-a083-12653865a300": {
+"file": "user-cuts/tight/170458a9-ab91-430e-a083-12653865a300-506a0a46.webp",
+"h": 600,
+"src": "833410b9-6f3b-4c66-ad05-77e1b0c82c5f/fa243f0a-be6f-46fb-8da8-3702406f7cfc.png",
+"w": 200
 },
 "176e446c-3efd-4ff3-bc0e-77dbf73863e3": {
 "file": "user-cuts/tight/176e446c-3efd-4ff3-bc0e-77dbf73863e3-ac5d6ec2.webp",
@@ -3148,6 +3160,12 @@
 "src": "05d043cb-3324-4665-8e2f-8078142ad01f/c6e0f5d2-8841-4bd4-9ef9-a5f59827c5c0.png",
 "w": 210
 },
+"a1b20325-a1a1-4cdc-83cf-df889285c807": {
+"file": "user-cuts/tight/a1b20325-a1a1-4cdc-83cf-df889285c807-970766fa.webp",
+"h": 600,
+"src": "833410b9-6f3b-4c66-ad05-77e1b0c82c5f/3236772f-39f7-43e9-b92c-07aa0213bb43.png",
+"w": 182
+},
 "a1b36363-9ca3-4025-8a65-6dcf0c37e23a": {
 "file": "user-cuts/tight/a1b36363-9ca3-4025-8a65-6dcf0c37e23a-e0e290cc.webp",
 "h": 600,
@@ -5070,6 +5088,10 @@
 530,
 1200
 ],
+"user-cuts/053cf3cc-6f0f-408d-a7c5-500e37651d62-d5aba6bb-v2.webp": [
+530,
+1200
+],
 "user-cuts/06b60c3e-ff6a-4ed8-914e-cad9837dee29-08d55aa9-v2.webp": [
 800,
 800
@@ -5299,6 +5321,10 @@
 1200
 ],
 "user-cuts/16762a34-6338-40b2-8373-c8b98c3c5528-9bde858e-v2.webp": [
+530,
+1200
+],
+"user-cuts/170458a9-ab91-430e-a083-12653865a300-d1548a5a-v2.webp": [
 530,
 1200
 ],
@@ -7115,6 +7141,10 @@
 1200
 ],
 "user-cuts/a10a7cb2-8beb-43b0-b3c7-87d725a7cd64-56701d2a-v2.webp": [
+530,
+1200
+],
+"user-cuts/a1b20325-a1a1-4cdc-83cf-df889285c807-ecfe872b-v2.webp": [
 530,
 1200
 ],
