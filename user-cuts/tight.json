@@ -1454,6 +1454,12 @@
 "src": "cec99bb6-82fe-4c37-9769-697933698218/3e32f32b-266f-4e71-afb8-6cd05c147ced.png",
 "w": 207
 },
+"4afd30f7-2972-47ad-876f-480c093c6a8a": {
+"file": "user-cuts/tight/4afd30f7-2972-47ad-876f-480c093c6a8a-78bc3eae.webp",
+"h": 600,
+"src": "833410b9-6f3b-4c66-ad05-77e1b0c82c5f/d010cc89-e515-4006-b0d0-8b997dac0f5f.png",
+"w": 199
+},
 "4aff9a44-d8f0-4f4c-9a41-6b58a9fe17f3": {
 "file": "user-cuts/tight/4aff9a44-d8f0-4f4c-9a41-6b58a9fe17f3-8c2fc351.webp",
 "h": 600,
@@ -2978,6 +2984,12 @@
 "src": "833410b9-6f3b-4c66-ad05-77e1b0c82c5f/16608f57-665e-4f64-8629-16cb3f1e381a.png",
 "w": 203
 },
+"95bad7d9-f608-4aa6-9ba5-a77563345989": {
+"file": "user-cuts/tight/95bad7d9-f608-4aa6-9ba5-a77563345989-d6d98db4.webp",
+"h": 600,
+"src": "833410b9-6f3b-4c66-ad05-77e1b0c82c5f/4a2ea8ab-eba7-4871-a69d-e7c2a276f914.png",
+"w": 199
+},
 "95bd868d-8b8c-4652-a0ac-dce455047980": {
 "skip": "not a cut-out",
 "src": "833410b9-6f3b-4c66-ad05-77e1b0c82c5f/f638e5af-93fe-4408-9328-ae5ebcd13e5c.jpg"
@@ -3533,6 +3545,12 @@
 "h": 600,
 "src": "833410b9-6f3b-4c66-ad05-77e1b0c82c5f/e561b00f-9a6f-408f-a9a5-c445591de4a5.png",
 "w": 202
+},
+"b184da77-da3b-4933-a101-d3b284b286a1": {
+"file": "user-cuts/tight/b184da77-da3b-4933-a101-d3b284b286a1-8d2c59f0.webp",
+"h": 600,
+"src": "833410b9-6f3b-4c66-ad05-77e1b0c82c5f/0a55203b-ef18-456b-9860-a949dc03867c.png",
+"w": 178
 },
 "b245e0bb-3752-4260-80e3-1356c7fd9db1": {
 "file": "user-cuts/tight/b245e0bb-3752-4260-80e3-1356c7fd9db1-12b1a818.webp",
@@ -6030,6 +6048,10 @@
 530,
 1200
 ],
+"user-cuts/4afd30f7-2972-47ad-876f-480c093c6a8a-e78251c9-v2.webp": [
+530,
+1200
+],
 "user-cuts/4aff9a44-d8f0-4f4c-9a41-6b58a9fe17f3-287e9e10-v2.webp": [
 530,
 1200
@@ -7062,6 +7084,10 @@
 530,
 1200
 ],
+"user-cuts/95bad7d9-f608-4aa6-9ba5-a77563345989-756bcc72-v2.webp": [
+530,
+1200
+],
 "user-cuts/95bd868d-8b8c-4652-a0ac-dce455047980-0d27eec2-v4.webp": [
 800,
 800
@@ -7431,6 +7457,10 @@
 1200
 ],
 "user-cuts/b1201257-b62e-4f15-bd64-d62030080869-9d8367c3-v2.webp": [
+530,
+1200
+],
+"user-cuts/b184da77-da3b-4933-a101-d3b284b286a1-82865986-v2.webp": [
 530,
 1200
 ],
