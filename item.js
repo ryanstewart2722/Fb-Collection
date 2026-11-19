@@ -144,16 +144,15 @@ async function load() {
   // likes: anyone can see the count; signed-in people can like or un-like
   (async () => {
     const btn = root.querySelector("#im-like"); if (!btn) return;
-    const count = async () => (await sb.from("item_likes").select("item_id", { count: "exact", head: true }).eq("item_id", i.id)).count || 0;
-    let n = await count(), on = false;
+    let on = false;
     if (me) { const { data } = await sb.from("item_likes").select("item_id").eq("item_id", i.id).eq("user_id", me).maybeSingle(); on = !!data; }
-    const paint = () => { btn.innerHTML = `<span class="star" aria-hidden="true">${on ? "\u2665" : "\u2661"}</span> ${on ? "Liked" : "Like"} \u00b7 ${n}`; btn.hidden = false; };
+    const paint = () => { btn.innerHTML = `<span class="star" aria-hidden="true">${on ? "\u2665" : "\u2661"}</span> ${on ? "Liked" : "Like"}`; btn.hidden = false; };
     paint();
     btn.addEventListener("click", async () => {
       if (!me) return (location.href = "/signin.html");
       btn.disabled = true;
       const res = on ? await sb.from("item_likes").delete().eq("item_id", i.id).eq("user_id", me) : await sb.from("item_likes").insert({ item_id: i.id });
-      if (!res.error) { on = !on; n = Math.max(0, n + (on ? 1 : -1)); }
+      if (!res.error) { on = !on; }
       btn.disabled = false; paint();
     });
   })();
