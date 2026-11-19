@@ -3,11 +3,11 @@
 // Each kind is loaded once as a light list, then matched on the page, so results come back as you type.
 const MUSEUM_KIND = { decks: "Deck", trucks: "Trucks", wheels: "Wheels", obstacles: "Obstacle", misc: "Misc." };
 const MUSEUM_SEL = {
-  decks: "id,name,slug,image_path,size,color,release_date,drop_no,drop_title,mold_code,graphic,shape,molds,brands(name)",
-  trucks: "id,name,slug,image_path,size,color,release_date,brands(name)",
-  wheels: "id,name,slug,image_path,color,material,duro,release_date,brands(name)",
-  obstacles: "id,name,slug,image_path,material,release_date,brands(name)",
-  misc: "id,name,slug,image_path,material,release_date,brands(name)",
+  decks: "id,name,slug,image_path,size,color,release_date,drop_no,drop_title,mold_code,graphic,shape,molds,description,brands(name)",
+  trucks: "id,name,slug,image_path,size,color,release_date,description,brands(name)",
+  wheels: "id,name,slug,image_path,color,material,duro,release_date,description,brands(name)",
+  obstacles: "id,name,slug,image_path,material,release_date,description,brands(name)",
+  misc: "id,name,slug,image_path,material,release_date,description,brands(name)",
 };
 const museumName = (t, r) => t === "decks" ? momsDeckName(r) : (t === "wheels" || t === "trucks") && r.brands?.name && !r.name.toLowerCase().includes(r.brands.name.toLowerCase()) ? `${r.brands.name} ${r.name}` : r.name;
 // the line of facts shown under a result's name
@@ -32,7 +32,8 @@ function loadTable(t) {
       // colour is the least trustworthy field (many entries are tagged by hand), so it is kept apart and counts for less
       const text = [museumName(t, r), brand, r.material, r.mold_code, [].concat(r.molds || []).join(" "), r.graphic, r.shape, r.drop_title, r.drop_no ? "drop " + r.drop_no : ""].join(" ");
       const size = parseFloat(r.size);   // e.g. "32.5mm" -> 32.5
-      return { t, r, words: norm(text), cwords: norm(r.color), nums: new Set([...(text.match(/\d+(\.\d+)?/g) || []), yr, Number.isFinite(size) ? String(size) : "", r.duro ? String(parseFloat(r.duro)) : ""].filter(Boolean)), yr, brand };
+      const words = norm(text), joined = words.slice(1).map((w, k) => words[k] + w);   // "Flat Face" is also found as "flatface"
+      return { t, r, words: words.concat(joined), dwords: new Set(norm(r.description)), cwords: norm(r.color), nums: new Set([...(text.match(/\d+(\.\d+)?/g) || []), yr, Number.isFinite(size) ? String(size) : "", r.duro ? String(parseFloat(r.duro)) : ""].filter(Boolean)), yr, brand };
     }));
   })());
 }
@@ -61,6 +62,7 @@ function strength(entry, q) {
     if (best === 3) return 3;
   }
   if (!best) for (const w of entry.cwords) if (w === q || (q.length >= 3 && w.startsWith(q))) return 1;   // colour only: a weak hint
+  if (!best && entry.dwords.has(q)) return 0.8;   // only in the description: a weaker hint
   if (!best && q.length >= 5) for (const w of entry.words) if (near(q, w)) return 1.5;
   return best;
 }
@@ -82,14 +84,14 @@ async function searchMuseum(t, text) {
   });
   const rank = (a, b) => b.pts - a.pts;
   // a matching number (deck #, size, year) can stand in for one missing word
-  const best = scored.filter((x) => x.got + Math.min(x.numHit, 1) >= need && (x.got > 0 || x.numHit > 0)).sort(rank).slice(0, 40);
+  const best = scored.filter((x) => x.got + Math.min(x.numHit, 1) >= need && (x.got > 0 || x.numHit > 0)).sort(rank).slice(0, 600);
   const ids = new Set(best.map((x) => x.e));
   const close = words.length < 2 && best.length ? [] : scored.filter((x) => !ids.has(x.e) && x.got >= Math.max(1, need - 1) && x.got > 0).sort(rank).slice(0, best.length ? 12 : 24);
-  return [...best.map((x) => x.e), ...close.map((x) => Object.assign({}, x.e, { close: true }))];
+  return [...best.map((x) => Object.assign({}, x.e, { score: x.pts })), ...close.map((x) => Object.assign({}, x.e, { close: true, score: x.pts }))];
 }
-// For the museum page: the same words scanned across every kind at once (decks, trucks, wheels, obstacles, misc.).
-async function searchAllMuseum(text, perKind = 8) {
-  const kinds = Object.keys(MUSEUM_SEL);
-  const lists = await Promise.all(kinds.map((t) => searchMuseum(t, text)));
-  return { best: lists.flatMap((l) => l.filter((e) => !e.close).slice(0, perKind)), close: lists.flatMap((l) => l.filter((e) => e.close).slice(0, 4)) };
+// For the museum page: the same words scanned across every kind at once (decks, trucks, wheels, obstacles, misc.), best first.
+async function searchAllMuseum(text) {
+  const lists = await Promise.all(Object.keys(MUSEUM_SEL).map((t) => searchMuseum(t, text)));
+  const all = lists.flat(), byScore = (a, b) => b.score - a.score;
+  return { best: all.filter((e) => !e.close).sort(byScore), close: all.filter((e) => e.close).sort(byScore).slice(0, 12) };
 }
