@@ -136,3 +136,4 @@
 .me-rv-user { margin: 22px 0 6px; font-size: 14px; font-weight: normal; }
 .me-rv-user[hidden] { display: none; }
 .me-sort .active { background: #000; color: #fff; }
+.me-fold { min-width: 28px; padding: 2px 6px; }
