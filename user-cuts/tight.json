@@ -144,6 +144,12 @@
 "src": "833410b9-6f3b-4c66-ad05-77e1b0c82c5f/e8b4a1c5-0eb0-48af-a842-0322dd9fba62.png",
 "w": 199
 },
+"05513146-4e77-4b88-8b39-0f75b0bf61ac": {
+"file": "user-cuts/tight/05513146-4e77-4b88-8b39-0f75b0bf61ac-aef4491e.webp",
+"h": 600,
+"src": "833410b9-6f3b-4c66-ad05-77e1b0c82c5f/1609894e-e78c-4c25-a72a-0975de8b073d.png",
+"w": 226
+},
 "06b60c3e-ff6a-4ed8-914e-cad9837dee29": {
 "file": "user-cuts/tight/06b60c3e-ff6a-4ed8-914e-cad9837dee29-08d55aa9.webp",
 "h": 600,
@@ -3228,6 +3234,12 @@
 "src": "833410b9-6f3b-4c66-ad05-77e1b0c82c5f/e7459bde-9177-4d97-9343-fe275e8132bf.png",
 "w": 204
 },
+"914551da-d934-4d58-87ec-7c2b270d79dd": {
+"file": "user-cuts/tight/914551da-d934-4d58-87ec-7c2b270d79dd-238ff1cc.webp",
+"h": 600,
+"src": "833410b9-6f3b-4c66-ad05-77e1b0c82c5f/af7ea1e9-a537-4cf1-9c8c-75416aae8cc8.png",
+"w": 213
+},
 "914b86c1-b68c-443c-a243-8421a89c905e": {
 "file": "user-cuts/tight/914b86c1-b68c-443c-a243-8421a89c905e-73ed4419.webp",
 "h": 600,
@@ -5114,6 +5126,12 @@
 "src": "bf218bdb-676c-46ca-bb9d-6e926437a197/d8acf4a7-5961-499a-9900-14adc056f0cc.png",
 "w": 679
 },
+"e66f8c10-072e-4f36-9c9f-f2d43c30454f": {
+"file": "user-cuts/tight/e66f8c10-072e-4f36-9c9f-f2d43c30454f-d4ad106b.webp",
+"h": 600,
+"src": "833410b9-6f3b-4c66-ad05-77e1b0c82c5f/a940cf6c-f681-4b4a-9c0e-4b9eb03ec3c6.png",
+"w": 226
+},
 "e672f189-910a-43e0-baa4-7af45adc26cc": {
 "file": "user-cuts/tight/e672f189-910a-43e0-baa4-7af45adc26cc-35a69824.webp",
 "h": 600,
@@ -5677,6 +5695,10 @@
 1200
 ],
 "user-cuts/053cf3cc-6f0f-408d-a7c5-500e37651d62-d5aba6bb-v2.webp": [
+530,
+1200
+],
+"user-cuts/05513146-4e77-4b88-8b39-0f75b0bf61ac-068ba72d-v2.webp": [
 530,
 1200
 ],
@@ -7768,6 +7790,10 @@
 530,
 1200
 ],
+"user-cuts/914551da-d934-4d58-87ec-7c2b270d79dd-0d2e3205-v2.webp": [
+530,
+1200
+],
 "user-cuts/914b86c1-b68c-443c-a243-8421a89c905e-a0e2b9c3-v2.webp": [
 530,
 1200
@@ -9039,6 +9065,10 @@
 "user-cuts/e5cafe46-2479-455c-ad7f-da0940b69973-a0355e7b-v2.webp": [
 800,
 800
+],
+"user-cuts/e66f8c10-072e-4f36-9c9f-f2d43c30454f-21d326fe-v2.webp": [
+530,
+1200
 ],
 "user-cuts/e672f189-910a-43e0-baa4-7af45adc26cc-8d816f2f-v2.webp": [
 530,
