@@ -876,12 +876,22 @@ function applyReviewFilter() {
   reviewItems.forEach((x) => { if (x) counts[x.r.section] = (counts[x.r.section] || 0) + 1; });
   if (rvFilter !== "all" && !counts[rvFilter]) rvFilter = "all";
   document.querySelectorAll(".me-filter button").forEach((b) => b.classList.toggle("active", b.dataset.sec === rvFilter));
-  document.querySelectorAll(".me-rv").forEach((c) => { c.hidden = (rvFilter !== "all" && c.dataset.sec !== rvFilter) || (rvUser && c.dataset.user !== rvUser); });
-  document.querySelectorAll(".me-rv-user").forEach((h) => { const mine = [...document.querySelectorAll(`.me-rv[data-user="${CSS.escape(h.dataset.user)}"]`)].some((c) => !c.hidden); h.hidden = !mine; });
+  const shown = new Set();   // people with at least one card matching the filters (folded or not)
+  document.querySelectorAll(".me-rv").forEach((c) => {
+    const match = !((rvFilter !== "all" && c.dataset.sec !== rvFilter) || (rvUser && c.dataset.user !== rvUser));
+    if (match) shown.add(c.dataset.user);
+    c.hidden = !match || (rvSort === "user" && rvFolded.has(c.dataset.user));
+  });
+  document.querySelectorAll(".me-rv-user").forEach((h) => {
+    h.hidden = !shown.has(h.dataset.user);
+    const f = rvFolded.has(h.dataset.user), b = h.querySelector(".me-fold"); if (b) b.textContent = f ? "▸" : "▾";
+  });
+  const fa = document.getElementById("rv-foldall"); if (fa) fa.hidden = rvSort !== "user";
   document.querySelectorAll(".me-sort button[data-s]").forEach((b) => b.classList.toggle("active", b.dataset.s === rvSort));
   const pick = document.getElementById("rv-userpick"); if (pick) pick.innerHTML = rvUser ? ` Showing only ${esc(rvUser)} <button class="ad-btn" data-act="rv-user" data-user="">Show everyone</button>` : "";
   document.querySelectorAll(".me-bulk button[data-section]").forEach((b) => { b.hidden = rvFilter !== "all" && b.dataset.section !== rvFilter; });
 }
+const rvFolded = new Set();   // people whose cards are folded away so the others are quicker to reach
 let rvSort = "oldest", rvUser = "";   // how the Review list is ordered, and (optionally) one submitter to show
 const rvWho = (x) => x.r.profiles?.username || "someone";
 // the cards, in the chosen order; "By user" puts each person's submissions together under their name
@@ -892,7 +902,7 @@ function rvCards() {
   const per = {}; order.forEach(({ x }) => { per[rvWho(x)] = (per[rvWho(x)] || 0) + 1; });
   let last = null;
   return (order.map(({ x, i }) => {
-    const head = rvSort === "user" && rvWho(x) !== last ? `<h3 class="me-rv-user" data-user="${esc(rvWho(x))}"><button class="ad-btn" data-act="rv-user" data-user="${esc(rvWho(x))}">${esc(rvWho(x))} (${per[rvWho(x)]})</button></h3>` : "";
+    const head = rvSort === "user" && rvWho(x) !== last ? `<h3 class="me-rv-user" data-user="${esc(rvWho(x))}"><button class="ad-btn me-fold" data-act="rv-fold" data-user="${esc(rvWho(x))}" title="Fold away / open up" aria-label="Fold away or open up ${esc(rvWho(x))}">▾</button> <button class="ad-btn" data-act="rv-user" data-user="${esc(rvWho(x))}">${esc(rvWho(x))} (${per[rvWho(x)]})</button></h3>` : "";
     last = rvWho(x);
     return head + rvCard(x, i);
   }).join("") || `<p class="me-empty">Nothing waiting.</p>`);
@@ -930,7 +940,7 @@ async function renderReview() {
   const secCounts = {}; reviewItems.forEach((x) => { secCounts[x.r.section] = (secCounts[x.r.section] || 0) + 1; });
   const kinds = [["all", "All"], ["decks", "Decks"], ["trucks", "Trucks"], ["wheels", "Wheels"], ["obstacles", "Obstacles"], ["misc", "Misc."]];
   const filterBar = `<p class="me-filter">` + kinds.map(([k, label]) => `<button class="ad-btn" data-act="rv-filter" data-sec="${k}">${label}${k === "all" ? ` (${reviewItems.length})` : secCounts[k] ? ` (${secCounts[k]})` : ""}</button>`).join(" ") + `</p>`;
-  const sortBar = `<p class="me-filter me-sort">Sort: ` + [["oldest", "Oldest first"], ["newest", "Newest first"], ["user", "By user"]].map(([k, label]) => `<button class="ad-btn" data-act="rv-sort" data-s="${k}">${label}</button>`).join(" ") + `<span class="me-userpick" id="rv-userpick"></span></p>`;
+  const sortBar = `<p class="me-filter me-sort">Sort: ` + [["oldest", "Oldest first"], ["newest", "Newest first"], ["user", "By user"]].map(([k, label]) => `<button class="ad-btn" data-act="rv-sort" data-s="${k}">${label}</button>`).join(" ") + `<span id="rv-foldall" hidden> <button class="ad-btn" data-act="rv-foldall" data-fold="1">Collapse all</button> <button class="ad-btn" data-act="rv-foldall" data-fold="0">Expand all</button></span><span class="me-userpick" id="rv-userpick"></span></p>`;
   app.innerHTML = `<p class="me-count">${reviewItems.length} waiting for review</p>${filterBar}${sortBar}${bulk ? `<p class="me-bulk">${bulk}</p>` : ""}<div class="me-review">${rvCards()}</div>`;
   applyReviewFilter();
 }
@@ -1090,7 +1100,9 @@ async function addAllSubmissions(section, btn) {
 app.addEventListener("click", (e) => {
   const a = e.target.closest("[data-act]")?.dataset.act;
   if (a === "rv-sort") { rvSort = e.target.closest("[data-act]").dataset.s; document.querySelector(".me-review").innerHTML = rvCards(); applyReviewFilter(); return; }
-  if (a === "rv-user") { const u = e.target.closest("[data-act]").dataset.user; rvUser = rvUser === u ? "" : u; applyReviewFilter(); return; }
+  if (a === "rv-fold") { const u = e.target.closest("[data-act]").dataset.user; rvFolded.has(u) ? rvFolded.delete(u) : rvFolded.add(u); applyReviewFilter(); return; }
+  if (a === "rv-foldall") { const fold = e.target.closest("[data-act]").dataset.fold === "1"; document.querySelectorAll(".me-rv-user").forEach((h) => (fold ? rvFolded.add(h.dataset.user) : rvFolded.delete(h.dataset.user))); applyReviewFilter(); return; }
+  if (a === "rv-user") { const u = e.target.closest("[data-act]").dataset.user; rvUser = rvUser === u ? "" : u; if (rvUser) rvFolded.delete(rvUser); applyReviewFilter(); return; }
   if (a === "rv-filter") { rvFilter = e.target.closest("[data-act]").dataset.sec; applyReviewFilter(); return; }
   if (a === "rv-all") return addAllSubmissions(e.target.closest("[data-act]").dataset.section).catch(fail("Couldn't add them all"));
   if (a === "rv-ok" || a === "rv-no") reviewAct(e.target.closest(".me-rv"), a === "rv-ok");
