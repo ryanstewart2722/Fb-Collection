@@ -982,6 +982,17 @@ async function addSubmission(x, setStep = () => {}) {
   if (table === "wheels") { row.material = f.material || null; row.duro = f.duro || null; }
   setStep(`adding it to ${table}`);
   const made = await insertWithSlug(table, row, `${f.name} ${f.color || ""} ${f.brand || ""}`);
+  // when it came from someone's collection, that item is linked to the new museum entry (so it shows under "In Use" and on the item page)
+  try {
+    if (r.user_id && r.image_path) {
+      const found = await sb.from("collection_items").select("id").eq("user_id", r.user_id).neq("status", "removed").or(`image_path.eq.${r.image_path},source_path.eq.${r.image_path}`);
+      for (const it of found.data || []) {
+        const link = { item_id: it.id, museum_type: table, museum_id: made.id };
+        const ins = await sb.from("collection_item_links").insert(link);
+        if (!ins.error || /duplicate|unique/i.test(ins.error.message || "")) await sb.from("collection_item_links").update({ link_status: "approved" }).eq("item_id", it.id).eq("museum_type", table).eq("museum_id", made.id);
+      }
+    }
+  } catch (err) { console.warn("could not link the collection item", err); }
   setStep("marking the submission approved");
   const { error } = await sb.from("submissions").update({ status: "approved", review_note: "Added as " + made.slug }).eq("id", r.id);
   if (error) throw error;
