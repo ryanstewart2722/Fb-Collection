@@ -472,3 +472,6 @@ body > main.auth { width: 100%; box-sizing: border-box; }
 
 /* Previous / Next sit at the bottom of the page, just above the footer */
 .board { position: relative; padding-bottom: 56px; }
+
+/* item page: find / remove / review notes show only in the owner's edit mode */
+#board:not(.im-editing) .im-edonly, #board:not(.im-editing) .im-x, #board:not(.im-editing) .im-pend, #board:not(.im-editing) #im-form{display:none !important}
