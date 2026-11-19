@@ -167,7 +167,7 @@ async function load() {
       ? kinds.map((t) => { const m = current.find((x) => x.t === t); return m ? one(m) : `<button type="button" class="im-slot" data-p="${t}"><span>+</span>${esc(MUSEUM_KIND[t])}</button>`; }).join("") + current.filter((m) => !kinds.includes(m.t)).map(one).join("")
       : current.map(one).join("");
     box.innerHTML = html || "";
-    box.closest(".board-use")?.classList.toggle("empty", !html);   // nothing linked: no text, and the empty row folds away like on museum pages
+    box.closest(".board-use")?.classList.toggle("use-none", !html);   // nothing linked: no text, and the empty row folds away like on museum pages
     // visitors only see "In Museum" when something is linked; the owner (and staff) always do, to add entries
     root.querySelector("#im-section").hidden = !canLink && !current.length;
   };

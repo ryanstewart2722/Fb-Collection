@@ -235,7 +235,7 @@ h2 {
 .board-use-list img.cut { aspect-ratio: auto 530 / 1200; }
 .board-use-list a:not(.ready):has(img:not(.cut)) { opacity: 0; transition: opacity 0.25s ease; }   /* raw photos wait until trimmed */
 .board-use-list a.ready { opacity: 1; }   /* the cut photos are all this shape, so each one holds its width before it loads (its real shape takes over once it has) */
-.board-use.empty .board-use-list { min-height: 0; margin-top: 0; }   /* nothing in use: In Use sits right above More by */
+.board-use.use-none .board-use-list { min-height: 0; margin-top: 0; }   /* nothing in use: In Use sits right above More by */
 .board-use-empty { color: #777; font-size: 14px; align-self: center; }
 /* item pages (collection items): the In Museum row shows each linked museum entry with a small label, and owners can search the museum to link one */
 .board-use-list a.sq img { height: 92px; }
