@@ -129,7 +129,7 @@ async function load() {
       <div class="board-specs">${specs(i, owner)}</div>
       <div class="board-dock">
         <div class="board-use"><p class="board-use-head">In Museum</p>
-          ${canLink ? `<form class="board-use-form" id="im-form"><input type="search" id="im-q" placeholder="Search the museum: name, brand, year, size, colour" autocomplete="off" aria-label="Search the museum"> <button type="submit">Search</button> <span class="board-use-msg" id="im-msg" aria-live="polite"></span><div class="im-results" id="im-res"></div></form>` : ""}
+          ${canLink ? `<form class="im-find" id="im-form" autocomplete="off"><div class="im-parts" id="im-parts"></div><input type="search" id="im-q" placeholder="Search the museum" aria-label="Search the museum"><div class="im-pop" id="im-res" hidden></div></form>` : ""}
           <div class="board-use-list" id="im-list"></div></div>
         <div class="board-brand">
           <span class="board-more-head">More in ${owner ? `<a class="board-brand-link" href="/u/${encodeURIComponent(owner.username)}">${esc(owner.display_name || owner.username)}'s</a> ` : ""}Collection</span>
@@ -177,51 +177,98 @@ async function loadMuseum(links) {
   return out.sort((a, b) => rank[a.t] - rank[b.t]);
 }
 
-// ---------- find it in the museum, and link it (or remove the link) ----------
+// ---------- find it in the museum, and link it ----------
+// Each kind of entry is loaded once (a light list), then matched here on the page so results come back as you type.
+const TABLE = {}, tableP = {};
+function loadTable(t) {
+  return (tableP[t] ||= (async () => {
+    const rows = [];
+    for (let from = 0; ; from += 1000) {
+      const { data, error } = await sb.from(t).select(MUSEUM_SEL[t]).not("image_path", "is", null).order("id").range(from, from + 999);
+      if (error || !data) break;
+      rows.push(...data);
+      if (data.length < 1000) break;
+    }
+    return (TABLE[t] = rows.map((r) => {
+      const brand = r.brands?.name || "", yr = r.release_date ? String(r.release_date).slice(0, 4) : "";
+      const text = [museumName(t, r), brand, r.color, r.material, r.mold_code, r.drop_title, r.drop_no ? "drop " + r.drop_no : ""].join(" ");
+      const size = parseFloat(r.size);   // e.g. "32.5mm" -> 32.5
+      return { t, r, words: norm(text), nums: new Set([...(text.match(/\d+(\.\d+)?/g) || []), yr, Number.isFinite(size) ? String(size) : "", r.duro ? String(parseFloat(r.duro)) : ""].filter(Boolean)), yr, brand, size };
+    }));
+  })());
+}
+const STOP = new Set(["x", "the", "and", "of", "a", "mm", "deck", "decks", "wheels", "wheel", "trucks", "truck"]);
+const norm = (x) => String(x ?? "").toLowerCase().replace(/['\u2019]/g, "").replace(/[^a-z0-9.]+/g, " ").replace(/\.(?!\d)/g, "").trim().split(/\s+/).filter(Boolean);
+// how well one entry matches the words typed: whole words count most, starts-of-words next; numbers must match exactly (size, year, number)
+function score(entry, qs) {
+  let got = 0, pts = 0;
+  for (const q of qs) {
+    let best = 0;
+    if (/^\d+(\.\d+)?$/.test(q)) {
+      if (entry.nums.has(q) || entry.nums.has(String(parseFloat(q)))) best = 4;
+    } else {
+      for (const w of entry.words) {
+        const p = w === q ? 3 : q.length >= 3 && w.startsWith(q) ? 2 : q.length >= 5 && w.includes(q) ? 1 : 0;
+        if (p > best) best = p;
+        if (best === 3) break;
+      }
+    }
+    if (best) { got++; pts += best; }
+  }
+  return { got, pts };
+}
+async function searchMuseum(t, text) {
+  const qs = [...new Set(norm(text).map((w) => w.replace(/mm$/, "")).filter((w) => w && !STOP.has(w)))].slice(0, 8);
+  if (!qs.length) return [];
+  const need = qs.length <= 2 ? qs.length : Math.ceil(qs.length * 0.6);
+  const table = await loadTable(t);
+  return table.map((e) => ({ e, ...score(e, qs) })).filter((x) => x.got >= need).sort((a, b) => b.got - a.got || b.pts - a.pts).slice(0, 40).map((x) => x.e);
+}
+
 function setupLinking(i, getCurrent, refresh) {
-  const form = root.querySelector("#im-form"), q = root.querySelector("#im-q"), msg = root.querySelector("#im-msg"), res = root.querySelector("#im-res");
+  const form = root.querySelector("#im-form"), q = root.querySelector("#im-q"), pop = root.querySelector("#im-res"), partsBox = root.querySelector("#im-parts");
   const kinds = LINKABLE[i.section] || [];
-  let timer; q.addEventListener("input", () => { clearTimeout(timer); timer = setTimeout(() => form.requestSubmit(), 350); });   // searches as you type
-  form.addEventListener("submit", async (e) => {
-    e.preventDefault();
-    const term = q.value.replace(/[,*()%\\]/g, " ").replace(/\s+/g, " ").trim();
-    msg.textContent = ""; res.innerHTML = "";
-    if (term.length < 2) return;
-    msg.textContent = "Searching…";
-    try {
-      // word by word: every word is looked for in the name or the brand, and the best matches (the most words) come first
-      const words = [...new Set(term.toLowerCase().split(" ").filter((w) => w.length >= 2))].slice(0, 5);
-      const brandIds = {};
-      await Promise.all(words.map(async (w) => { const { data } = await sb.from("brands").select("id").ilike("name", `%${w}%`).limit(20); brandIds[w] = (data || []).map((x) => x.id); }));
-      const found = [];
-      await Promise.all(kinds.map(async (t) => {
-        const seen = new Map();
-        await Promise.all(words.map(async (w) => {
-          const ids = brandIds[w];
-          const { data } = await sb.from(t).select(MUSEUM_SEL[t]).or(`name.ilike.*${w}*` + (ids.length ? `,brand_id.in.(${ids.join(",")})` : "")).not("image_path", "is", null).order("release_date", { ascending: false, nullsFirst: false }).limit(60);
-          (data || []).forEach((r) => seen.set(r.id, r));
-        }));
-        const score = (r) => { const hay = [museumName(t, r), r.brands?.name, r.color, r.size, r.release_date ? String(r.release_date).slice(0, 4) : ""].join(" ").toLowerCase(); return words.filter((w) => hay.includes(w)).length; };
-        [...seen.values()].map((r) => ({ t, r, n: score(r) })).sort((x, y) => y.n - x.n).slice(0, kinds.length > 1 ? 6 : 12).forEach((x) => found.push(x));
-      }));
-      msg.textContent = found.length ? "" : "Nothing matched. Try a shorter word, or the brand.";
-      const have = new Set(getCurrent().map((m) => m.t));
-      res.innerHTML = found.map(({ t, r }) => {
-        const yr = r.release_date ? String(r.release_date).slice(0, 4) : "";
-        const more = [r.brands?.name, yr, r.size, r.color].filter(Boolean).join(" \u00b7 ");
-        return `<div class="im-res"><img src="${esc(r.image_path || "")}" alt=""><span><b>${esc(museumName(t, r))}</b><br>${esc(MUSEUM_KIND[t])}${more ? " \u00b7 " + esc(more) : ""}</span><button type="button" data-t="${t}" data-id="${r.id}"${have.has(t) ? ' disabled title="Already linked: remove it first"' : ""}>${have.has(t) ? "Linked" : "Link"}</button></div>`;
-      }).join("");
-    } catch (err) { msg.textContent = "Couldn't search just now."; console.error(err); }
+  const d = i.details || {};
+  let part = kinds[0], seq = 0, timer;
+  // what to look for to begin with: what the owner typed about this part
+  const start = (t) => String(t === "decks" ? [i.name, d.maker, d.mold, d.size, d.color].filter(Boolean).join(" ") : t === "trucks" ? (d.trucks || (i.section === "trucks" ? [i.name, d.size, d.color].join(" ") : "")) : t === "wheels" ? (d.wheels || (i.section === "wheels" ? [i.name, d.color].join(" ") : "")) : [i.name, d.maker, d.material].filter(Boolean).join(" ")).trim();
+  const paintParts = () => {
+    partsBox.innerHTML = kinds.length > 1 ? kinds.map((t) => `<button type="button" data-p="${t}"${t === part ? ' class="on"' : ""}>${MUSEUM_KIND[t]}</button>`).join("") : "";
+  };
+  const run = async () => {
+    const n = ++seq, have = new Set(getCurrent().map((m) => m.t));
+    pop.hidden = false;
+    pop.innerHTML = `<p class="im-note">Searching\u2026</p>`;
+    let found = [];
+    try { found = await searchMuseum(part, q.value); } catch (err) { console.error(err); }
+    if (n !== seq) return;
+    if (!norm(q.value).length) { pop.hidden = true; return; }
+    pop.innerHTML = found.map(({ t, r, yr }) => {
+      const more = [r.brands?.name, yr, r.size, r.color].filter(Boolean).join(" \u00b7 ");
+      const linked = have.has(t);
+      return `<div class="im-res"><span class="im-pic"><img src="${esc(r.image_path || "")}" alt="" loading="lazy"></span><span class="im-txt"><b>${esc(museumName(t, r))}</b><br>${esc(more)}</span><button type="button" data-t="${t}" data-id="${r.id}"${linked ? " disabled" : ""}>${linked ? "Linked" : "Link"}</button></div>`;
+    }).join("") || `<p class="im-note">Nothing matched. Try fewer words.</p>`;
+  };
+  paintParts();
+  q.addEventListener("focus", () => { if (!q.value) q.value = start(part); if (norm(q.value).length) run(); });
+  q.addEventListener("input", () => { clearTimeout(timer); timer = setTimeout(run, 200); });
+  form.addEventListener("submit", (e) => { e.preventDefault(); run(); });
+  partsBox.addEventListener("click", (e) => {
+    const b = e.target.closest("button[data-p]");
+    if (!b) return;
+    part = b.dataset.p; paintParts(); q.value = start(part); q.focus(); run();
   });
-  res.addEventListener("click", async (e) => {
+  document.addEventListener("click", (e) => { if (!form.contains(e.target)) pop.hidden = true; });
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape") pop.hidden = true; });
+  pop.addEventListener("click", async (e) => {
     const b = e.target.closest("button[data-t]");
     if (!b || b.disabled) return;
     b.disabled = true;
-    const { data, error } = await sb.from("collection_item_links").insert({ item_id: i.id, museum_type: b.dataset.t, museum_id: Number(b.dataset.id) }).select("link_status").maybeSingle();
-    if (error) { msg.textContent = "Couldn't link that. " + error.message; b.disabled = false; return; }
-    msg.textContent = data?.link_status === "approved" ? "Linked." : "Sent. It shows for everyone once it's approved.";
+    const { error } = await sb.from("collection_item_links").insert({ item_id: i.id, museum_type: b.dataset.t, museum_id: Number(b.dataset.id) });
+    if (error) { b.disabled = false; b.textContent = "Couldn't link"; return; }
     b.textContent = "Linked";
     await refresh();
+    run();
   });
 }
 
