@@ -220,7 +220,7 @@ function score(entry, qs) {
 async function searchMuseum(t, text) {
   const qs = [...new Set(norm(text).map((w) => w.replace(/mm$/, "")).filter((w) => w && !STOP.has(w)))].slice(0, 8);
   if (!qs.length) return [];
-  const need = qs.length <= 2 ? qs.length : Math.ceil(qs.length * 0.6);
+  const need = qs.length <= 3 ? qs.length : Math.ceil(qs.length * 0.6);
   const table = await loadTable(t);
   return table.map((e) => ({ e, ...score(e, qs) })).filter((x) => x.got >= need).sort((a, b) => b.got - a.got || b.pts - a.pts).slice(0, 40).map((x) => x.e);
 }
