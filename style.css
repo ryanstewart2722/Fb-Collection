@@ -512,3 +512,6 @@ body > main.auth { width: 100%; box-sizing: border-box; }
 .im-title { margin: 14px 0 6px; font-size: 15px; }
 .im-cancel { font: inherit; font-size: 13px; background: none; border: 0; color: #777; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; margin-left: 10px; }
 .im-res button { min-width: 84px; }
+.im-head { display: flex; gap: 16px; flex-wrap: wrap; align-items: center; }
+.im-head label { display: flex; gap: 6px; align-items: center; }
+.im-head select { max-width: 150px; }
