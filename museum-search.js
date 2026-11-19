@@ -31,6 +31,7 @@
   };
     pop.addEventListener("click", (e) => { if (e.target.closest("[data-all]")) { e.preventDefault(); filterPage(); } });
   { const first = new URLSearchParams(location.search).get("q"); if (first) q.value = first; }
+  form.addEventListener("click", () => q.focus());   // the whole bar starts a search, not just the word
   q.addEventListener("input", () => { clearTimeout(timer); timer = setTimeout(run, 200); });
   q.addEventListener("focus", () => { if (q.value.trim().length >= 2 && q.value.trim() !== (new URLSearchParams(location.search).get("q") || "")) run(); });
   const full = () => `${location.pathname}?q=${encodeURIComponent(q.value.trim())}`;
