@@ -203,23 +203,16 @@ function loadTable(t) {
 const STOP = new Set(["x", "the", "and", "of", "a", "mm", "deck", "decks", "wheels", "wheel", "trucks", "truck"]);
 const norm = (x) => String(x ?? "").toLowerCase().replace(/['\u2019]/g, " ").replace(/(?<!\d)\.|\.(?!\d)/g, " ").replace(/[^a-z0-9. ]+/g, " ").trim().split(/\s+/).filter(Boolean);   // "Dr.M's" -> dr m s; "29.5mm" stays one number
 // how well one entry matches the words typed: whole words count most, starts-of-words next; numbers must match exactly (size, year, number)
-function score(entry, qs) {
-  let got = 0, pts = 0, numHit = 0;
-  for (const q of qs) {
-    let best = 0;
-    const isNum = /^\d+(\.\d+)?$/.test(q);
-    if (isNum) {
-      if (entry.nums.has(q) || entry.nums.has(String(parseFloat(q)))) best = 4;
-    } else {
-      for (const w of entry.words) {
-        const p = w === q ? 3 : q.length >= 3 && w.startsWith(q) ? 2 : q.length >= 5 && w.includes(q) ? 1 : 0;
-        if (p > best) best = p;
-        if (best === 3) break;
-      }
-    }
-    if (best) { pts += best; if (isNum) numHit++; else got++; }
+// how strongly one entry matches one typed word (0 = not at all)
+function strength(entry, q) {
+  if (/^\d+(\.\d+)?$/.test(q)) return entry.nums.has(q) || entry.nums.has(String(parseFloat(q))) ? 4 : 0;
+  let best = 0;
+  for (const w of entry.words) {
+    const p = w === q ? 3 : q.length >= 3 && w.startsWith(q) ? 2 : q.length >= 5 && w.includes(q) ? 1 : 0;
+    if (p > best) best = p;
+    if (best === 3) break;
   }
-  return { got, pts, numHit };
+  return best;
 }
 async function searchMuseum(t, text, brand, color) {
   const qs = [...new Set(norm(text).map((w) => w.replace(/mm$/, "")).filter((w) => w && !STOP.has(w)))].slice(0, 8);
@@ -228,8 +221,16 @@ async function searchMuseum(t, text, brand, color) {
   const need = Math.min(words.length, words.length <= 3 ? words.length : Math.ceil(words.length * 0.6));
   const table = (await loadTable(t)).filter((e) => (!brand || e.brand === brand) && (!color || e.colors.includes(color)));
   if (!qs.length) return table.slice().sort((a, b) => String(b.r.release_date || "").localeCompare(String(a.r.release_date || ""))).slice(0, 40);   // just a brand picked: newest first
-  const scored = table.map((e) => ({ e, ...score(e, qs) }));
-  const pick = (n) => scored.filter((x) => x.got >= n && (x.got > 0 || x.numHit > 0)).sort((a, b) => b.got - a.got || b.pts - a.pts).slice(0, 40).map((x) => x.e);
+  // a rare word ("blank", "freshwater") tells entries apart much better than a common one ("dr", "m"), so it counts for more
+  const mat = table.map((e) => qs.map((q) => strength(e, q)));
+  const wt = qs.map((q, k) => Math.log(1 + table.length / (1 + mat.reduce((n, row) => n + (row[k] ? 1 : 0), 0))));
+  const scored = table.map((e, r) => {
+    let got = 0, pts = 0, numHit = 0;
+    qs.forEach((q, k) => { const st = mat[r][k]; if (!st) return; pts += st * wt[k]; if (/^\d/.test(q)) numHit++; else got++; });
+    pts -= e.words.length * 0.02;   // between equals, the shorter (more exact) name wins
+    return { e, got, pts, numHit };
+  });
+  const pick = (n) => scored.filter((x) => x.got >= n && (x.got > 0 || x.numHit > 0)).sort((a, b) => b.pts - a.pts).slice(0, 40).map((x) => x.e);
   const hits = pick(need);
   return hits.length || words.length < 2 ? hits : pick(Math.max(1, need - 1));   // nothing matched every word: show the closest ones
 }
