@@ -137,3 +137,8 @@
 .me-rv-user[hidden] { display: none; }
 .me-sort .active { background: #000; color: #fff; }
 .me-fold { min-width: 28px; padding: 2px 6px; }
+
+.me-item.picked, .me-card.picked { outline: 2px solid #000; outline-offset: -2px; background: #f1f1f1; }
+.me-card.picked .me-card-img { background: #e6e6e6; }
+.me-selbar { position: sticky; bottom: 0; z-index: 30; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding: 10px 0; background: #fff; border-top: 1px solid var(--line); font-size: 13px; }
+.me-selbar select { border: 1px solid var(--line); padding: 8px 10px; font-size: 16px; background: #fff; }
