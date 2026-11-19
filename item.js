@@ -191,20 +191,27 @@ function setupLinking(i, getCurrent, refresh) {
     if (term.length < 2) return (msg.textContent = "Type at least two letters.");
     msg.textContent = "Searching…";
     try {
-      const { data: bs } = await sb.from("brands").select("id").ilike("name", `%${term}%`).limit(20);
-      const ids = (bs || []).map((b) => b.id);
-      const orq = `name.ilike.*${term}*` + (ids.length ? `,brand_id.in.(${ids.join(",")})` : "");
+      // word by word: every word is looked for in the name or the brand, and the best matches (the most words) come first
+      const words = [...new Set(term.toLowerCase().split(" ").filter((w) => w.length >= 2))].slice(0, 5);
+      const brandIds = {};
+      await Promise.all(words.map(async (w) => { const { data } = await sb.from("brands").select("id").ilike("name", `%${w}%`).limit(20); brandIds[w] = (data || []).map((x) => x.id); }));
       const found = [];
       await Promise.all(kinds.map(async (t) => {
-        const { data } = await sb.from(t).select(MUSEUM_SEL[t]).or(orq).not("image_path", "is", null).order("release_date", { ascending: false, nullsFirst: false }).limit(10);
-        (data || []).forEach((r) => found.push({ t, r }));
+        const seen = new Map();
+        await Promise.all(words.map(async (w) => {
+          const ids = brandIds[w];
+          const { data } = await sb.from(t).select(MUSEUM_SEL[t]).or(`name.ilike.*${w}*` + (ids.length ? `,brand_id.in.(${ids.join(",")})` : "")).not("image_path", "is", null).order("release_date", { ascending: false, nullsFirst: false }).limit(60);
+          (data || []).forEach((r) => seen.set(r.id, r));
+        }));
+        const score = (r) => { const hay = [museumName(t, r), r.brands?.name, r.color, r.size, r.release_date ? String(r.release_date).slice(0, 4) : ""].join(" ").toLowerCase(); return words.filter((w) => hay.includes(w)).length; };
+        [...seen.values()].map((r) => ({ t, r, n: score(r) })).sort((x, y) => y.n - x.n).slice(0, kinds.length > 1 ? 6 : 12).forEach((x) => found.push(x));
       }));
       msg.textContent = found.length ? "" : "Nothing matched. Try a shorter word, or the brand.";
       const have = new Set(getCurrent().map((m) => m.t));
       res.innerHTML = found.map(({ t, r }) => {
         const yr = r.release_date ? String(r.release_date).slice(0, 4) : "";
-        const more = [r.brands?.name, yr, r.size, r.color].filter(Boolean).join(" · ");
-        return `<div class="im-res"><img src="${esc(r.image_path || "")}" alt=""><span><b>${esc(museumName(t, r))}</b><br>${esc(MUSEUM_KIND[t])}${more ? " · " + esc(more) : ""}</span><button type="button" data-t="${t}" data-id="${r.id}"${have.has(t) ? ' disabled title="Already linked: remove it first"' : ""}>${have.has(t) ? "Linked" : "Link"}</button></div>`;
+        const more = [r.brands?.name, yr, r.size, r.color].filter(Boolean).join(" \u00b7 ");
+        return `<div class="im-res"><img src="${esc(r.image_path || "")}" alt=""><span><b>${esc(museumName(t, r))}</b><br>${esc(MUSEUM_KIND[t])}${more ? " \u00b7 " + esc(more) : ""}</span><button type="button" data-t="${t}" data-id="${r.id}"${have.has(t) ? ' disabled title="Already linked: remove it first"' : ""}>${have.has(t) ? "Linked" : "Link"}</button></div>`;
       }).join("");
     } catch (err) { msg.textContent = "Couldn't search just now."; console.error(err); }
   });
