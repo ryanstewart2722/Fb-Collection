@@ -214,7 +214,7 @@ function setupLinking(i, getCurrent, refresh) {
   q.addEventListener("focus", () => { if (!pop.hidden || !q.value) return; run(); });
   q.addEventListener("input", () => { clearTimeout(timer); timer = setTimeout(run, 200); });
   form.addEventListener("submit", (e) => { e.preventDefault(); run(); });
-  document.addEventListener("click", (e) => { if (!form.contains(e.target)) pop.hidden = true; });
+  document.addEventListener("click", (e) => { if (!form.contains(e.target) && !e.target.closest(".im-slot")) pop.hidden = true; });   // a click anywhere else closes the matches (but tapping a box opens them)
   document.addEventListener("keydown", (e) => { if (e.key === "Escape") pop.hidden = true; });
   list.addEventListener("click", async (e) => {
     const bt = e.target.closest("button[data-t]");
