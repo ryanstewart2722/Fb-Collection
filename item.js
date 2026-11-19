@@ -225,7 +225,10 @@ async function searchMuseum(t, text) {
   if (!qs.length) return [];
   const need = qs.length <= 3 ? qs.length : Math.ceil(qs.length * 0.6);
   const table = await loadTable(t);
-  return table.map((e) => ({ e, ...score(e, qs) })).filter((x) => x.got >= need).sort((a, b) => b.got - a.got || b.pts - a.pts).slice(0, 40).map((x) => x.e);
+  const scored = table.map((e) => ({ e, ...score(e, qs) }));
+  const pick = (n) => scored.filter((x) => x.got >= n).sort((a, b) => b.got - a.got || b.pts - a.pts).slice(0, 40).map((x) => x.e);
+  const hits = pick(need);
+  return hits.length || qs.length < 2 ? hits : pick(Math.max(1, need - 1));   // nothing matched every word: show the closest ones
 }
 
 function setupLinking(i, getCurrent, refresh) {
