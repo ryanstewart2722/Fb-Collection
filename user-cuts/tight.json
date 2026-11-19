@@ -2076,6 +2076,12 @@
 "src": "ab869fa3-7d27-476b-8794-5c2952b538df/300daf97-546b-4b3f-8549-41320756e566.png",
 "w": 214
 },
+"5c2920b9-0647-4ce7-ae13-5e344e38594b": {
+"file": "user-cuts/tight/5c2920b9-0647-4ce7-ae13-5e344e38594b-d51a87a8.webp",
+"h": 600,
+"src": "64add218-2734-4884-9f3f-9068430c5692/6abdd44c-c57e-40d8-977c-56c0c68e1e45.png",
+"w": 654
+},
 "5c6d86f7-2a36-4d4f-a2ba-bc721d28daa7": {
 "file": "user-cuts/tight/5c6d86f7-2a36-4d4f-a2ba-bc721d28daa7-90de2675.webp",
 "h": 600,
@@ -7257,6 +7263,10 @@
 "user-cuts/5c1b6ebf-563a-4b33-8c01-c500ddbec800-82361a0a-v2.webp": [
 530,
 1200
+],
+"user-cuts/5c2920b9-0647-4ce7-ae13-5e344e38594b-70cdb3ce-v2.webp": [
+800,
+800
 ],
 "user-cuts/5c6d86f7-2a36-4d4f-a2ba-bc721d28daa7-90de2675-v2.webp": [
 530,
