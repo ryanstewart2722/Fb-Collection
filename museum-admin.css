@@ -129,3 +129,6 @@
 .me-inuse-item b { font-weight: 500; overflow-wrap: anywhere; }
 .me-inuse-add { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
 .me-inuse-add select { font: inherit; font-size: 14px; padding: 6px 8px; max-width: 320px; }
+.me-filter { margin: 0 0 12px; display: flex; flex-wrap: wrap; gap: 8px; }
+.me-filter .active { background: #000; color: #fff; }
+.me-rv[hidden], .me-bulk button[hidden] { display: none; }

@@ -870,6 +870,15 @@ app.addEventListener("change", (e) => {
 /* ---------- Review: what people uploaded, waiting for you ---------- */
 // Photos people upload sit in a private folder. Nothing is public until you approve it here.
 let reviewItems = [];
+let rvFilter = "all";   // which kind the Review list is showing: all, decks, trucks, wheels, obstacles, misc
+function applyReviewFilter() {
+  const counts = {};
+  reviewItems.forEach((x) => { if (x) counts[x.r.section] = (counts[x.r.section] || 0) + 1; });
+  if (rvFilter !== "all" && !counts[rvFilter]) rvFilter = "all";
+  document.querySelectorAll(".me-filter button").forEach((b) => b.classList.toggle("active", b.dataset.sec === rvFilter));
+  document.querySelectorAll(".me-rv").forEach((c) => { c.hidden = rvFilter !== "all" && c.dataset.sec !== rvFilter; });
+  document.querySelectorAll(".me-bulk button[data-section]").forEach((b) => { b.hidden = rvFilter !== "all" && b.dataset.section !== rvFilter; });
+}
 async function renderReview() {
   app.innerHTML = `<p class="me-count">Loading…</p>`;
   const [ci, sub] = await Promise.all([
@@ -887,10 +896,13 @@ async function renderReview() {
   setReviewBadge(reviewItems.length);
   const subCounts = {}; reviewItems.forEach((x) => { if (x.kind === "sub") subCounts[x.r.section] = (subCounts[x.r.section] || 0) + 1; });
   const bulk = Object.entries(subCounts).map(([sec, n]) => `<button class="ad-btn" data-act="rv-all" data-section="${esc(sec)}">Add all ${esc(sec)} (${n})</button>`).join(" ");
-  app.innerHTML = `<p class="me-count">${reviewItems.length} waiting for review</p>${bulk ? `<p class="me-bulk">${bulk}</p>` : ""}<div class="me-review">` + (reviewItems.map((x, i) => {
+  const secCounts = {}; reviewItems.forEach((x) => { secCounts[x.r.section] = (secCounts[x.r.section] || 0) + 1; });
+  const kinds = [["all", "All"], ["decks", "Decks"], ["trucks", "Trucks"], ["wheels", "Wheels"], ["obstacles", "Obstacles"], ["misc", "Misc."]];
+  const filterBar = `<p class="me-filter">` + kinds.map(([k, label]) => `<button class="ad-btn" data-act="rv-filter" data-sec="${k}">${label}${k === "all" ? ` (${reviewItems.length})` : secCounts[k] ? ` (${secCounts[k]})` : ""}</button>`).join(" ") + `</p>`;
+  app.innerHTML = `<p class="me-count">${reviewItems.length} waiting for review</p>${filterBar}${bulk ? `<p class="me-bulk">${bulk}</p>` : ""}<div class="me-review">` + (reviewItems.map((x, i) => {
     const r = x.r, who = r.profiles?.username || "someone";
     const f = x.kind === "item" ? { section: r.section, name: r.name, ...r.details } : { section: r.section, ...r.fields };
-    return `<div class="me-rv" data-i="${i}">
+    return `<div class="me-rv" data-i="${i}" data-sec="${esc(r.section)}">
       <div class="me-rv-img">${x.url ? `<img src="${esc(x.url)}" alt="">` : `<span>No photo</span>`}${x.url2 ? `<img src="${esc(x.url2)}" alt="" title="Second photo">` : ""}</div>
       <div class="me-rv-info">
         <b>${esc(f.name || "(no name)")}</b> <em>${x.kind === "item" ? "collection · " + esc(r.section) : "museum submission · " + esc(r.section)}</em>
@@ -899,6 +911,7 @@ async function renderReview() {
         <div class="me-rv-act"><button class="ad-btn ad-btn-dark" data-act="rv-ok">${x.kind === "sub" ? "Add to museum" : "Approve"}</button> <button class="ad-btn me-danger" data-act="rv-no">Reject</button></div>
       </div></div>`;
   }).join("") || `<p class="me-empty">Nothing waiting.</p>`) + `</div>`;
+  applyReviewFilter();
 }
 // A museum submission that came from someone's collection should show (and publish) the better re-cut of that photo, not the first quick one.
 async function useRefinedCuts() {
@@ -1044,6 +1057,7 @@ async function addAllSubmissions(section, btn) {
 }
 app.addEventListener("click", (e) => {
   const a = e.target.closest("[data-act]")?.dataset.act;
+  if (a === "rv-filter") { rvFilter = e.target.closest("[data-act]").dataset.sec; applyReviewFilter(); return; }
   if (a === "rv-all") return addAllSubmissions(e.target.closest("[data-act]").dataset.section).catch(fail("Couldn't add them all"));
   if (a === "rv-ok" || a === "rv-no") reviewAct(e.target.closest(".me-rv"), a === "rv-ok");
 });
