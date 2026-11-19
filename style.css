@@ -550,3 +550,6 @@ body > main.auth { width: 100%; box-sizing: border-box; }
 .m-find input[type="search"]::placeholder { color: #000; opacity: 1; }
 .m-find input[type="search"]:focus::placeholder { color: transparent; }
 .m-pop { top: calc(var(--bar-h) * 2); }
+/* popup text is the same size as the list text */
+.m-pop, .m-res, .m-count, .m-note, .m-more, .m-pic .no-pic { font-size: 12px; line-height: 1.25; }
+.m-pic .no-pic { font-size: 10px; }
