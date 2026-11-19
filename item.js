@@ -262,7 +262,8 @@ function setupLinking(i, getCurrent, refresh) {
     try { found = await searchMuseum(part, q.value, brandSel.value, colorSel.value); } catch (err) { console.error(err); }
     if (n !== seq) return;
     list.innerHTML = found.map(({ t, r, yr }) => {
-      const more = [r.brands?.name, yr, r.size, r.color].filter(Boolean).join(" \u00b7 ");
+      const mold = r.mold_code || [].concat(r.molds || []).join(", ");
+      const more = [r.brands?.name, yr, r.size, r.color, mold && "Mold: " + mold, r.shape, r.material, r.duro && r.duro + (/d$/i.test(r.duro) ? "" : "d"), r.drop_no && "Drop " + r.drop_no].filter(Boolean).join(" \u00b7 ");
       const linked = have.has(t);
       return `<div class="im-res"><span class="im-pic"><img src="${esc(r.image_path || "")}" alt="" loading="lazy"></span><span class="im-txt"><b>${esc(museumName(t, r))}</b><br>${esc(more)}</span><button type="button" data-t="${t}" data-id="${r.id}"${linked ? " disabled" : ""}>${linked ? "Linked" : "This one"}</button></div>`;
     }).join("") || `<p class="im-note">${norm(q.value).length || brandSel.value || colorSel.value ? "Nothing matched. Try fewer words, or pick a brand." : "Type a name, or pick a brand."}</p>`;
