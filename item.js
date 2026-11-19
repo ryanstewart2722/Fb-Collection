@@ -144,7 +144,7 @@ async function load() {
   let current = museum;   // what is linked right now
   const paintMuseum = () => {
     const box = root.querySelector("#im-list");
-    box.innerHTML = current.map((m) => `<span class="im-one"><a class="ready${TALL.has(m.t) ? "" : " sq"}" href="${esc(museumLink(m.t, m.r))}" title="${esc(m.name)}"><img src="${esc(m.r.image_path || "")}" alt="${esc(m.name)}" loading="lazy"></a>`).join("")
+    box.innerHTML = current.map((m) => `<a class="ready${TALL.has(m.t) ? "" : " sq"}" href="${esc(museumLink(m.t, m.r))}" title="${esc(m.name)}"><img src="${esc(m.r.image_path || "")}" alt="${esc(m.name)}" loading="lazy"></a>`).join("")
       || `<span class="board-use-empty">${canLink ? "Not linked to the museum yet." : "Not linked to the museum yet."}</span>`;
   };
   paintMuseum();
