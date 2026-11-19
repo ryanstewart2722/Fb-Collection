@@ -541,3 +541,19 @@ body > main.auth { width: 100%; box-sizing: border-box; }
 .m-more { display: block; width: 100%; font: inherit; font-size: 14px; padding: 12px; background: #fff; border: 0; border-top: 1px solid #000; cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
 .m-more:hover { background: #f3f3f3; }
 .im-more-btn { display: block; width: 100%; font: inherit; font-size: 14px; padding: 12px; background: #fff; border: 0; border-top: 1px solid #000; cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
+
+/* the full results page */
+.s-app { padding: 24px var(--gutter) 80px; }
+.s-wrap { max-width: 980px; margin: 0 auto; }
+.s-form input[type="search"] { font: inherit; font-size: 18px; padding: 10px 14px; border: 1px solid #000; background: #fff; border-radius: 0; width: 100%; box-sizing: border-box; }
+.s-tabs { margin: 16px 0 4px; font-size: 14px; }
+.s-tabs a { color: #777; } .s-tabs a.on { color: #000; text-decoration: underline; text-underline-offset: 3px; }
+.s-count { margin: 6px 0 10px; font-size: 13px; color: #777; }
+.s-res { display: grid; grid-template-columns: 84px 1fr; gap: 18px; align-items: center; padding: 10px 4px; font-size: 15px; line-height: 1.35; color: #000; border-top: 1px solid #eee; }
+.s-res:hover { background: #f6f6f6; }
+.s-pic { width: 84px; height: 84px; display: flex; align-items: center; justify-content: center; }
+.s-pic img { max-width: 100%; max-height: 100%; object-fit: contain; }
+.s-note { margin: 0; padding: 14px 4px; font-size: 14px; color: #777; }
+.s-sep { border-top: 1px solid #000; color: #000; margin-top: 12px; }
+.s-more { display: block; margin: 20px auto 0; font: inherit; font-size: 15px; padding: 12px 28px; background: #fff; border: 1px solid #000; border-radius: 0; cursor: pointer; }
+.s-more[hidden] { display: none; }
