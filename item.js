@@ -10,15 +10,6 @@ const SECTION_NAME = { setups: "Setup", decks: "Deck", wheels: "Wheels", trucks:
 const TALL = new Set(["decks", "setups"]);   // boards are tall; wheels, trucks, obstacles and misc. are square-ish
 // what each kind of museum entry can be linked from, and how it is listed
 const LINKABLE = { setups: ["decks", "trucks", "wheels"], decks: ["decks"], trucks: ["trucks"], wheels: ["wheels"], obstacles: ["obstacles"], misc: ["misc"] };
-const MUSEUM_KIND = { decks: "Deck", trucks: "Trucks", wheels: "Wheels", obstacles: "Obstacle", misc: "Misc." };
-const MUSEUM_SEL = {
-  decks: "id,name,slug,image_path,size,color,release_date,drop_no,drop_title,mold_code,graphic,shape,molds,brands(name)",
-  trucks: "id,name,slug,image_path,size,color,release_date,brands(name)",
-  wheels: "id,name,slug,image_path,color,material,duro,release_date,brands(name)",
-  obstacles: "id,name,slug,image_path,material,release_date,brands(name)",
-  misc: "id,name,slug,image_path,material,release_date,brands(name)",
-};
-const museumName = (t, r) => t === "decks" ? momsDeckName(r) : (t === "wheels" || t === "trucks") && r.brands?.name && !r.name.toLowerCase().includes(r.brands.name.toLowerCase()) ? `${r.brands.name} ${r.name}` : r.name;
 const museumLink = (t, r) => `board.html?type=${t}&slug=${encodeURIComponent(r.slug)}`;
 
 const topBack = document.getElementById("top-back");
@@ -216,11 +207,12 @@ function setupLinking(i, getCurrent, refresh) {
     let found = [];
     try { found = await searchMuseum(part, q.value); } catch (err) { console.error(err); }
     if (n !== seq) return;
-    list.innerHTML = found.map(({ t, r, yr }) => {
-      const mold = r.mold_code || [].concat(r.molds || []).join(", ");
-      const more = [r.brands?.name, yr, r.size, r.color, mold && "Mold: " + mold, r.shape, r.material, r.duro && r.duro + (/d$/i.test(r.duro) ? "" : "d"), r.drop_no && "Drop " + r.drop_no].filter(Boolean).join(" \u00b7 ");
+    let sawClose = false;
+    list.innerHTML = found.map(({ t, r, close }) => {
+      const more = museumInfo(t, r);
       const linked = have.has(t);
-      return `<div class="im-res"><span class="im-pic"><img src="${esc(r.image_path || "")}" alt="" loading="lazy"></span><span class="im-txt"><b>${esc(museumName(t, r))}</b><br>${esc(more)}</span><button type="button" data-t="${t}" data-id="${r.id}"${linked ? " disabled" : ""}>${linked ? "Linked" : "This one"}</button></div>`;
+      const head = close && !sawClose ? (sawClose = true, `<p class="im-note im-sep">Close, but not exact</p>`) : "";
+      return head + `<div class="im-res"><span class="im-pic"><img src="${esc(r.image_path || "")}" alt="" loading="lazy"></span><span class="im-txt"><b>${esc(museumName(t, r))}</b><br>${esc(more)}</span><button type="button" data-t="${t}" data-id="${r.id}"${linked ? " disabled" : ""}>${linked ? "Linked" : "This one"}</button></div>`;
     }).join("") || `<p class="im-note">${norm(q.value).length ? "Nothing matched. Try fewer words." : "Type a few words: a name, brand, colour or size."}</p>`;
   };
     const choose = async (t) => { part = t; paintParts(); form.hidden = false; q.value = start(part); q.focus(); pop.hidden = false; run(); form.scrollIntoView({ block: "nearest", behavior: "smooth" }); };
