@@ -157,14 +157,8 @@ function ownerBar() {
   </div>`;
   return `<div class="p-owner">
     <button class="auth-link" data-act="editimg">${state.edit ? "Done editing" : "Edit"}</button> ·
-    <button class="auth-link" data-act="edit">Edit name and bio</button> ·
     <button class="auth-link" data-act="private">${p.is_private ? "Make my collection public" : "Make my collection private"}</button> ·
     <button class="auth-link" data-act="signout">Sign out</button>
-    <form id="edit-form" class="auth-form p-edit" hidden>
-      <input id="ed-name" type="text" placeholder="Display name" maxlength="60" value="${esc(p.display_name || "")}">
-      <textarea id="ed-bio" placeholder="A short bio (optional)" maxlength="300" rows="3">${esc(p.bio || "")}</textarea>
-      <button class="auth-btn" type="submit">Save</button>
-    </form>
     <p id="owner-msg" class="auth-note" aria-live="polite"></p>
   </div>`;
 }
