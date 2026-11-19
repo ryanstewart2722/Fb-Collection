@@ -541,3 +541,12 @@ body > main.auth { width: 100%; box-sizing: border-box; }
 .m-more { display: block; width: 100%; font: inherit; font-size: 14px; padding: 12px; background: #fff; border: 0; border-top: 1px solid #000; cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
 .m-more:hover { background: #f3f3f3; }
 .im-more-btn { display: block; width: 100%; font: inherit; font-size: 14px; padding: 12px; background: #fff; border: 0; border-top: 1px solid #000; cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
+
+/* museum search, plain: a bar the height of the nav, directly under it; a magnifying glass and the word "Search" */
+.controls { position: sticky; top: var(--bar-h); z-index: 40; height: var(--bar-h); box-sizing: border-box; margin-top: 0; margin-bottom: 0; padding-top: 0; background: #fff; box-shadow: -50vw 0 0 #fff, 50vw 0 0 #fff; align-items: center; }
+.controls .m-find { display: flex; align-items: center; gap: 8px; margin-right: auto; }
+.m-glass { flex: none; }
+.m-find input[type="search"] { font: inherit; font-size: 12px; padding: 0; border: 0; outline: 0; background: transparent; width: min(170px, 45vw); -webkit-appearance: none; appearance: none; }
+.m-find input[type="search"]::placeholder { color: #000; opacity: 1; }
+.m-find input[type="search"]:focus::placeholder { color: transparent; }
+.m-pop { top: calc(var(--bar-h) * 2); }
