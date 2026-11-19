@@ -129,7 +129,7 @@ async function load() {
       ${i.status !== "approved" ? `<p class="board-use-msg">This is waiting for review, so only you can see it.</p>` : ""}
       <div class="board-specs">${specs(i, owner)}</div>
       <div class="board-dock">
-        <div class="board-use"><p class="board-use-head">In Museum${canLink ? ` <button type="button" class="board-submit" id="im-find">Find in museum</button>` : ""}</p>
+        <div class="board-use"><p class="board-use-head">In Museum${canLink ? ` <button type="button" class="board-submit" id="im-edit">Edit</button> <button type="button" class="board-submit im-edonly" id="im-find">Find in museum</button>` : ""}</p>
           ${canLink ? `<form class="board-use-form" id="im-form" hidden><input type="search" id="im-q" placeholder="Search the museum by name or brand" autocomplete="off" aria-label="Search the museum"> <button type="submit">Search</button> <span class="board-use-msg" id="im-msg" aria-live="polite"></span><div class="im-results" id="im-res"></div></form>` : ""}
           <div class="board-use-list" id="im-list"></div></div>
         <div class="board-brand">
