@@ -356,6 +356,12 @@
 "src": "67ad4da0-bd17-403f-8d30-af727cfd033b/cfd97b17-ac99-43d0-9bd7-0c303b08ff66.png",
 "w": 236
 },
+"0f775972-e54b-4b6a-b1e3-67abe1d102ee": {
+"file": "user-cuts/tight/0f775972-e54b-4b6a-b1e3-67abe1d102ee-4b867821.webp",
+"h": 600,
+"src": "833410b9-6f3b-4c66-ad05-77e1b0c82c5f/5505edb1-7378-4379-aebc-81108ea95ee2.png",
+"w": 204
+},
 "0f848aad-f7c9-4794-8fde-21df2dd6f5e6": {
 "file": "user-cuts/tight/0f848aad-f7c9-4794-8fde-21df2dd6f5e6-c792a440.webp",
 "h": 600,
@@ -2021,6 +2027,12 @@
 "h": 600,
 "src": "833410b9-6f3b-4c66-ad05-77e1b0c82c5f/e988933f-0a36-42b7-abbe-e0b6b6307bfa.png",
 "w": 208
+},
+"5d12b589-b325-4057-8b35-4488db48d846": {
+"file": "user-cuts/tight/5d12b589-b325-4057-8b35-4488db48d846-ace8cf95.webp",
+"h": 600,
+"src": "833410b9-6f3b-4c66-ad05-77e1b0c82c5f/dd08c5b0-ece4-4433-92b3-f5fd924e122d.png",
+"w": 219
 },
 "5d437a31-f836-4fa3-b596-a128039e1dae": {
 "skip": "not a cut-out",
@@ -4428,6 +4440,12 @@
 "src": "e4bfa2b8-6013-4168-b98a-c06c203c84be/dc2144c5-4f89-445c-b93d-6e1dc698372a.png",
 "w": 718
 },
+"c2fcb5d2-1c58-4d07-aad9-ac1c5eac18a7": {
+"file": "user-cuts/tight/c2fcb5d2-1c58-4d07-aad9-ac1c5eac18a7-5642a562.webp",
+"h": 600,
+"src": "833410b9-6f3b-4c66-ad05-77e1b0c82c5f/bb52bcf4-a036-41e9-92b5-3c399ea04b9a.png",
+"w": 222
+},
 "c3460a07-612e-49d8-9355-dd299f88acef": {
 "file": "user-cuts/tight/c3460a07-612e-49d8-9355-dd299f88acef-31f85dc8.webp",
 "h": 600,
@@ -5938,6 +5956,10 @@
 530,
 1200
 ],
+"user-cuts/0f775972-e54b-4b6a-b1e3-67abe1d102ee-55ce86a2-v2.webp": [
+530,
+1200
+],
 "user-cuts/0f848aad-f7c9-4794-8fde-21df2dd6f5e6-4934e961-v2.webp": [
 530,
 1200
@@ -7063,6 +7085,10 @@
 1200
 ],
 "user-cuts/5cea03e5-5970-4139-844e-f8ab62ef15dc-78ac29cd-v2.webp": [
+530,
+1200
+],
+"user-cuts/5d12b589-b325-4057-8b35-4488db48d846-dc7567ca-v2.webp": [
 530,
 1200
 ],
@@ -8685,6 +8711,10 @@
 "user-cuts/c2f44596-50b9-472f-ab65-ae2eb94b4822-f8f0b366-v2.webp": [
 800,
 800
+],
+"user-cuts/c2fcb5d2-1c58-4d07-aad9-ac1c5eac18a7-dafa6df1-v2.webp": [
+530,
+1200
 ],
 "user-cuts/c3460a07-612e-49d8-9355-dd299f88acef-09f2a658-v2.webp": [
 530,
