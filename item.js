@@ -82,7 +82,6 @@ function specs(i, owner) {
   const lines = (ORDER[i.section] || []).map((k) => k === "name*" ? `Deck: ${i.name}` : v(k) && `${FIELD[k]}: ${v(k)}`).filter(Boolean);
   const person = owner ? `Collection of: <a class="board-brand-link" href="/u/${encodeURIComponent(owner.username)}">${esc(owner.display_name || owner.username)}</a>` : "";
   const cell = (t, html) => `<span>${html ? t : esc(t)}</span>`;
-  const half = Math.ceil(lines.length / 2) || 1;
   const left = lines.slice(0, setupsSplit(i, lines));
   const right = lines.slice(left.length);
   const col = (arr, extra) => `<div>${arr.map((t) => cell(t)).join("")}${extra ? cell(extra, true) : ""}</div>`;
@@ -146,7 +145,7 @@ async function load() {
   let current = museum;   // what is linked right now
   const paintMuseum = () => {
     const box = root.querySelector("#im-list");
-    box.innerHTML = current.map((m) => `<span class="im-one"><a${TALL.has(m.t) ? "" : ' class="sq"'} href="${esc(museumLink(m.t, m.r))}" title="${esc(m.name)}"><img src="${esc(m.r.image_path || "")}" alt="${esc(m.name)}" loading="lazy"></a>
+    box.innerHTML = current.map((m) => `<span class="im-one"><a class="ready${TALL.has(m.t) ? "" : " sq"}" href="${esc(museumLink(m.t, m.r))}" title="${esc(m.name)}"><img src="${esc(m.r.image_path || "")}" alt="${esc(m.name)}" loading="lazy"></a>
       <span class="im-cap">${esc(MUSEUM_KIND[m.t])}${m.status !== "approved" ? ` <i class="im-pend">waiting for review</i>` : ""}${canLink ? ` <button type="button" class="im-x" data-t="${m.t}" data-id="${m.r.id}" title="Remove this link">remove</button>` : ""}</span></span>`).join("")
       || `<span class="board-use-empty">${canLink ? "Not linked to the museum yet." : "Not linked to the museum yet."}</span>`;
   };
