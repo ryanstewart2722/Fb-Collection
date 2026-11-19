@@ -32,9 +32,9 @@
     pop.addEventListener("click", (e) => { if (e.target.closest("[data-all]")) { e.preventDefault(); filterPage(); } });
   { const first = new URLSearchParams(location.search).get("q"); if (first) q.value = first; }
   q.addEventListener("input", () => { clearTimeout(timer); timer = setTimeout(run, 200); });
-  q.addEventListener("focus", () => { if (q.value.trim().length >= 2) run(); });
+  q.addEventListener("focus", () => { if (q.value.trim().length >= 2 && q.value.trim() !== (new URLSearchParams(location.search).get("q") || "")) run(); });
   const full = () => `${location.pathname}?q=${encodeURIComponent(q.value.trim())}`;
-  const filterPage = () => { pop.hidden = true; q.blur(); if (window.momsSearch) window.momsSearch(q.value); else location.href = full(); };
+  const filterPage = () => { clearTimeout(timer); seq++; pop.hidden = true; q.blur(); if (window.momsSearch) window.momsSearch(q.value); else location.href = full(); };
   form.addEventListener("submit", (e) => { e.preventDefault(); if (q.value.trim().length >= 2) filterPage(); });
   document.addEventListener("click", (e) => { if (!form.contains(e.target) && !pop.contains(e.target)) pop.hidden = true; });
   document.addEventListener("keydown", (e) => { if (e.key === "Escape") { pop.hidden = true; q.blur(); } });
