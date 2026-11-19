@@ -226,7 +226,7 @@ async function setupInUse(r, inUseP) {
     const style = sized ? ` style="width:${Math.round(i.size[0] * SHOW_H / i.size[1])}px;height:${SHOW_H}px"` : "";
     return `<a${i.section === "decks" || i.section === "setups" ? "" : ' class="sq"'} href="/u/${encodeURIComponent(i.profiles.username)}" title="${esc(who)}${i.name ? " \u00b7 " + esc(i.name) : ""}"><img${sized ? ' class="cut"' : ""}${style} src="${esc(i.url)}" alt="${esc(i.name)}" loading="lazy" decoding="async"></a>`;
   }).join("");
-  if (!withPhoto.length) list.innerHTML = `<span class="board-use-empty">No one has added this yet.</span>`;
+  if (!withPhoto.length) list.innerHTML = "";   // nothing yet: leave the space empty (the Submit yours link above is still there)
   // Live re-cut photos are already tight, so they show right away with no measuring. Only raw photos (no re-cut yet) are trimmed, and each stays hidden until it is.
   list.querySelectorAll("img:not(.cut)").forEach((im) => {
     const show = () => im.closest("a")?.classList.add("ready");
