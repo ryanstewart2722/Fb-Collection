@@ -201,19 +201,26 @@ function setupLinking(i, getCurrent, refresh) {
     else if (part === "wheels") { put("name", i.section === "wheels" ? i.name : d.wheels); put("color", i.section === "wheels" ? d.color : ""); put("duro", i.section === "wheels" ? d.duro : ""); put("material", i.section === "wheels" ? d.material : ""); put("brand", i.section === "wheels" ? (d.maker || d.brand) : ""); }
     else { put("name", i.name); put("brand", d.maker || d.brand); put("material", d.material); }
     add.href = "submit.html?" + p; };
+  let cache = [], shownN = 20;
+  const paintResults = (have) => {
+    const part = cache.slice(0, shownN);
+    let sawClose = false;
+    list.innerHTML = part.map(({ t, r, close }) => {
+      const more = museumInfo(t, r);
+      const linked = have.has(t);
+      const head = close && !sawClose ? (sawClose = true, `<p class="im-note im-sep">Close, but not exact</p>`) : "";
+      return head + `<div class="im-res"><span class="im-pic"><img src="${esc(r.image_path || "")}" alt="" loading="lazy"></span><span class="im-txt"><b>${esc(museumName(t, r))}</b><br>${esc(more)}</span><button type="button" data-t="${t}" data-id="${r.id}"${linked ? " disabled" : ""}>${linked ? "Linked" : "This one"}</button></div>`;
+    }).join("") + (cache.length > shownN ? `<button type="button" class="im-more-btn" id="im-more-btn">Show more (${cache.length - shownN} left)</button>` : "")
+      || `<p class="im-note">${norm(q.value).length ? "Nothing matched. Try fewer words." : "Type a few words: a name, brand, colour or size."}</p>`;
+  };
   const run = async () => {
     const n = ++seq, have = new Set(getCurrent().map((m) => m.t));
     pop.hidden = false;
     let found = [];
     try { found = await searchMuseum(part, q.value); } catch (err) { console.error(err); }
     if (n !== seq) return;
-    let sawClose = false;
-    list.innerHTML = found.map(({ t, r, close }) => {
-      const more = museumInfo(t, r);
-      const linked = have.has(t);
-      const head = close && !sawClose ? (sawClose = true, `<p class="im-note im-sep">Close, but not exact</p>`) : "";
-      return head + `<div class="im-res"><span class="im-pic"><img src="${esc(r.image_path || "")}" alt="" loading="lazy"></span><span class="im-txt"><b>${esc(museumName(t, r))}</b><br>${esc(more)}</span><button type="button" data-t="${t}" data-id="${r.id}"${linked ? " disabled" : ""}>${linked ? "Linked" : "This one"}</button></div>`;
-    }).join("") || `<p class="im-note">${norm(q.value).length ? "Nothing matched. Try fewer words." : "Type a few words: a name, brand, colour or size."}</p>`;
+    cache = found; shownN = 20;
+    paintResults(have);
   };
     const choose = async (t) => { part = t; paintParts(); form.hidden = false; q.value = start(part); q.focus(); pop.hidden = false; run(); form.scrollIntoView({ block: "nearest", behavior: "smooth" }); };
   listBox.addEventListener("click", (e) => { const sl = e.target.closest(".im-slot"); if (sl) choose(sl.dataset.p); });
@@ -224,6 +231,7 @@ function setupLinking(i, getCurrent, refresh) {
   document.addEventListener("click", (e) => { if (!form.contains(e.target) && !e.target.closest(".im-slot")) pop.hidden = true; });   // a click anywhere else closes the matches (but tapping a box opens them)
   document.addEventListener("keydown", (e) => { if (e.key === "Escape") pop.hidden = true; });
   list.addEventListener("click", async (e) => {
+    if (e.target.closest("#im-more-btn")) { shownN += 20; const y = list.scrollTop; paintResults(new Set(getCurrent().map((m) => m.t))); list.scrollTop = y; return; }
     const bt = e.target.closest("button[data-t]");
     if (!bt || bt.disabled) return;
     bt.disabled = true;
