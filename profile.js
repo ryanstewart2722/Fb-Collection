@@ -313,6 +313,14 @@ document.addEventListener("click", (e) => {
   const it = state.items.find((i) => i.id === el.dataset.id);
   if (it && it.link && (canHover || el.classList.contains("on"))) location.href = it.link;
 }, true);
+// A collection item opens its own page (on touch screens: first tap shows it, second tap opens it). Not while the owner is editing.
+document.addEventListener("click", (e) => {
+  if (!state || state.fav || (state.owner && state.edit)) return;
+  const el = e.target.closest("#items .item[data-id], #items .row[data-id]");
+  if (!el || el.dataset.id.startsWith("s")) return;   // "s0", "s1"…: the built-in sample items have no page
+  if (e.target.closest("a, button, input, label")) return;
+  if (canHover || el.classList.contains("on")) location.href = "/item.html?id=" + encodeURIComponent(el.dataset.id);
+}, true);
 
 /* ---------- page ---------- */
 function syncEditHeader() {
