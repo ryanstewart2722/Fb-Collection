@@ -138,7 +138,7 @@ async function load() {
       <div class="board-dock">
         <div class="board-use"><p class="board-use-head">In Museum</p>
           <div class="board-use-list" id="im-list"></div>
-          ${canLink ? `<form class="im-find" id="im-form" autocomplete="off" hidden><p class="im-title"><span id="im-title"></span> <button type="button" class="im-cancel" id="im-cancel">Cancel</button></p><input type="search" id="im-q" placeholder="Type a name, or just a few words" aria-label="Search the museum"><div class="im-pop" id="im-pop" hidden><div class="im-list" id="im-res"></div><p class="im-foot">Can\u2019t find it? <a href="./" target="_blank" rel="noopener">Browse the whole museum</a> or <a id="im-add" href="submit.html" target="_blank" rel="noopener">add it to the museum</a></p></div></form>` : ""}</div>
+          ${canLink ? `<form class="im-find" id="im-form" autocomplete="off" hidden><p class="im-title"><span id="im-title"></span> <button type="button" class="im-cancel" id="im-cancel">Cancel</button></p><input type="search" id="im-q" placeholder="Type a name, or just a few words" aria-label="Search the museum"><div class="im-pop" id="im-pop" hidden><div class="im-list" id="im-res"></div><p class="im-foot">Can\u2019t find it? <a id="im-browse" href="./" target="_blank" rel="noopener">Browse the museum</a> or <a id="im-add" href="submit.html" target="_blank" rel="noopener">add it to the museum</a></p></div></form>` : ""}</div>
         <div class="board-brand">
           <span class="board-more-head">More in ${owner ? `<a class="board-brand-link" href="/u/${encodeURIComponent(owner.username)}">${esc(owner.display_name || owner.username)}'s</a> ` : ""}Collection</span>
           <div class="board-more" id="im-more"></div>
@@ -196,13 +196,14 @@ async function loadMuseum(links) {
 // ---------- find it in the museum, and link it ----------
 // (the matching itself lives in msearch.js, so the museum page can use the same search)
 function setupLinking(i, getCurrent, refresh) {
-  const form = root.querySelector("#im-form"), q = root.querySelector("#im-q"), pop = root.querySelector("#im-pop"), list = root.querySelector("#im-res"), titleEl = root.querySelector("#im-title"), cancel = root.querySelector("#im-cancel"), listBox = root.querySelector("#im-list"), add = root.querySelector("#im-add");
+  const form = root.querySelector("#im-form"), q = root.querySelector("#im-q"), pop = root.querySelector("#im-pop"), list = root.querySelector("#im-res"), titleEl = root.querySelector("#im-title"), cancel = root.querySelector("#im-cancel"), listBox = root.querySelector("#im-list"), add = root.querySelector("#im-add"), browse = root.querySelector("#im-browse");
   const kinds = LINKABLE[i.section] || [];
   const d = i.details || {};
   let part = kinds[0], seq = 0, timer;
   // what to look for to begin with: what the owner typed about this part
   const start = (t) => String(t === "decks" ? [i.name, d.maker, d.mold, d.size, d.color].filter(Boolean).join(" ") : t === "trucks" ? (d.trucks || (i.section === "trucks" ? [i.name, d.size, d.color].join(" ") : "")) : t === "wheels" ? (d.wheels || (i.section === "wheels" ? [i.name, d.color].join(" ") : "")) : [i.name, d.maker, d.material].filter(Boolean).join(" ")).trim();
-  const paintParts = () => { titleEl.textContent = "Find the " + (MUSEUM_KIND[part] || "item").toLowerCase().replace(/\.$/, ""); const p = new URLSearchParams({ type: part });   // the submit form starts filled in with what they already typed about it
+  const paintParts = () => { titleEl.textContent = "Find the " + (MUSEUM_KIND[part] || "item").toLowerCase().replace(/\.$/, ""); browse.href = "./?type=" + part;   // browsing shows only this kind
+    const p = new URLSearchParams({ type: part });   // the submit form starts filled in with what they already typed about it
     const put = (k, v) => { if (v) p.set(k, String(v)); };
     if (part === "decks") { put("name", i.section === "setups" || i.section === "decks" ? i.name : ""); put("brand", d.maker || d.brand); put("size", d.size); put("color", d.color); put("mold", d.mold); }
     else if (part === "trucks") { put("name", i.section === "trucks" ? i.name : d.trucks); put("size", i.section === "trucks" ? d.size : ""); put("color", i.section === "trucks" ? d.color : ""); put("brand", i.section === "trucks" ? (d.maker || d.brand) : ""); }
