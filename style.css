@@ -493,3 +493,5 @@ body > main.auth { width: 100%; box-sizing: border-box; }
 .im-pic img { max-width: 100%; max-height: 100%; object-fit: contain; }
 .im-res button { font: inherit; font-size: 13px; background: #fff; border: 1px solid #000; padding: 3px 10px; border-radius: 0; cursor: pointer; }
 .im-res button:disabled { opacity: 0.45; cursor: default; }
+
+.im-find[hidden] { display: none; }
