@@ -568,3 +568,5 @@ body > main.auth { width: 100%; box-sizing: border-box; }
   .board-use-form input[type="search"] { font-size: 16px; }
 }
 .board-use[hidden] { display: none; }
+/* the whole search bar is the target */
+.controls .m-find { flex: 1; align-self: stretch; margin-right: 0; cursor: text; }
