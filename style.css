@@ -554,3 +554,5 @@ body > main.auth { width: 100%; box-sizing: border-box; }
 .m-pop, .m-res, .m-count, .m-note, .m-more, .m-pic .no-pic { font-size: 12px; line-height: 1.25; }
 .m-pic .no-pic { font-size: 10px; }
 .m-res b, .m-pop b { font-weight: normal; }
+.m-res .m-txt { color: #000; }
+.m-res .m-sub { color: #555; }
