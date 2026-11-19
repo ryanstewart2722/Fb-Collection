@@ -142,7 +142,7 @@ function sections() {
 function headHtml() {
   const { profile, owner } = state;
   return `<section class="p-head">
-    <p class="p-user">museumofminiskateboards.org/u/${esc(profile.username)}${profile.is_private ? ` · <b>Private</b>` : ""}${state.fav ? ` · <a class="p-fav-link" href="#${view === "list" ? "list" : "image"}">← Back to collection</a>` : ` · <a class="p-fav-link" href="#favorites">Favorites${state.favItems ? ` (${state.favItems.length})` : ""}</a> · <a class="p-fav-link" href="#likes">Likes${state.likeItems ? ` (${state.likeItems.length})` : ""}</a>`}</p>
+    <p class="p-user">museumofminiskateboards.org/u/${esc(profile.username)}${profile.is_private ? ` · <b>Private</b>` : ""}${state.fav ? ` · <a class="p-fav-link" href="#${view === "list" ? "list" : "image"}">← Back to collection</a>` : ` · <a class="p-fav-link" href="#favorites">Favorites${state.favItems ? ` (${state.favItems.length})` : ""}</a> · <a class="p-fav-link" href="#likes">Likes${state.likeItems ? ` (${state.likeItems.length})` : ""}</a>${state.myName ? ` · <a class="p-fav-link" href="/u/${esc(state.myName)}#likes">My Likes</a>` : ""}`}</p>
     ${owner ? ownerBar() : ""}
   </section>`;
 }
@@ -771,6 +771,7 @@ async function load() {
   await loadRecuts();
   await Promise.all(rows.map(async (i) => { i.url = await photoUrl(i); i.url2 = i.image_path_2 ? await photoUrl2(i) : ""; }));
   state = { profile, items: rows, owner, staff, isAdmin, viewer: session?.user.id };
+  if (session && !self) { const { data: mine } = await sb.from("profiles").select("username").eq("id", session.user.id).maybeSingle(); state.myName = mine?.username || ""; }   // on someone else's page: a way to your own likes
   await Promise.all([loadFavs(), loadLikes()]);
   paint();
 }
