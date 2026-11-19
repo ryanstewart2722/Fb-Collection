@@ -6,6 +6,8 @@ const $ = (s) => document.querySelector(s);
 const app = $("#app");
 const preview = $(".preview");
 const canHover = matchMedia("(hover: hover)").matches;
+const narrow = matchMedia("(max-width: 760px)");
+const isMobile = () => !canHover || narrow.matches;   // phones and narrow windows: the image view follows your scrolling, like the museum
 const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
 const spans = (list) => list.map((c) => `<span>${esc(c)}</span>`).join("");
 
@@ -53,11 +55,39 @@ function clearActive() {
   document.querySelectorAll(".bar.show").forEach((x) => x.classList.remove("show"));
   hidePreview();
 }
-if (!canHover) { document.body.classList.add("touch"); document.addEventListener("click", clearActive); }
+if (!canHover) { document.body.classList.add("touch"); document.addEventListener("click", () => { if (!document.body.classList.contains("scrub")) clearActive(); }); }
 function bindItem(el, activate) {
   if (canHover) return el.addEventListener("mouseenter", () => activate(el));
   el.addEventListener("click", (e) => { e.stopPropagation(); el.classList.contains("on") ? clearActive() : activate(el); });
 }
+
+// Where a picture goes when opened: someone's collection item opens its own page; a favourite opens the museum page. The built-in samples have no page.
+let activeOpen = null, scrubGrids = [], scrubEl = null, scrubPending = false;
+const openUrl = (d) => !d || String(d.id).startsWith("s") ? null : d.link || "/item.html?id=" + encodeURIComponent(d.id);
+// Image view on phones: the picture at a fixed line on the screen is the active one, so scrolling changes the big photo and the info bar.
+function scrubUpdate() {
+  scrubPending = false;
+  if (!document.body.classList.contains("scrub") || !scrubGrids.length || view === "list") return;
+  const focus = (parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--bar-h")) || 43) + 112;
+  for (const g of scrubGrids) {
+    const rect = g.grid.getBoundingClientRect();
+    if (focus < rect.top || focus > rect.bottom || !g.els.length) continue;
+    const first = g.els[0].offsetTop;
+    const cols = g.els.filter((e) => e.offsetTop === first).length || 1;
+    const pitch = g.els[cols] ? g.els[cols].offsetTop - first : g.els[0].offsetHeight + parseFloat(getComputedStyle(g.grid).rowGap);
+    const idx = Math.max(0, Math.min(g.els.length - 1, Math.floor(((focus - rect.top - first) / pitch) * cols)));
+    if (g.els[idx] !== scrubEl || !activeOpen) { scrubEl = g.els[idx]; g.activate(scrubEl); }
+    return;
+  }
+  const top = scrubGrids[0];   // above the first picture (page just opened): start on the first one
+  if (top && top.els.length && focus < top.grid.getBoundingClientRect().top) { if (top.els[0] !== scrubEl || !activeOpen) { scrubEl = top.els[0]; top.activate(scrubEl); } return; }
+  scrubEl = null; clearActive();
+}
+const scrubSoon = () => { if (!scrubPending) { scrubPending = true; requestAnimationFrame(scrubUpdate); } };
+addEventListener("scroll", scrubSoon, { passive: true });
+addEventListener("resize", scrubSoon);
+preview.addEventListener("click", () => { if (document.body.classList.contains("scrub") && activeOpen) location.href = activeOpen; });
+narrow.addEventListener("change", () => { if (state) paintItems(); });
 
 // High-quality re-cuts are made a few minutes after an upload (see scripts/recut_worker.py) and listed in /user-cuts/index.json.
 let RECUTS = {};
@@ -212,6 +242,7 @@ function renderGrid() {
 }
 function paintItems() {
   const box = $("#items");
+  document.body.classList.remove("scrub"); scrubGrids = []; scrubEl = null; activeOpen = null;
   if (state.owner && !state.items.length) view = "list";   // nothing to show as pictures yet
   clearActive();
   document.querySelectorAll("#views a").forEach((a) => { a.classList.toggle("active", a.dataset.view === view); a.setAttribute("href", (state.fav ? "#favorites" : "#") + (state.fav ? (a.dataset.view === "list" ? "-list" : "") : a.dataset.view)); });
@@ -235,20 +266,32 @@ function paintItems() {
       if (canHover) row.addEventListener("mouseleave", clearActive);
     });
   } else {
+    const scrub = isMobile() && !editing;
+    document.body.classList.toggle("scrub", scrub);
+    scrubGrids = [];
     box.querySelectorAll(".grid").forEach((grid) => {
       const bar = grid.querySelector(".bar");
-      grid.querySelectorAll(".item").forEach((el) => bindItem(el, () => {
+      const els = [...grid.querySelectorAll(".item")];
+      const activate = (el) => {
         clearActive();
         const d = find(el.dataset.id), img = el.querySelector("img");
         el.classList.add("on"); grid.classList.add("hovering");
-        const gap = parseFloat(getComputedStyle(grid).rowGap);
-        bar.style.top = el.offsetTop + img.offsetHeight + gap / 2 - 16 + "px";
+        if (!scrub) { const gap = parseFloat(getComputedStyle(grid).rowGap); bar.style.top = el.offsetTop + img.offsetHeight + gap / 2 - 16 + "px"; }
         bar.innerHTML = spans(rowCells(grid.dataset.s, d));
         bar.classList.add("show");
+        activeOpen = openUrl(d);
         showPreview(d.url);
-      }));
-      if (canHover) grid.addEventListener("mouseleave", clearActive);
+      };
+      if (scrub) {   // same as the museum: scrolling moves through the pictures; tapping a picture, the photo or the bar opens it
+        els.forEach((el) => el.addEventListener("click", () => { const u = openUrl(find(el.dataset.id)); if (u) location.href = u; }));
+        bar.addEventListener("click", () => activeOpen && (location.href = activeOpen));
+        scrubGrids.push({ grid, els, activate });
+      } else {
+        els.forEach((el) => bindItem(el, () => activate(el)));
+        if (canHover) grid.addEventListener("mouseleave", clearActive);
+      }
     });
+    scrubUpdate();
   }
 }
 /* Hover while scrolling: browsers don't fire mouseenter when the page moves under a still pointer,
