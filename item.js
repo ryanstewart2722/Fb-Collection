@@ -144,7 +144,7 @@ async function load() {
   let paintMuseum = () => {
     const box = root.querySelector("#im-list");
     const kinds = canLink ? loggedParts(i, current) : [];
-    const one = (m) => `<a class="ready${TALL.has(m.t) ? "" : " sq"}" href="${esc(museumLink(m.t, m.r))}" title="${esc(m.name)}"><img src="${esc(m.r.image_path || "")}" alt="${esc(m.name)}" loading="lazy"></a>`;
+    const one = (m) => `<a class="ready${TALL.has(m.t) ? "" : " sq"}" href="${esc(museumLink(m.t, m.r))}" title="${esc(m.name)}">${m.r.image_path ? `<img src="${esc(m.r.image_path)}" alt="${esc(m.name)}" loading="lazy">` : `<span class="no-pic">${esc(m.name)}</span>`}</a>`;
     // the owner sees one place for each part, in order: the picture when it is linked, otherwise an empty box to tap
     const html = kinds.length
       ? kinds.map((t) => { const m = current.find((x) => x.t === t); return m ? one(m) : `<button type="button" class="im-slot" data-p="${t}"><span>+</span>${esc(MUSEUM_KIND[t])}</button>`; }).join("") + current.filter((m) => !kinds.includes(m.t)).map(one).join("")
@@ -209,7 +209,7 @@ function setupLinking(i, getCurrent, refresh) {
       const more = museumInfo(t, r);
       const linked = have.has(t);
       const head = close && !sawClose ? (sawClose = true, `<p class="im-note im-sep">Close, but not exact</p>`) : "";
-      return head + `<div class="im-res"><span class="im-pic"><img src="${esc(r.image_path || "")}" alt="" loading="lazy"></span><span class="im-txt"><b>${esc(museumName(t, r))}</b><br>${esc(more)}</span><button type="button" data-t="${t}" data-id="${r.id}"${linked ? " disabled" : ""}>${linked ? "Linked" : "This one"}</button></div>`;
+      return head + `<div class="im-res"><span class="im-pic">${museumPic(r)}</span><span class="im-txt"><b>${esc(museumName(t, r))}</b><br>${esc(more)}</span><button type="button" data-t="${t}" data-id="${r.id}"${linked ? " disabled" : ""}>${linked ? "Linked" : "This one"}</button></div>`;
     }).join("") + (cache.length > shownN ? `<button type="button" class="im-more-btn" id="im-more-btn">Show more (${cache.length - shownN} left)</button>` : "")
       || `<p class="im-note">${norm(q.value).length ? "Nothing matched. Try fewer words." : "Type a few words: a name, brand, colour or size."}</p>`;
   };

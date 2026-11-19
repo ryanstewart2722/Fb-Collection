@@ -26,7 +26,7 @@ const rowsNow = () => {
   const close = ks.flatMap((t) => (lists[t] || []).filter((e) => e.close)).sort((a, b) => b.score - a.score).slice(0, 30);
   return { best, close };
 };
-const row = (e) => `<a class="s-res" href="${esc(link(e.t, e.r))}"><span class="s-pic"><img src="${esc(e.r.image_path || "")}" alt="" loading="lazy"></span><span class="s-txt"><b>${esc(museumName(e.t, e.r))}</b><br>${esc(MUSEUM_KIND[e.t])}${museumInfo(e.t, e.r) ? " · " + esc(museumInfo(e.t, e.r)) : ""}</span></a>`;
+const row = (e) => `<a class="s-res" href="${esc(link(e.t, e.r))}"><span class="s-pic">${museumPic(e.r)}</span><span class="s-txt"><b>${esc(museumName(e.t, e.r))}</b><br>${esc(MUSEUM_KIND[e.t])}${museumInfo(e.t, e.r) ? " · " + esc(museumInfo(e.t, e.r)) : ""}</span></a>`;
 
 function paint() {
   const total = KINDS.reduce((n, t) => n + exact(t).length, 0);

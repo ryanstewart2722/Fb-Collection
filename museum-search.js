@@ -6,7 +6,7 @@
   const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
   const only = window.MOMS_ONLY || "";
   const link = (t, r) => `board.html?type=${t}&slug=${encodeURIComponent(r.slug)}`;
-  const row = (e) => `<a class="m-res" href="${esc(link(e.t, e.r))}"><span class="m-pic"><img src="${esc(e.r.image_path || "")}" alt="" loading="lazy"></span><span class="m-txt"><b>${esc(museumName(e.t, e.r))}</b><br>${esc(MUSEUM_KIND[e.t])}${museumInfo(e.t, e.r) ? " \u00b7 " + esc(museumInfo(e.t, e.r)) : ""}</span></a>`;
+  const row = (e) => `<a class="m-res" href="${esc(link(e.t, e.r))}"><span class="m-pic">${museumPic(e.r)}</span><span class="m-txt"><b>${esc(museumName(e.t, e.r))}</b><br>${esc(MUSEUM_KIND[e.t])}${museumInfo(e.t, e.r) ? " \u00b7 " + esc(museumInfo(e.t, e.r)) : ""}</span></a>`;
   let seq = 0, timer, shown = 25, cache = null;
   const STEP = 25;
   const paint = () => {

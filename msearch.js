@@ -16,12 +16,14 @@ const museumInfo = (t, r) => {
   return [r.brands?.name, r.release_date && String(r.release_date).slice(0, 4), r.size, r.color, mold && "Mold: " + mold, r.shape, r.material, r.duro && r.duro + (/d$/i.test(r.duro) ? "" : "d"), r.drop_no && "Drop " + r.drop_no].filter(Boolean).join(" · ");
 };
 
+// a result's picture: the photo, or an empty box when the entry has none yet (so it is still listed and can be picked)
+const museumPic = (r, cls) => r.image_path ? `<img src="${String(r.image_path).replace(/"/g, "&quot;")}" alt="" loading="lazy">` : `<span class="${cls || "no-pic"}">no photo</span>`;
 const TABLE = {}, tableP = {};
 function loadTable(t) {
   return (tableP[t] ||= (async () => {
     const rows = [], H = { apikey: MOMS.key, Authorization: "Bearer " + MOMS.key };
     for (let from = 0; ; from += 1000) {
-      const res = await fetch(`${MOMS.url}/rest/v1/${t}?select=${encodeURIComponent(MUSEUM_SEL[t])}&image_path=not.is.null&order=id&limit=1000&offset=${from}`, { headers: H });
+      const res = await fetch(`${MOMS.url}/rest/v1/${t}?select=${encodeURIComponent(MUSEUM_SEL[t])}&order=id&limit=1000&offset=${from}`, { headers: H });
       if (!res.ok) break;
       const data = await res.json();
       rows.push(...data);
@@ -84,7 +86,7 @@ async function searchMuseum(t, text) {
   });
   const rank = (a, b) => b.pts - a.pts;
   // a matching number (deck #, size, year) can stand in for one missing word
-  const best = scored.filter((x) => x.got + Math.min(x.numHit, 1) >= need && (x.got > 0 || x.numHit > 0)).sort(rank).slice(0, 600);
+  const best = scored.filter((x) => x.got + Math.min(x.numHit, 1) >= need && (x.got > 0 || x.numHit > 0)).sort(rank);
   const ids = new Set(best.map((x) => x.e));
   const close = words.length < 2 && best.length ? [] : scored.filter((x) => !ids.has(x.e) && x.got >= Math.max(1, need - 1) && x.got > 0).sort(rank).slice(0, best.length ? 12 : 24);
   return [...best.map((x) => Object.assign({}, x.e, { score: x.pts })), ...close.map((x) => Object.assign({}, x.e, { close: true, score: x.pts }))];
