@@ -12,7 +12,7 @@ const TALL = new Set(["decks", "setups"]);   // boards are tall; wheels, trucks,
 const LINKABLE = { setups: ["decks", "trucks", "wheels"], decks: ["decks"], trucks: ["trucks"], wheels: ["wheels"], obstacles: ["obstacles"], misc: ["misc"] };
 const MUSEUM_KIND = { decks: "Deck", trucks: "Trucks", wheels: "Wheels", obstacles: "Obstacle", misc: "Misc." };
 const MUSEUM_SEL = {
-  decks: "id,name,slug,image_path,size,color,release_date,drop_no,drop_title,mold_code,brands(name)",
+  decks: "id,name,slug,image_path,size,color,release_date,drop_no,drop_title,mold_code,graphic,shape,molds,brands(name)",
   trucks: "id,name,slug,image_path,size,color,release_date,brands(name)",
   wheels: "id,name,slug,image_path,color,material,duro,release_date,brands(name)",
   obstacles: "id,name,slug,image_path,material,release_date,brands(name)",
@@ -194,7 +194,7 @@ function loadTable(t) {
     }
     return (TABLE[t] = rows.map((r) => {
       const brand = r.brands?.name || "", yr = r.release_date ? String(r.release_date).slice(0, 4) : "";
-      const text = [museumName(t, r), brand, r.color, r.material, r.mold_code, r.drop_title, r.drop_no ? "drop " + r.drop_no : ""].join(" ");
+      const text = [museumName(t, r), brand, r.color, r.material, r.mold_code, [].concat(r.molds || []).join(" "), r.graphic, r.shape, r.drop_title, r.drop_no ? "drop " + r.drop_no : ""].join(" ");
       const size = parseFloat(r.size);   // e.g. "32.5mm" -> 32.5
       return { t, r, words: norm(text), nums: new Set([...(text.match(/\d+(\.\d+)?/g) || []), yr, Number.isFinite(size) ? String(size) : "", r.duro ? String(parseFloat(r.duro)) : ""].filter(Boolean)), yr, brand, size, colors: String(r.color || "").split(/[\/,&]| and /i).map((c) => c.trim().toLowerCase()).filter(Boolean) };
     }));
