@@ -73,6 +73,14 @@ async function secondPhoto(i) {
   return /^https?:/.test(p) ? p : signed(p);
 }
 
+// Which parts to offer a box for: only the ones the owner actually typed in (or that are already linked). Most people don't log their trucks or wheels.
+const loggedParts = (i, current) => (LINKABLE[i.section] || []).filter((t) => {
+  const d = i.details || {};
+  if (current.some((m) => m.t === t)) return true;
+  if (i.section !== "setups") return true;   // a deck, trucks, wheels... item is that one part
+  return t === "decks" ? !!i.name : !!String(d[t] || "").trim();
+});
+
 // ---------- the details ----------
 const FIELD = { maker: "Manufacturer", mold: "Mold", size: "Size", color: "Color", material: "Material", duro: "Duro", year: "Year", trucks: "Trucks", wheels: "Wheels" };
 const ORDER = { setups: ["name*", "trucks", "wheels"], decks: ["maker", "mold", "size"], trucks: ["size", "color"], wheels: ["color", "material", "duro"], obstacles: ["maker", "material"], misc: ["maker", "material", "year"] };
@@ -144,7 +152,7 @@ async function load() {
   let current = museum;   // what is linked right now
   let paintMuseum = () => {
     const box = root.querySelector("#im-list");
-    const kinds = canLink ? (LINKABLE[i.section] || []) : [];
+    const kinds = canLink ? loggedParts(i, current) : [];
     const one = (m) => `<a class="ready${TALL.has(m.t) ? "" : " sq"}" href="${esc(museumLink(m.t, m.r))}" title="${esc(m.name)}"><img src="${esc(m.r.image_path || "")}" alt="${esc(m.name)}" loading="lazy"></a>`;
     // the owner sees one place for each part, in order: the picture when it is linked, otherwise an empty box to tap
     const html = kinds.length
@@ -152,7 +160,7 @@ async function load() {
       : current.map(one).join("");
     box.innerHTML = html || `<span class="board-use-empty">Not linked to the museum yet.</span>`;
   };
-  const fullCheck = () => { const f = root.querySelector("#im-form"); if (f) { if ((LINKABLE[i.section] || []).every((t) => current.some((m) => m.t === t))) f.hidden = true; } };   // everything is linked: no search needed
+  const fullCheck = () => { const f = root.querySelector("#im-form"); if (f) { if (loggedParts(i, current).every((t) => current.some((m) => m.t === t))) f.hidden = true; } };   // everything is linked: no search needed
   const paint0 = paintMuseum;
   paintMuseum = () => { paint0(); fullCheck(); };
   paintMuseum();
@@ -194,7 +202,13 @@ function setupLinking(i, getCurrent, refresh) {
   let part = kinds[0], seq = 0, timer;
   // what to look for to begin with: what the owner typed about this part
   const start = (t) => String(t === "decks" ? [i.name, d.maker, d.mold, d.size, d.color].filter(Boolean).join(" ") : t === "trucks" ? (d.trucks || (i.section === "trucks" ? [i.name, d.size, d.color].join(" ") : "")) : t === "wheels" ? (d.wheels || (i.section === "wheels" ? [i.name, d.color].join(" ") : "")) : [i.name, d.maker, d.material].filter(Boolean).join(" ")).trim();
-  const paintParts = () => { titleEl.textContent = "Find the " + (MUSEUM_KIND[part] || "item").toLowerCase().replace(/\.$/, ""); add.href = "submit.html?type=" + part; };
+  const paintParts = () => { titleEl.textContent = "Find the " + (MUSEUM_KIND[part] || "item").toLowerCase().replace(/\.$/, ""); const p = new URLSearchParams({ type: part });   // the submit form starts filled in with what they already typed about it
+    const put = (k, v) => { if (v) p.set(k, String(v)); };
+    if (part === "decks") { put("name", i.section === "setups" || i.section === "decks" ? i.name : ""); put("brand", d.maker || d.brand); put("size", d.size); put("color", d.color); put("mold", d.mold); }
+    else if (part === "trucks") { put("name", i.section === "trucks" ? i.name : d.trucks); put("size", i.section === "trucks" ? d.size : ""); put("color", i.section === "trucks" ? d.color : ""); put("brand", i.section === "trucks" ? (d.maker || d.brand) : ""); }
+    else if (part === "wheels") { put("name", i.section === "wheels" ? i.name : d.wheels); put("color", i.section === "wheels" ? d.color : ""); put("duro", i.section === "wheels" ? d.duro : ""); put("material", i.section === "wheels" ? d.material : ""); put("brand", i.section === "wheels" ? (d.maker || d.brand) : ""); }
+    else { put("name", i.name); put("brand", d.maker || d.brand); put("material", d.material); }
+    add.href = "submit.html?" + p; };
   const run = async () => {
     const n = ++seq, have = new Set(getCurrent().map((m) => m.t));
     pop.hidden = false;

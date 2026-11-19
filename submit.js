@@ -50,4 +50,7 @@ $("#s-again").addEventListener("click", () => location.reload());
   ({ data: { session } } = await sb.auth.getSession());
   if (!session) { $("#s-need").hidden = false; return; }
   paintForm(); $("#s-form").hidden = false;
+  // arriving from an item page: start with what they already typed
+  const q = new URLSearchParams(location.search);
+  for (const [k, v] of q) { if (k === "type") continue; const el = document.querySelector(`#f-sub [name="${CSS.escape(k)}"]`); if (el && !el.value) el.value = v.slice(0, 200); }
 })();
