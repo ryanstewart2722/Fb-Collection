@@ -142,11 +142,14 @@ async function load() {
   root.querySelector("#im-more").innerHTML = shownMore.map((m) => `<a${TALL.has(m.section) ? "" : ' class="sq"'} href="${esc(link(m.id))}" title="${esc(m.name)}"><img src="${esc(m.url)}" alt="${esc(m.name)}" loading="lazy"></a>`).join("") || `<span class="board-use-empty">Nothing else here yet.</span>`;
 
   let current = museum;   // what is linked right now
-  const paintMuseum = () => {
+  let paintMuseum = () => {
     const box = root.querySelector("#im-list");
     box.innerHTML = current.map((m) => `<a class="ready${TALL.has(m.t) ? "" : " sq"}" href="${esc(museumLink(m.t, m.r))}" title="${esc(m.name)}"><img src="${esc(m.r.image_path || "")}" alt="${esc(m.name)}" loading="lazy"></a>`).join("")
       || `<span class="board-use-empty">${canLink ? "Not linked to the museum yet." : "Not linked to the museum yet."}</span>`;
   };
+  const fullCheck = () => { const f = root.querySelector("#im-form"); if (f) f.hidden = (LINKABLE[i.section] || []).every((t) => current.some((m) => m.t === t)); };   // everything is linked: no search needed
+  const paint0 = paintMuseum;
+  paintMuseum = () => { paint0(); fullCheck(); };
   paintMuseum();
   if (canLink) setupLinking(i, () => current, async () => { current = await loadMuseum(await linksP2(i.id)); paintMuseum(); });
 }
