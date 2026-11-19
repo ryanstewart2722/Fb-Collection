@@ -32,7 +32,12 @@
     pop.addEventListener("click", (e) => { if (e.target.closest("[data-all]")) { e.preventDefault(); filterPage(); } });
   { const first = new URLSearchParams(location.search).get("q"); if (first) q.value = first; }
   form.addEventListener("click", () => q.focus());   // the whole bar starts a search, not just the word
-  q.addEventListener("input", () => { clearTimeout(timer); timer = setTimeout(run, 200); });
+  q.addEventListener("input", () => {
+    clearTimeout(timer); timer = setTimeout(run, 200);
+    // emptying the box (the small x, or deleting everything) also takes the filter off the page
+    const chip = document.getElementById("m-chip");
+    if (!q.value.trim() && chip && !chip.hidden && window.momsSearch) { pop.hidden = true; seq++; window.momsSearch(""); }
+  });
   q.addEventListener("focus", () => { if (q.value.trim().length >= 2 && q.value.trim() !== (new URLSearchParams(location.search).get("q") || "")) run(); });
   const full = () => `${location.pathname}?q=${encodeURIComponent(q.value.trim())}`;
   const filterPage = () => { clearTimeout(timer); seq++; pop.hidden = true; q.blur(); if (window.momsSearch) window.momsSearch(q.value); else location.href = full(); };
