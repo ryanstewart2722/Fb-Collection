@@ -51,6 +51,7 @@ let editing = null;   // row being edited ({} for a new one), or null when showi
 let photo2 = null, target = 1, drop2 = false;   // second photo (shown below the first on the board page)
 let photo = null;     // new photo waiting to upload: { blob, ext, preview }
 let formDirty = false;
+let selMode = false, sel = new Set();   // quick select: tick several entries, then delete them or move them to another section
 let view = (() => { try { return localStorage.getItem("me-view") === "images" ? "images" : "list"; } catch { return "list"; } })();
 
 function setStatus(text, isError = false) {
@@ -104,24 +105,27 @@ function renderListNow() {
       ${tab === "brands" ? "" : `<select id="photo-filter" aria-label="Filter by photo"><option value="">All boards</option><option value="without" ${list.photo === "without" ? "selected" : ""}>No photo yet</option><option value="with" ${list.photo === "with" ? "selected" : ""}>Has a photo</option></select>`}
       ${tab === "brands" ? "" : `<select id="brand-filter" aria-label="Filter by brand"><option value="">All brands</option>${brands.map((b) => `<option value="${b.id}" ${String(b.id) === String(list.brand) ? "selected" : ""}>${esc(b.name)}</option>`).join("")}</select>`}
       <select id="sort-by" aria-label="Sort"><option value="release" ${list.sort === "release" ? "selected" : ""}>${tab === "brands" ? "A to Z" : "By release date"}</option><option value="added" ${list.sort === "added" ? "selected" : ""}>Recently added</option></select>
+      ${tab === "brands" ? "" : `<button class="ad-btn${selMode ? " ad-btn-dark" : ""}" data-act="sel-toggle">${selMode ? "Done selecting" : "Select"}</button>`}
       <button class="ad-btn ad-btn-dark" data-act="new">+ Add ${t.one}</button>
     </div>
     <p class="me-count">${list.total} ${list.total === 1 ? t.one : tab}${tab === "brands" ? "" : `<span class="me-views"><button class="ad-link${view === "list" ? " on" : ""}" data-act="view-list">List</button> / <button class="ad-link${view === "images" ? " on" : ""}" data-act="view-images">Images</button></span>`}</p>
     ${view === "images" && tab !== "brands" ? `<div class="me-grid">
-      ${list.rows.map((r, i) => `<div class="me-card" data-i="${i}">
+      ${list.rows.map((r, i) => `<div class="me-card${sel.has(r.id) ? " picked" : ""}" data-i="${i}">
         <button class="me-card-img${r.image_path ? "" : " none"}" data-act="open" title="Open ${esc(r.name)}">${r.image_path ? `<img src="${esc(r.image_path)}" alt="${esc(r.name)}" loading="lazy">` : `<span>No photo yet</span>`}</button>
         <span class="me-card-name">${esc(momsDeckName(r))}</span>
         ${r.image_path ? `<button class="ad-btn me-card-rot" data-act="rotate-card">Rotate 180°</button>` : `<button class="ad-btn me-card-rot" data-act="open">Add photo</button>`}
       </div>`).join("") || `<p class="me-empty">Nothing here.</p>`}
     </div>` : `<div class="me-list">
-      ${list.rows.map((r, i) => `<button class="me-item" data-i="${i}">
+      ${list.rows.map((r, i) => `<button class="me-item${sel.has(r.id) ? " picked" : ""}" data-i="${i}">
         ${tab === "brands" ? "" : `<span class="me-thumb">${r.image_path ? `<img src="${esc(r.image_path)}" alt="" loading="lazy">` : ""}</span>`}
         <span class="me-name">${esc(momsDeckName(r))}${r.color ? ` <em>${esc(r.color)}</em>` : ""}</span>
         <span class="me-meta">${esc(tab === "brands" ? r.made_in : [r.brands?.name, year(r), !r.image_path && "no photo: not on the site yet"].filter(Boolean).join(" · "))}</span>
       </button>`).join("") || `<p class="me-empty">Nothing here yet.</p>`}
     </div>`}
+    ${selMode && tab !== "brands" ? `<div class="me-selbar" id="me-selbar"><span id="me-selcount"></span> <button class="ad-btn" data-act="sel-all">Select all shown</button> <button class="ad-btn" data-act="sel-none">Clear</button> <select id="me-moveto" aria-label="Move to"><option value="">Move to…</option>${Object.keys(TYPES).filter((k) => k !== "brands" && k !== tab).map((k) => `<option value="${k}">${k[0].toUpperCase() + k.slice(1)}</option>`).join("")}</select> <button class="ad-btn" data-act="sel-move">Move</button> <button class="ad-btn me-danger" data-act="sel-delete">Delete</button></div>` : ""}
     ${list.rows.length < list.total ? `<button class="ad-btn" data-act="more">Show more</button> <button class="ad-btn" data-act="all">View all (${list.total - list.rows.length} more)</button>` : ""}`;
 
+  paintSel();
   $("#photo-filter")?.addEventListener("change", (e) => {
     list.photo = e.target.value;
     loadList().then(renderList).catch(fail("Couldn't load"));
@@ -644,6 +648,53 @@ function renderForm2() {   // redraw the form without losing what was typed
   formDirty = true; window.scrollTo(0, y);
 }
 
+/* ---------- Quick select: delete several, or move them to another section ---------- */
+function paintSel() { const c = $("#me-selcount"); if (c) c.textContent = sel.size ? `${sel.size} selected` : "Tap entries to select them"; }
+const COMMON = ["brand_id", "name", "color", "release_date", "release_precision", "description", "image_path", "image_path_2", "extra_brand_ids", "attributes", "extra_images"];
+const HAS_SIZE = new Set(["decks", "trucks", "obstacles", "misc"]), HAS_MAT = new Set(["wheels", "obstacles", "misc"]);
+async function selDelete() {
+  const ids = [...sel]; if (!ids.length) return;
+  if (!confirm(`Delete ${ids.length} ${ids.length === 1 ? "entry" : "entries"} from ${tab}? This can't be undone.`)) return;
+  setStatus("Deleting…");
+  const rows = list.rows.filter((r) => sel.has(r.id));
+  const { data, error } = await sb.from(tab).delete().in("id", ids).select("id");
+  if (error) return setStatus("Couldn't delete: " + friendly(error), true);
+  const gone = new Set((data || []).map((d) => d.id));
+  const done = [...gone];
+  if (done.length) {   // tidy up what pointed at them
+    await sb.from("collection_item_links").delete().eq("museum_type", tab).in("museum_id", done).then(() => {}, () => {});
+    await sb.from("favorites").delete().eq("museum_type", tab).in("museum_id", done).then(() => {}, () => {});
+    for (const r of rows) if (gone.has(r.id)) await removeOurPhoto(r.image_path).catch(() => {});
+  }
+  sel = new Set([...sel].filter((i) => !gone.has(i)));
+  setStatus(`Deleted ${done.length}${done.length < ids.length ? ` (${ids.length - done.length} couldn't be deleted: not allowed)` : ""}.`);
+  await loadList(); renderList();
+}
+async function selMove() {
+  const to = $("#me-moveto")?.value, ids = [...sel];
+  if (!ids.length) return setStatus("Select some entries first.", true);
+  if (!to) return setStatus("Choose where to move them first.", true);
+  if (!confirm(`Move ${ids.length} ${ids.length === 1 ? "entry" : "entries"} from ${tab} to ${to}? Details that ${to} doesn't have (like mold or duro) are left behind.`)) return;
+  const rows = list.rows.filter((r) => sel.has(r.id)); let moved = 0;
+  for (const r of rows) {
+    setStatus(`Moving ${moved + 1} of ${rows.length}…`);
+    try {
+      const row = {}; COMMON.forEach((k) => { if (r[k] !== undefined) row[k] = r[k]; });
+      if (HAS_SIZE.has(tab) && HAS_SIZE.has(to) && r.size != null) row.size = r.size;
+      if (HAS_MAT.has(tab) && HAS_MAT.has(to) && r.material != null) row.material = r.material;
+      if (tab === "wheels" && to === "wheels") row.duro = r.duro;
+      const made = await insertWithSlug(to, row, `${r.name} ${r.color || ""} ${r.brands?.name || ""}`);
+      await sb.from("collection_item_links").update({ museum_type: to, museum_id: made.id }).eq("museum_type", tab).eq("museum_id", r.id).then(() => {}, () => {});
+      await sb.from("favorites").update({ museum_type: to, museum_id: made.id }).eq("museum_type", tab).eq("museum_id", r.id).then(() => {}, () => {});
+      const del = await sb.from(tab).delete().eq("id", r.id).select("id");
+      if (del.error || !del.data?.length) { await sb.from(to).delete().eq("id", made.id); throw del.error || new Error("not allowed"); }
+      sel.delete(r.id); moved++;
+    } catch (err) { setStatus(`Moved ${moved}. Stopped at “${r.name}”: ${friendly(err)}`, true); await loadList(); return renderList(); }
+  }
+  setStatus(`Moved ${moved} to ${to}.`);
+  await loadList(); renderList();
+}
+
 function leaveForm() {
   return !editing || !(formDirty || photo || photo2) || confirm("Leave without saving your changes?");
 }
@@ -652,6 +703,18 @@ app.addEventListener("input", (e) => {
   if (e.target.closest(".me-form")) formDirty = true;
 });
 app.addEventListener("click", async (e) => {
+  if (selMode && tab !== "brands" && !editing && !e.target.closest("#me-selbar, .me-toolbar, .me-views, [data-act='more'], [data-act='all']")) {   // quick select: a click ticks the entry instead of opening it
+    const c = e.target.closest(".me-item, .me-card");
+    if (c) { e.preventDefault(); const id = list.rows[c.dataset.i]?.id; if (id != null) { sel.has(id) ? sel.delete(id) : sel.add(id); c.classList.toggle("picked", sel.has(id)); paintSel(); } return; }
+  }
+  {
+    const sa = e.target.closest("[data-act]")?.dataset.act;
+    if (sa === "sel-toggle") { selMode = !selMode; if (!selMode) sel.clear(); return renderList(); }
+    if (sa === "sel-all") { list.rows.forEach((r) => sel.add(r.id)); return renderList(); }
+    if (sa === "sel-none") { sel.clear(); return renderList(); }
+    if (sa === "sel-delete") return selDelete();
+    if (sa === "sel-move") return selMove();
+  }
   const card = e.target.closest(".me-card");
   if (card) {
     const a = e.target.closest("[data-act]")?.dataset.act;
@@ -701,7 +764,7 @@ app.addEventListener("click", async (e) => {
 
 document.querySelectorAll(".ad-tabs button").forEach((b) => b.addEventListener("click", async () => {
   if (!leaveForm()) return;
-  tab = b.dataset.tab; fromReview = false; rememberTab(tab);
+  tab = b.dataset.tab; fromReview = false; rememberTab(tab); sel.clear();
   editing = null; photo = null; list.search = ""; list.brand = ""; list.photo = "";
   document.querySelectorAll(".ad-tabs button").forEach((x) => x.classList.toggle("active", x === b));
   setStatus("");
