@@ -142,7 +142,7 @@ function sections() {
 function headHtml() {
   const { profile, owner } = state;
   return `<section class="p-head">
-    <p class="p-user">museumofminiskateboards.org/u/${esc(profile.username)}${profile.is_private ? ` · <b>Private</b>` : ""}${state.fav ? ` · <a class="p-fav-link" href="#${view === "list" ? "list" : "image"}">← Back to collection</a>` : ` · <a class="p-fav-link" href="#favorites">Favorites${state.favItems ? ` (${state.favItems.length})` : ""}</a>${state.self ? ` · <a class="p-fav-link" href="#likes">Likes${state.likeItems ? ` (${state.likeItems.length})` : ""}</a>` : ""}`}</p>
+    <p class="p-user">museumofminiskateboards.org/u/${esc(profile.username)}${profile.is_private ? ` · <b>Private</b>` : ""}${state.fav ? ` · <a class="p-fav-link" href="#${view === "list" ? "list" : "image"}">← Back to collection</a>` : ` · <a class="p-fav-link" href="#favorites">Favorites${state.favItems ? ` (${state.favItems.length})` : ""}</a> · <a class="p-fav-link" href="#likes">Likes${state.likeItems ? ` (${state.likeItems.length})` : ""}</a>`}</p>
     ${owner ? ownerBar() : ""}
   </section>`;
 }
@@ -342,7 +342,6 @@ async function loadFavs() {
 }
 async function loadLikes() {   // the collection items this person has liked (the database only shows likes on approved items of public collections)
   state.likeItems = [];
-  if (!state.self) return;   // likes are private: only the person themselves sees them
   try {
     const { data: lk } = await sb.from("item_likes").select("item_id,created_at").eq("user_id", state.profile.id).order("created_at", { ascending: false });
     if (!lk || !lk.length) return;
