@@ -127,7 +127,7 @@ async function load() {
       <h1>${esc(title)}</h1>
       <div class="board-specs">${specs(i, owner)}</div>
       <div class="board-dock">
-        <div class="board-use"><p class="board-use-head">In Museum</p>
+        <div class="board-use" id="im-section"><p class="board-use-head">In Museum</p>
           <div class="board-use-list" id="im-list"></div>
           ${canLink ? `<form class="im-find" id="im-form" autocomplete="off" hidden><p class="im-title"><span id="im-title"></span> <button type="button" class="im-cancel" id="im-cancel">Cancel</button></p><input type="search" id="im-q" placeholder="Type a name, or just a few words" aria-label="Search the museum"><div class="im-pop" id="im-pop" hidden><div class="im-list" id="im-res"></div><p class="im-foot">Can\u2019t find it? <a id="im-browse" href="./" target="_blank" rel="noopener">Browse the museum</a> or <a id="im-add" href="submit.html" target="_blank" rel="noopener">add it to the museum</a></p></div></form>` : ""}</div>
         <div class="board-brand">
@@ -150,6 +150,8 @@ async function load() {
       ? kinds.map((t) => { const m = current.find((x) => x.t === t); return m ? one(m) : `<button type="button" class="im-slot" data-p="${t}"><span>+</span>${esc(MUSEUM_KIND[t])}</button>`; }).join("") + current.filter((m) => !kinds.includes(m.t)).map(one).join("")
       : current.map(one).join("");
     box.innerHTML = html || `<span class="board-use-empty">Not linked to the museum yet.</span>`;
+    // visitors only see "In Museum" when something is linked; the owner (and staff) always do, to add entries
+    root.querySelector("#im-section").hidden = !canLink && !current.length;
   };
   const fullCheck = () => { const f = root.querySelector("#im-form"); if (f) { if (loggedParts(i, current).every((t) => current.some((m) => m.t === t))) f.hidden = true; } };   // everything is linked: no search needed
   const paint0 = paintMuseum;

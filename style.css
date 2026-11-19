@@ -567,3 +567,4 @@ body > main.auth { width: 100%; box-sizing: border-box; }
   .im-find input[type="search"] { display: block; font-size: 16px; line-height: 1.2; padding: 9px 13px; width: 133.333%; transform: scale(0.75); transform-origin: left top; margin-bottom: -10px; }
   .board-use-form input[type="search"] { font-size: 16px; }
 }
+.board-use[hidden] { display: none; }
