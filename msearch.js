@@ -35,24 +35,32 @@ function loadTable(t) {
       const text = [museumName(t, r), brand, r.material, r.mold_code, [].concat(r.molds || []).join(" "), r.graphic, r.shape, r.drop_title, r.drop_no ? "drop " + r.drop_no : ""].join(" ");
       const size = parseFloat(r.size);   // e.g. "32.5mm" -> 32.5
       const words = norm(text), joined = words.slice(1).map((w, k) => words[k] + w);   // "Flat Face" is also found as "flatface"
-      return { t, r, words: words.concat(joined), dwords: new Set(norm(r.description)), cwords: norm(r.color), nums: new Set([...(text.match(/\d+(\.\d+)?/g) || []), yr, Number.isFinite(size) ? String(size) : "", r.duro ? String(parseFloat(r.duro)) : ""].filter(Boolean)), yr, brand };
+      return { t, r, wset: new Set(words.concat(joined)), words: words.concat(joined), dwords: new Set(norm(r.description)), cwords: norm(r.color), nums: new Set([...(text.match(/\d+(\.\d+)?/g) || []), yr, Number.isFinite(size) ? String(size) : "", r.duro ? String(parseFloat(r.duro)) : ""].filter(Boolean)), yr, brand };
     }));
   })());
 }
 const STOP = new Set(["x", "the", "and", "of", "a", "mm", "deck", "decks", "wheels", "wheel", "trucks", "truck"]);
 const norm = (x) => String(x ?? "").toLowerCase().replace(/['’]/g, " ").replace(/(?<!\d)\.|\.(?!\d)/g, " ").replace(/[^a-z0-9. ]+/g, " ").trim().split(/\s+/).filter(Boolean);   // "Dr.M's" -> dr m s; "29.5mm" stays one number
 const isNum = (q) => /^\d+(\.\d+)?$/.test(q);
-// one word off (a typo): "freshwatr" ~ "freshwater"
-function near(a, b) {
-  const la = a.length, lb = b.length, max = la >= 8 ? 2 : 1;
-  if (Math.abs(la - lb) > max) return false;
+// how many letters apart two words are (stops early once it is more than `max`)
+function dist(a, b, max) {
+  const la = a.length, lb = b.length;
+  if (Math.abs(la - lb) > max) return max + 1;
   let prev = Array.from({ length: lb + 1 }, (_, j) => j);
   for (let i = 1; i <= la; i++) {
     const cur = [i];
     for (let j = 1; j <= lb; j++) cur[j] = Math.min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
     prev = cur;
   }
-  return prev[lb] <= max;
+  return prev[lb];
+}
+// a typo: one slip in a 4-5 letter word, up to two in a longer one ("catfsh" ~ "catfish", "freshwatr" ~ "freshwater"); also when the typed word is only the start of a longer one
+function typo(q, w) {
+  const max = q.length >= 6 ? 2 : q.length >= 4 ? 1 : 0;
+  if (!max) return Infinity;
+  let d = dist(q, w, max);
+  if (w.length > q.length) d = Math.min(d, dist(q, w.slice(0, q.length), 1) + 0.5);   // a typo in the start of a longer word
+  return d;
 }
 // how strongly one entry matches one typed word (0 = not at all): whole word > start of a word > a typo; a colour hit counts for less
 function strength(entry, q) {
@@ -65,7 +73,7 @@ function strength(entry, q) {
   }
   if (!best) for (const w of entry.cwords) if (w === q || (q.length >= 3 && w.startsWith(q))) return 1;   // colour only: a weak hint
   if (!best && entry.dwords.has(q)) return 0.8;   // only in the description: a weaker hint
-  if (!best && q.length >= 5) for (const w of entry.words) if (near(q, w)) return 1.5;
+  if (!best && q.length >= 4) { let bd = Infinity; for (const w of entry.words) { const d = typo(q, w); if (d < bd) bd = d; if (bd <= 1) break; } if (bd <= 1) return 1.5; if (bd <= 1.5) return 1.3; if (bd <= 2) return 1.2; }
   return best;
 }
 // Results: the best matches first, then a few close ones (marked close: true) for when nothing is exact.
@@ -76,7 +84,11 @@ async function searchMuseum(t, text) {
   const need = Math.min(words.length, words.length <= 3 ? words.length : Math.ceil(words.length * 0.6));
   const table = await loadTable(t);
   // a rare word ("blank", "freshwater") tells entries apart much better than a common one ("dr", "m"), so it counts for more
-  const mat = table.map((e) => qs.map((q) => strength(e, q)));
+  const mat = table.map((e) => {
+    const row = qs.map((q) => strength(e, q));
+    for (let k = 0; k + 1 < qs.length; k++) if (!isNum(qs[k]) && !isNum(qs[k + 1]) && e.wset.has(qs[k] + qs[k + 1])) { row[k] = Math.max(row[k], 3); row[k + 1] = Math.max(row[k + 1], 3); }   // "dr m" finds "drm"
+    return row;
+  });
   const wt = qs.map((q, k) => Math.log(1 + table.length / (1 + mat.reduce((n, row) => n + (row[k] ? 1 : 0), 0))));
   const scored = table.map((e, r) => {
     let got = 0, pts = 0, numHit = 0;
