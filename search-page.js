@@ -5,6 +5,7 @@ const params = new URLSearchParams(location.search);
 let text = params.get("q") || "", kind = MUSEUM_KIND[params.get("type")] ? params.get("type") : "";   // "" = all kinds
 const KINDS = Object.keys(MUSEUM_SEL), STEP = 50;
 let lists = {}, shown = STEP, seq = 0, timer;
+const saveUrl = () => { const u = new URLSearchParams(); if (text.trim()) u.set("q", text.trim()); if (kind) u.set("type", kind); history.replaceState(null, "", location.pathname + (u.toString() ? "?" + u : "")); };
 const link = (t, r) => `board.html?type=${t}&slug=${encodeURIComponent(r.slug)}`;
 
 root.innerHTML = `
@@ -41,10 +42,7 @@ function paint() {
 async function run() {
   const n = ++seq;
   text = q.value;
-  const url = new URLSearchParams();
-  if (text.trim()) url.set("q", text.trim());
-  if (kind) url.set("type", kind);
-  history.replaceState(null, "", url.toString() ? "?" + url : location.pathname);
+  saveUrl();
   if (text.trim().length < 2) { lists = {}; shown = STEP; paint(); return; }
   count.textContent = "Searching…";
   const res = await Promise.all(KINDS.map((t) => searchMuseum(t, text).catch(() => [])));
@@ -55,6 +53,6 @@ async function run() {
 }
 q.addEventListener("input", () => { clearTimeout(timer); timer = setTimeout(run, 250); });
 document.getElementById("s-form").addEventListener("submit", (e) => { e.preventDefault(); run(); });
-tabs.addEventListener("click", (e) => { const a = e.target.closest("a[data-k]"); if (!a) return; e.preventDefault(); kind = a.dataset.k; shown = STEP; history.replaceState(null, "", location.search.replace(/[?&]type=[^&]*/, "").replace(/^&/, "?") + (kind ? (location.search.includes("?") ? "&" : "?") + "type=" + kind : "")); paint(); });
+tabs.addEventListener("click", (e) => { const a = e.target.closest("a[data-k]"); if (!a) return; e.preventDefault(); kind = a.dataset.k; shown = STEP; saveUrl(); paint(); });
 more.addEventListener("click", () => { shown += STEP; paint(); });
 run();
