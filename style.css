@@ -556,3 +556,8 @@ body > main.auth { width: 100%; box-sizing: border-box; }
 .m-res b, .m-pop b { font-weight: normal; }
 .m-res .m-txt { color: #000; }
 .m-res .m-sub { color: #555; }
+/* the item page's museum search matches the museum page's: 12px, name black, details grey, nothing bold */
+.im-find input[type="search"], .im-pop, .im-res, .im-res button, .im-foot, .im-sep, .im-more-btn, .im-title, .im-cancel, .im-pop .m-note { font-size: 12px; line-height: 1.25; }
+.im-res b { font-weight: normal; color: #000; }
+.im-res .im-sub { color: #555; }
+.im-pic .no-pic { font-size: 10px; }
