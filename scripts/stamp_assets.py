@@ -10,7 +10,8 @@ import hashlib, pathlib, re, sys
 root = pathlib.Path(__file__).resolve().parent.parent
 ref = re.compile(r'''((?:href|src)=")([^"?:#]+\.(?:css|js))(?:\?v=[0-9a-f]+)?(")''')
 changed = 0
-for page in sorted(root.glob("*.html")):
+TYPE_DIRS = ("decks", "trucks", "wheels", "obstacles", "misc")   # the museum type pages made by make_type_pages.py
+for page in sorted(list(root.glob("*.html")) + [root / d / "index.html" for d in TYPE_DIRS if (root / d / "index.html").is_file()]):
     text = page.read_text()
     def stamp(m):
         f = root / m.group(2).lstrip("/")
@@ -19,5 +20,5 @@ for page in sorted(root.glob("*.html")):
         return f'{m.group(1)}{m.group(2)}?v={hashlib.md5(f.read_bytes()).hexdigest()[:8]}{m.group(3)}'
     new = ref.sub(stamp, text)
     if new != text:
-        page.write_text(new); changed += 1; print("stamped", page.name)
+        page.write_text(new); changed += 1; print("stamped", page.relative_to(root))
 print("done;", changed, "page(s) updated")
