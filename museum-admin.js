@@ -229,6 +229,7 @@ function renderForm() {
     <div class="me-actions">
       <button class="ad-btn ad-btn-dark" data-act="save">${isNew ? `Add ${t.one}` : "Save changes"}</button>
       ${!isNew && tab !== "brands" ? `<a class="ad-btn" href="board.html?type=${tab}&slug=${encodeURIComponent(r.slug)}" target="_blank" rel="noopener">View on site ↗</a>` : ""}
+      ${!isNew && tab !== "brands" ? `<button class="ad-btn" data-act="duplicate" title="Start a new ${t.one} with everything filled in the same, then change the photo, name or color">Duplicate</button>` : ""}
       ${!isNew ? `<button class="ad-btn me-danger" data-act="delete">Delete</button>` : ""}
     </div>
     ${!isNew && tab === "brands" ? `<div class="me-merge">
@@ -758,6 +759,15 @@ app.addEventListener("click", async (e) => {
   if (act === "rm-photo2") { photo2 = null; drop2 = true; renderForm2(); }
   if (act === "rotate") rotatePhoto();
   if (act === "save") save();
+  if (act === "duplicate" && leaveForm()) {   // a new entry with the same info; photos start empty
+    const v = readForm(), copy = { ...editing };
+    for (const k of ["id", "slug", "image_path", "image_path_2", "created_at", "updated_at"]) delete copy[k];
+    TYPES[tab].fields.forEach(([key, , kind]) => { if (!["brand", "release", "morebrands", "molds"].includes(kind) && key in v) copy[key] = v[key] || null; });
+    if (v.molds != null) copy.molds = v.molds.split(",").map((x) => x.trim()).filter(Boolean);
+    fromReview = false; editing = copy; photo = null; photo2 = null; drop2 = false;
+    renderForm(); formDirty = true;
+    setStatus("Duplicated: add a photo and change the name or color, then press Add.");
+  }
   if (act === "delete") del();
   if (act === "merge") mergeBrand();
 });
