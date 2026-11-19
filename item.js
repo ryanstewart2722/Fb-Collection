@@ -202,7 +202,7 @@ function setupLinking(i, getCurrent, refresh) {
   let part = kinds[0], seq = 0, timer;
   // what to look for to begin with: what the owner typed about this part
   const start = (t) => String(t === "decks" ? [i.name, d.maker, d.mold, d.size, d.color].filter(Boolean).join(" ") : t === "trucks" ? (d.trucks || (i.section === "trucks" ? [i.name, d.size, d.color].join(" ") : "")) : t === "wheels" ? (d.wheels || (i.section === "wheels" ? [i.name, d.color].join(" ") : "")) : [i.name, d.maker, d.material].filter(Boolean).join(" ")).trim();
-  const paintParts = () => { titleEl.textContent = "Find the " + (MUSEUM_KIND[part] || "item").toLowerCase().replace(/\.$/, ""); browse.href = "./?type=" + part;   // browsing shows only this kind
+  const paintParts = () => { titleEl.textContent = "Find the " + (MUSEUM_KIND[part] || "item").toLowerCase().replace(/\.$/, ""); browse.href = "/" + part + "/";   // browsing shows only this kind
     const p = new URLSearchParams({ type: part });   // the submit form starts filled in with what they already typed about it
     const put = (k, v) => { if (v) p.set(k, String(v)); };
     if (part === "decks") { put("name", i.section === "setups" || i.section === "decks" ? i.name : ""); put("brand", d.maker || d.brand); put("size", d.size); put("color", d.color); put("mold", d.mold); }

@@ -40,7 +40,8 @@ const params = new URLSearchParams(location.search);
 let view = params.get("view") === "image" ? "image" : "list";
 let sort = params.get("sort") === "brand" ? "brand" : "newest";
 // ?type=wheels shows only that kind (used by "Browse the museum" on an item page); no ?type shows everything as before
-const ONLY = SECTIONS.some((s) => s.type === params.get("type")) ? params.get("type") : "";
+const WANT = params.get("type") || window.MOMS_ONLY || "";   // the type pages (/wheels/ ...) set MOMS_ONLY
+const ONLY = SECTIONS.some((s) => s.type === WANT) ? WANT : "";
 if (ONLY) SECTIONS.splice(0, SECTIONS.length, ...SECTIONS.filter((s) => s.type === ONLY));
 
 // Refine filters live in the address too, e.g. ?brand=11&mold=Freshwater&size=30-33&color=Black&from=2025-01
@@ -420,7 +421,7 @@ function render() {
 
 function saveState() {
   const p = new URLSearchParams();
-  if (ONLY) p.set("type", ONLY);
+  if (ONLY && !window.MOMS_ONLY) p.set("type", ONLY);
   if (view === "image") p.set("view", "image");
   if (sort === "brand") p.set("sort", "brand");
   F.brand.forEach((v) => p.append("brand", v)); F.mold.forEach((v) => p.append("mold", v));
