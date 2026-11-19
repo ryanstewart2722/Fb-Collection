@@ -150,6 +150,12 @@ async function load() {
       || `<span class="board-use-empty">${canLink ? "Not linked to the museum yet." : "Not linked to the museum yet."}</span>`;
   };
   paintMuseum();
+  const ed = root.querySelector("#im-edit");   // owner's edit mode: find / remove / review notes show only while it is on
+  if (ed) ed.addEventListener("click", () => {
+    const on = root.classList.toggle("im-editing");
+    ed.textContent = on ? "Done" : "Edit";
+    if (!on) { const f = root.querySelector("#im-form"); if (f) f.hidden = true; }
+  });
   if (canLink) setupLinking(i, () => current, async () => { current = await loadMuseum(await linksP2(i.id)); paintMuseum(); });
 }
 const linksP2 = (itemId) => sb.from("collection_item_links").select("museum_type,museum_id,link_status").eq("item_id", itemId).then((r) => r.data || []);
