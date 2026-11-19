@@ -489,7 +489,7 @@ body > main.auth { width: 100%; box-sizing: border-box; }
 .im-list { overflow-y: auto; flex: 1; }
 .im-head { padding: 8px 12px; font-size: 13px; color: #555; border-bottom: 1px solid #eee; }
 .im-head select { font: inherit; font-size: 13px; border: 1px solid #000; background: #fff; border-radius: 0; padding: 2px 4px; max-width: 70%; }
-.im-foot { display: block; padding: 10px 12px; font-size: 14px; color: #000; text-decoration: underline; text-underline-offset: 3px; border-top: 1px solid #000; background: #fff; }
+.im-foot { display: block; margin: 0; padding: 10px 12px; font-size: 14px; color: #555; line-height: 1.5; border-top: 1px solid #000; background: #fff; }
 .im-pop[hidden] { display: none; }
 .im-note { margin: 0; padding: 14px; font-size: 14px; color: #777; }
 .im-res { display: grid; grid-template-columns: 64px 1fr auto; gap: 14px; align-items: center; padding: 8px 12px; font-size: 14px; line-height: 1.3; }
@@ -515,3 +515,4 @@ body > main.auth { width: 100%; box-sizing: border-box; }
 .im-head { display: flex; gap: 16px; flex-wrap: wrap; align-items: center; }
 .im-head label { display: flex; gap: 6px; align-items: center; }
 .im-head select { max-width: 150px; }
+.im-foot a { color: #000; text-decoration: underline; text-underline-offset: 3px; }
