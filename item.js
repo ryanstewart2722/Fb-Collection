@@ -129,8 +129,8 @@ async function load() {
       <div class="board-specs">${specs(i, owner)}</div>
       <div class="board-dock">
         <div class="board-use"><p class="board-use-head">In Museum</p>
-          ${canLink ? `<form class="im-find" id="im-form" autocomplete="off"><div class="im-parts" id="im-parts"></div><input type="search" id="im-q" placeholder="Search the museum" aria-label="Search the museum"><div class="im-pop" id="im-pop" hidden><div class="im-head"><label>Brand <select id="im-brand"><option value="">All</option></select></label> <label>Colour <select id="im-color"><option value="">All</option></select></label></div><div class="im-list" id="im-res"></div><a class="im-foot" id="im-add" href="submit.html" target="_blank" rel="noopener">Can\u2019t find it? Add it to the museum</a></div></form>` : ""}
-          <div class="board-use-list" id="im-list"></div></div>
+          <div class="board-use-list" id="im-list"></div>
+          ${canLink ? `<form class="im-find" id="im-form" autocomplete="off" hidden><p class="im-title"><span id="im-title"></span> <button type="button" class="im-cancel" id="im-cancel">Cancel</button></p><input type="search" id="im-q" placeholder="Type a name, or just a few words" aria-label="Search the museum"><div class="im-pop" id="im-pop" hidden><div class="im-head"><label>Brand <select id="im-brand"><option value="">All</option></select></label> <label>Colour <select id="im-color"><option value="">All</option></select></label></div><div class="im-list" id="im-res"></div><a class="im-foot" id="im-add" href="submit.html" target="_blank" rel="noopener">Can\u2019t find it? Add it to the museum</a></div></form>` : ""}</div>
         <div class="board-brand">
           <span class="board-more-head">More in ${owner ? `<a class="board-brand-link" href="/u/${encodeURIComponent(owner.username)}">${esc(owner.display_name || owner.username)}'s</a> ` : ""}Collection</span>
           <div class="board-more" id="im-more"></div>
@@ -144,10 +144,11 @@ async function load() {
   let current = museum;   // what is linked right now
   let paintMuseum = () => {
     const box = root.querySelector("#im-list");
-    box.innerHTML = current.map((m) => `<a class="ready${TALL.has(m.t) ? "" : " sq"}" href="${esc(museumLink(m.t, m.r))}" title="${esc(m.name)}"><img src="${esc(m.r.image_path || "")}" alt="${esc(m.name)}" loading="lazy"></a>`).join("")
-      || `<span class="board-use-empty">${canLink ? "Not linked to the museum yet." : "Not linked to the museum yet."}</span>`;
+    const slots = canLink ? (LINKABLE[i.section] || []).filter((t) => !current.some((m) => m.t === t)).map((t) => `<button type="button" class="im-slot" data-p="${t}"><span>+</span>${esc(MUSEUM_KIND[t])}</button>`).join("") : "";   // an empty box to tap for each part that is still missing
+    box.innerHTML = current.map((m) => `<a class="ready${TALL.has(m.t) ? "" : " sq"}" href="${esc(museumLink(m.t, m.r))}" title="${esc(m.name)}"><img src="${esc(m.r.image_path || "")}" alt="${esc(m.name)}" loading="lazy"></a>`).join("") + slots
+      || `<span class="board-use-empty">Not linked to the museum yet.</span>`;
   };
-  const fullCheck = () => { const f = root.querySelector("#im-form"); if (f) f.hidden = (LINKABLE[i.section] || []).every((t) => current.some((m) => m.t === t)); };   // everything is linked: no search needed
+  const fullCheck = () => { const f = root.querySelector("#im-form"); if (f) { if ((LINKABLE[i.section] || []).every((t) => current.some((m) => m.t === t))) f.hidden = true; } };   // everything is linked: no search needed
   const paint0 = paintMuseum;
   paintMuseum = () => { paint0(); fullCheck(); };
   paintMuseum();
@@ -236,16 +237,13 @@ async function searchMuseum(t, text, brand, color) {
 }
 
 function setupLinking(i, getCurrent, refresh) {
-  const form = root.querySelector("#im-form"), q = root.querySelector("#im-q"), pop = root.querySelector("#im-pop"), list = root.querySelector("#im-res"), partsBox = root.querySelector("#im-parts"), brandSel = root.querySelector("#im-brand"), colorSel = root.querySelector("#im-color"), add = root.querySelector("#im-add");
+  const form = root.querySelector("#im-form"), q = root.querySelector("#im-q"), pop = root.querySelector("#im-pop"), list = root.querySelector("#im-res"), titleEl = root.querySelector("#im-title"), cancel = root.querySelector("#im-cancel"), listBox = root.querySelector("#im-list"), brandSel = root.querySelector("#im-brand"), colorSel = root.querySelector("#im-color"), add = root.querySelector("#im-add");
   const kinds = LINKABLE[i.section] || [];
   const d = i.details || {};
   let part = kinds[0], seq = 0, timer;
   // what to look for to begin with: what the owner typed about this part
   const start = (t) => String(t === "decks" ? [i.name, d.maker, d.mold, d.size, d.color].filter(Boolean).join(" ") : t === "trucks" ? (d.trucks || (i.section === "trucks" ? [i.name, d.size, d.color].join(" ") : "")) : t === "wheels" ? (d.wheels || (i.section === "wheels" ? [i.name, d.color].join(" ") : "")) : [i.name, d.maker, d.material].filter(Boolean).join(" ")).trim();
-  const paintParts = () => {
-    partsBox.innerHTML = kinds.length > 1 ? kinds.map((t) => `<button type="button" data-p="${t}"${t === part ? ' class="on"' : ""}>${MUSEUM_KIND[t]}</button>`).join("") : "";
-    add.href = "submit.html?type=" + part;
-  };
+  const paintParts = () => { titleEl.textContent = "Find the " + (MUSEUM_KIND[part] || "item").toLowerCase().replace(/\.$/, ""); add.href = "submit.html?type=" + part; };
   const paintBrands = async () => {   // every brand that has entries of this kind
     const table = await loadTable(part), n = {};
     table.forEach((e) => { if (e.brand) n[e.brand] = (n[e.brand] || 0) + 1; });
@@ -262,20 +260,16 @@ function setupLinking(i, getCurrent, refresh) {
     list.innerHTML = found.map(({ t, r, yr }) => {
       const more = [r.brands?.name, yr, r.size, r.color].filter(Boolean).join(" \u00b7 ");
       const linked = have.has(t);
-      return `<div class="im-res"><span class="im-pic"><img src="${esc(r.image_path || "")}" alt="" loading="lazy"></span><span class="im-txt"><b>${esc(museumName(t, r))}</b><br>${esc(more)}</span><button type="button" data-t="${t}" data-id="${r.id}"${linked ? " disabled" : ""}>${linked ? "Linked" : "Link"}</button></div>`;
+      return `<div class="im-res"><span class="im-pic"><img src="${esc(r.image_path || "")}" alt="" loading="lazy"></span><span class="im-txt"><b>${esc(museumName(t, r))}</b><br>${esc(more)}</span><button type="button" data-t="${t}" data-id="${r.id}"${linked ? " disabled" : ""}>${linked ? "Linked" : "This one"}</button></div>`;
     }).join("") || `<p class="im-note">${norm(q.value).length || brandSel.value || colorSel.value ? "Nothing matched. Try fewer words, or pick a brand." : "Type a name, or pick a brand."}</p>`;
   };
-  const open = async () => { if (!q.value) q.value = start(part); pop.hidden = false; await paintBrands(); run(); };
-  paintParts();
-  q.addEventListener("focus", open);
+    const choose = async (t) => { part = t; paintParts(); form.hidden = false; brandSel.value = ""; colorSel.value = ""; q.value = start(part); q.focus(); pop.hidden = false; await paintBrands(); run(); form.scrollIntoView({ block: "nearest", behavior: "smooth" }); };
+  listBox.addEventListener("click", (e) => { const sl = e.target.closest(".im-slot"); if (sl) choose(sl.dataset.p); });
+  cancel.addEventListener("click", () => { form.hidden = true; pop.hidden = true; });
+  q.addEventListener("focus", () => { if (!pop.hidden || !q.value) return; run(); });
   q.addEventListener("input", () => { clearTimeout(timer); timer = setTimeout(run, 200); });
   brandSel.addEventListener("change", run); colorSel.addEventListener("change", run);
   form.addEventListener("submit", (e) => { e.preventDefault(); run(); });
-  partsBox.addEventListener("click", async (e) => {
-    const bt = e.target.closest("button[data-p]");
-    if (!bt) return;
-    part = bt.dataset.p; paintParts(); q.value = start(part); await paintBrands(); brandSel.value = ""; colorSel.value = ""; q.focus(); run();
-  });
   document.addEventListener("click", (e) => { if (!form.contains(e.target)) pop.hidden = true; });
   document.addEventListener("keydown", (e) => { if (e.key === "Escape") pop.hidden = true; });
   list.addEventListener("click", async (e) => {
@@ -285,8 +279,8 @@ function setupLinking(i, getCurrent, refresh) {
     const { error } = await sb.from("collection_item_links").insert({ item_id: i.id, museum_type: bt.dataset.t, museum_id: Number(bt.dataset.id) });
     if (error) { bt.disabled = false; bt.textContent = "Couldn't link"; return; }
     bt.textContent = "Linked";
-    await refresh();
-    run();
+    await refresh();   // the picture appears in its box; the next missing part gets its own box
+    form.hidden = true; pop.hidden = true;
   });
 }
 

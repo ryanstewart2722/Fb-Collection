@@ -503,3 +503,12 @@ body > main.auth { width: 100%; box-sizing: border-box; }
 
 /* item page: squares sit centred beside the tall decks, not on the bottom line */
 #im-more, #im-list { align-items: center; }
+
+/* item page: an empty box to tap for each missing part; the search opens under it */
+.im-slot { width: 92px; height: 92px; border: 1px dashed #000; background: #fff; border-radius: 0; font: inherit; font-size: 13px; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; }
+.im-slot span { font-size: 24px; line-height: 1; }
+.im-slot:hover { background: #f3f3f3; }
+#im-list { align-items: center; }
+.im-title { margin: 14px 0 6px; font-size: 15px; }
+.im-cancel { font: inherit; font-size: 13px; background: none; border: 0; color: #777; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; margin-left: 10px; }
+.im-res button { min-width: 84px; }
