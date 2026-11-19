@@ -129,7 +129,7 @@ async function load() {
       <div class="board-specs">${specs(i, owner)}</div>
       <div class="board-dock">
         <div class="board-use"><p class="board-use-head">In Museum</p>
-          ${canLink ? `<form class="im-find" id="im-form" autocomplete="off"><div class="im-parts" id="im-parts"></div><input type="search" id="im-q" placeholder="Search the museum" aria-label="Search the museum"><div class="im-pop" id="im-res" hidden></div></form>` : ""}
+          ${canLink ? `<form class="im-find" id="im-form" autocomplete="off"><div class="im-parts" id="im-parts"></div><input type="search" id="im-q" placeholder="Search the museum" aria-label="Search the museum"><div class="im-pop" id="im-pop" hidden><div class="im-head"><label>Brand <select id="im-brand"><option value="">All</option></select></label></div><div class="im-list" id="im-res"></div><a class="im-foot" id="im-add" href="submit.html" target="_blank" rel="noopener">Can\u2019t find it? Add it to the museum</a></div></form>` : ""}
           <div class="board-use-list" id="im-list"></div></div>
         <div class="board-brand">
           <span class="board-more-head">More in ${owner ? `<a class="board-brand-link" href="/u/${encodeURIComponent(owner.username)}">${esc(owner.display_name || owner.username)}'s</a> ` : ""}Collection</span>
@@ -220,11 +220,12 @@ function score(entry, qs) {
   }
   return { got, pts };
 }
-async function searchMuseum(t, text) {
+async function searchMuseum(t, text, brand) {
   const qs = [...new Set(norm(text).map((w) => w.replace(/mm$/, "")).filter((w) => w && !STOP.has(w)))].slice(0, 8);
-  if (!qs.length) return [];
+  if (!qs.length && !brand) return [];
   const need = qs.length <= 3 ? qs.length : Math.ceil(qs.length * 0.6);
-  const table = await loadTable(t);
+  const table = (await loadTable(t)).filter((e) => !brand || e.brand === brand);
+  if (!qs.length) return table.slice().sort((a, b) => String(b.r.release_date || "").localeCompare(String(a.r.release_date || ""))).slice(0, 40);   // just a brand picked: newest first
   const scored = table.map((e) => ({ e, ...score(e, qs) }));
   const pick = (n) => scored.filter((x) => x.got >= n).sort((a, b) => b.got - a.got || b.pts - a.pts).slice(0, 40).map((x) => x.e);
   const hits = pick(need);
@@ -232,7 +233,7 @@ async function searchMuseum(t, text) {
 }
 
 function setupLinking(i, getCurrent, refresh) {
-  const form = root.querySelector("#im-form"), q = root.querySelector("#im-q"), pop = root.querySelector("#im-res"), partsBox = root.querySelector("#im-parts");
+  const form = root.querySelector("#im-form"), q = root.querySelector("#im-q"), pop = root.querySelector("#im-pop"), list = root.querySelector("#im-res"), partsBox = root.querySelector("#im-parts"), brandSel = root.querySelector("#im-brand"), add = root.querySelector("#im-add");
   const kinds = LINKABLE[i.section] || [];
   const d = i.details || {};
   let part = kinds[0], seq = 0, timer;
@@ -240,39 +241,45 @@ function setupLinking(i, getCurrent, refresh) {
   const start = (t) => String(t === "decks" ? [i.name, d.maker, d.mold, d.size, d.color].filter(Boolean).join(" ") : t === "trucks" ? (d.trucks || (i.section === "trucks" ? [i.name, d.size, d.color].join(" ") : "")) : t === "wheels" ? (d.wheels || (i.section === "wheels" ? [i.name, d.color].join(" ") : "")) : [i.name, d.maker, d.material].filter(Boolean).join(" ")).trim();
   const paintParts = () => {
     partsBox.innerHTML = kinds.length > 1 ? kinds.map((t) => `<button type="button" data-p="${t}"${t === part ? ' class="on"' : ""}>${MUSEUM_KIND[t]}</button>`).join("") : "";
+    add.href = "submit.html?type=" + part;
+  };
+  const paintBrands = async () => {   // every brand that has entries of this kind
+    const table = await loadTable(part), n = {};
+    table.forEach((e) => { if (e.brand) n[e.brand] = (n[e.brand] || 0) + 1; });
+    brandSel.innerHTML = `<option value="">All</option>` + Object.keys(n).sort((a, b) => a.localeCompare(b)).map((b) => `<option>${esc(b)}</option>`).join("");
   };
   const run = async () => {
     const n = ++seq, have = new Set(getCurrent().map((m) => m.t));
     pop.hidden = false;
-    pop.innerHTML = `<p class="im-note">Searching\u2026</p>`;
     let found = [];
-    try { found = await searchMuseum(part, q.value); } catch (err) { console.error(err); }
+    try { found = await searchMuseum(part, q.value, brandSel.value); } catch (err) { console.error(err); }
     if (n !== seq) return;
-    if (!norm(q.value).length) { pop.hidden = true; return; }
-    pop.innerHTML = found.map(({ t, r, yr }) => {
+    list.innerHTML = found.map(({ t, r, yr }) => {
       const more = [r.brands?.name, yr, r.size, r.color].filter(Boolean).join(" \u00b7 ");
       const linked = have.has(t);
       return `<div class="im-res"><span class="im-pic"><img src="${esc(r.image_path || "")}" alt="" loading="lazy"></span><span class="im-txt"><b>${esc(museumName(t, r))}</b><br>${esc(more)}</span><button type="button" data-t="${t}" data-id="${r.id}"${linked ? " disabled" : ""}>${linked ? "Linked" : "Link"}</button></div>`;
-    }).join("") || `<p class="im-note">Nothing matched. Try fewer words.</p>`;
+    }).join("") || `<p class="im-note">${norm(q.value).length || brandSel.value ? "Nothing matched. Try fewer words, or pick a brand." : "Type a name, or pick a brand."}</p>`;
   };
+  const open = async () => { if (!q.value) q.value = start(part); pop.hidden = false; await paintBrands(); run(); };
   paintParts();
-  q.addEventListener("focus", () => { if (!q.value) q.value = start(part); if (norm(q.value).length) run(); });
+  q.addEventListener("focus", open);
   q.addEventListener("input", () => { clearTimeout(timer); timer = setTimeout(run, 200); });
+  brandSel.addEventListener("change", run);
   form.addEventListener("submit", (e) => { e.preventDefault(); run(); });
-  partsBox.addEventListener("click", (e) => {
-    const b = e.target.closest("button[data-p]");
-    if (!b) return;
-    part = b.dataset.p; paintParts(); q.value = start(part); q.focus(); run();
+  partsBox.addEventListener("click", async (e) => {
+    const bt = e.target.closest("button[data-p]");
+    if (!bt) return;
+    part = bt.dataset.p; paintParts(); q.value = start(part); await paintBrands(); brandSel.value = ""; q.focus(); run();
   });
   document.addEventListener("click", (e) => { if (!form.contains(e.target)) pop.hidden = true; });
   document.addEventListener("keydown", (e) => { if (e.key === "Escape") pop.hidden = true; });
-  pop.addEventListener("click", async (e) => {
-    const b = e.target.closest("button[data-t]");
-    if (!b || b.disabled) return;
-    b.disabled = true;
-    const { error } = await sb.from("collection_item_links").insert({ item_id: i.id, museum_type: b.dataset.t, museum_id: Number(b.dataset.id) });
-    if (error) { b.disabled = false; b.textContent = "Couldn't link"; return; }
-    b.textContent = "Linked";
+  list.addEventListener("click", async (e) => {
+    const bt = e.target.closest("button[data-t]");
+    if (!bt || bt.disabled) return;
+    bt.disabled = true;
+    const { error } = await sb.from("collection_item_links").insert({ item_id: i.id, museum_type: bt.dataset.t, museum_id: Number(bt.dataset.id) });
+    if (error) { bt.disabled = false; bt.textContent = "Couldn't link"; return; }
+    bt.textContent = "Linked";
     await refresh();
     run();
   });
