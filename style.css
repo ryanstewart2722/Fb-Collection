@@ -561,3 +561,8 @@ body > main.auth { width: 100%; box-sizing: border-box; }
 .im-res b { font-weight: normal; color: #000; }
 .im-res .im-sub { color: #555; }
 .im-pic .no-pic { font-size: 10px; }
+/* phones: Safari zooms into a text box under 16px, so the box is 16px but drawn at 12px; nothing zooms */
+@media (hover: none) and (pointer: coarse) {
+  .m-find input[type="search"] { font-size: 16px; width: min(226px, 60vw); transform: scale(0.75); transform-origin: left center; margin-right: calc(min(226px, 60vw) * -0.25); }
+  .im-find input[type="search"], .board-use-form input[type="search"] { font-size: 16px; }
+}
