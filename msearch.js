@@ -2,12 +2,12 @@
 // Shared by the item page and the museum page. It needs MOMS (moms-config.js) and momsDeckName (the deck-name helper).
 // Each kind is loaded once as a light list, then matched on the page, so results come back as you type.
 const MUSEUM_KIND = { decks: "Deck", trucks: "Trucks", wheels: "Wheels", obstacles: "Obstacle", misc: "Misc." };
-const MUSEUM_SEL = {
-  decks: "id,name,slug,image_path,size,color,release_date,drop_no,drop_title,mold_code,graphic,shape,molds,description,brands(name)",
-  trucks: "id,name,slug,image_path,size,color,release_date,description,brands(name)",
-  wheels: "id,name,slug,image_path,color,material,duro,release_date,description,brands(name)",
-  obstacles: "id,name,slug,image_path,material,release_date,description,brands(name)",
-  misc: "id,name,slug,image_path,material,release_date,description,brands(name)",
+const MUSEUM_SEL = {   // everything the museum list / image views show, plus what the search reads
+  decks: "id,brand_id,name,mold_code,drop_no,drop_title,slug,color,size,size_mm,release_date,release_precision,image_path,extra_brand_ids,graphic,shape,molds,description,brands(name,slug)",
+  trucks: "id,brand_id,name,slug,color,size,size_mm,release_date,release_precision,image_path,extra_brand_ids,description,brands(name,slug)",
+  wheels: "id,brand_id,name,slug,color,material,duro,release_date,release_precision,image_path,extra_brand_ids,description,brands(name,slug)",
+  obstacles: "id,brand_id,name,slug,color,size,material,release_date,release_precision,image_path,extra_brand_ids,description,brands(name,slug)",
+  misc: "id,brand_id,name,slug,color,size,material,release_date,release_precision,image_path,extra_brand_ids,description,brands(name,slug)",
 };
 const museumName = (t, r) => t === "decks" ? momsDeckName(r) : (t === "wheels" || t === "trucks") && r.brands?.name && !r.name.toLowerCase().includes(r.brands.name.toLowerCase()) ? `${r.brands.name} ${r.name}` : r.name;
 // the line of facts shown under a result's name

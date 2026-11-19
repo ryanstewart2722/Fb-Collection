@@ -38,7 +38,11 @@ const photoFor = (s, r) => r.image_path || "";
 // View and sort live in the address (?view=image&sort=brand) so they can be shared.
 const params = new URLSearchParams(location.search);
 let view = params.get("view") === "image" ? "image" : "list";
-let sort = params.get("sort") === "brand" ? "brand" : "newest";
+let Q = (params.get("q") || "").trim();   // a search: the lists show only matching entries, in the same list / image views
+const searching = () => Q.length >= 2;
+let sort = ["brand", "newest", "match"].includes(params.get("sort")) ? params.get("sort") : (Q.length >= 2 ? "match" : "newest");
+if (sort === "match" && Q.length < 2) sort = "newest";
+let MATCH = null;   // the entries each kind matched for the current search
 // ?type=wheels shows only that kind (used by "Browse the museum" on an item page); no ?type shows everything as before
 const WANT = params.get("type") || window.MOMS_ONLY || "";   // the type pages (/wheels/ ...) set MOMS_ONLY
 const ONLY = SECTIONS.some((s) => s.type === WANT) ? WANT : "";
@@ -89,8 +93,35 @@ const orderBy = () => {
 const groupKey = (r) => (F.order === "added" ? "" : r.brands?.slug);   // no brand dividers when ordered by upload
 const boardUrl = (s, r) => `board.html?type=${s.type}&slug=${encodeURIComponent(r.slug)}`;
 
+// Refine filters applied to search matches (the same rules filterParams sends to the database)
+function passes(s, r) {
+  const wantsSize = F.size[0] || F.size[1];
+  if ((F.mold.length || F.shape.length) && s.type !== "decks") return false;
+  if (wantsSize && (s.type === "wheels" || s.type === "obstacles" || s.type === "misc")) return false;
+  if (F.brand.length && !F.brand.some((b) => String(r.brand_id) === b || (r.extra_brand_ids || []).map(String).includes(b))) return false;
+  if (F.mold.length && !F.mold.some((x) => [].concat(r.molds || []).includes(x))) return false;
+  if (F.shape.length && !F.shape.includes(r.shape)) return false;
+  if (F.color.length && !F.color.some((c) => String(r.color || "").toLowerCase().includes(c.toLowerCase()))) return false;
+  if (F.year.length && !F.year.includes(String(r.release_date || "").slice(0, 4))) return false;
+  const mm = parseFloat(r.size_mm ?? r.size);
+  if (F.size[0] && !(mm >= +F.size[0])) return false;
+  if (F.size[1] && !(mm <= +F.size[1])) return false;
+  return true;
+}
+function poolFor(s) {
+  const rows = (MATCH?.[s.type] || []).map((e) => e.r).filter((r) => passes(s, r));
+  if (sort === "match") return rows;   // best match first (the order the search gave)
+  const dir = releaseDir() === "asc" ? 1 : -1, date = (r) => r.release_date || "";
+  return rows.sort((a, b) => (sort === "brand" ? String(a.brands?.name || "").localeCompare(String(b.brands?.name || "")) : 0) || (date(a) < date(b) ? -dir : date(a) > date(b) ? dir : 0));
+}
 async function loadSection(s, reset) {
   if (reset) s.rows = [];
+  if (searching()) {
+    if (reset || !s.pool) s.pool = poolFor(s);
+    s.rows.push(...s.pool.slice(s.rows.length, s.rows.length + PAGE));
+    s.total = s.pool.length;
+    return;
+  }
   const fp = filterParams(s);
   if (fp === null) { s.rows = []; s.total = 0; return; }
   const { rows, total } = await momsFetch(
@@ -100,16 +131,41 @@ async function loadSection(s, reset) {
 }
 
 let loadSeq = 0;
+function paintSearchBits() {
+  const chip = document.getElementById("m-chip"), bm = document.getElementById("sort-match");
+  if (bm) bm.hidden = !searching();
+  if (!chip) return;
+  const n = SECTIONS.reduce((a, x) => a + (x.total || 0), 0);
+  chip.hidden = !searching();
+  chip.innerHTML = searching() ? `\u201c${esc(Q)}\u201d \u00b7 ${n} result${n === 1 ? "" : "s"} \u00b7 <a href="#" data-clear-q>Clear</a>` : "";
+}
+// the search box calls this: filter the lists to a search (or, with empty text, back to everything)
+window.momsSearch = (text) => {
+  Q = String(text || "").trim();
+  sort = searching() ? "match" : (sort === "match" ? "newest" : sort);
+  MATCH = null; saveState(); return loadAll();
+};
+document.addEventListener("click", (e) => {
+  if (!e.target.closest("[data-clear-q]")) return;
+  e.preventDefault();
+  const i = document.getElementById("m-q"); if (i) i.value = "";
+  window.momsSearch("");
+});
 async function loadAll() {
   const mine = ++loadSeq;                 // ignore a slow older request if filters changed again
   app.classList.add("loading");
   if (!BRANDS.size) { try { (await momsFetch("brands?select=id,name&limit=2000")).rows.forEach((b) => BRANDS.set(b.id, b.name)); } catch (e) { /* names of extra brands just won't show */ } }
-  await Promise.all(SECTIONS.map((s) => loadSection(s, true)));
+  if (searching() && MATCH?.q !== Q) {
+    const found = { q: Q };
+    await Promise.all(SECTIONS.map(async (s) => { found[s.type] = (await searchMuseum(s.type, Q)).filter((e) => !e.close); }));
+    MATCH = found;
+  }
+  await Promise.all(SECTIONS.map((s) => { s.pool = null; return loadSection(s, true); }));
   // "Show more" / "View all" are remembered, so coming back to the list shows as many boards as you had opened
   const sig = sort + "|" + SECTIONS.map((s) => filterParams(s) || "").join("|");
   let kept = null;
   try { const m = JSON.parse(sessionStorage.getItem("moms-loaded") || "null"); if (m && m.sig === sig) kept = m.n; } catch (e) {}
-  if (kept) await Promise.all(SECTIONS.map(async (s) => {
+  if (kept && !searching()) await Promise.all(SECTIONS.map(async (s) => {
     let before = -1;
     while (s.rows.length < Math.min(kept[s.type] || 0, s.total) && s.rows.length !== before) { before = s.rows.length; await loadSection(s, false); }
   }));
@@ -120,11 +176,13 @@ async function loadAll() {
     if (view === "image" && n) {   // the boards exist, but none of them has a photo yet: image view only shows photos
       app.innerHTML = `<p class="empty">${n} ${n === 1 ? "board matches" : "boards match"}, but ${n === 1 ? "it has" : "none have"} a photo yet. <a href="#" class="linklike">See ${n === 1 ? "it" : "them"} in the list</a></p>`;
       app.querySelector("a.linklike").addEventListener("click", (e) => { e.preventDefault(); view = "list"; saveState(); render(); });
-    } else app.innerHTML = filterCount()
+    } else if (searching()) app.innerHTML = `<p class="empty">Nothing matched \u201c${esc(Q)}\u201d${filterCount() ? " with these filters" : ""}. Try fewer words, or <button type="button" class="linklike" data-clear-q>clear the search</button>.</p>`;
+    else app.innerHTML = filterCount()
       ? `<p class="empty">No boards match these filters. <button type="button" class="linklike" data-clear>Clear filters</button></p>`
       : `<p class="empty">Nothing here yet.</p>`;
   }
   app.classList.remove("loading");
+  paintSearchBits();
   document.dispatchEvent(new Event("museum:loaded"));
 }
 
@@ -422,6 +480,8 @@ function render() {
 function saveState() {
   const p = new URLSearchParams();
   if (ONLY && !window.MOMS_ONLY) p.set("type", ONLY);
+  if (searching()) p.set("q", Q);
+  if (searching() && sort === "newest") p.set("sort", "newest");
   if (view === "image") p.set("view", "image");
   if (sort === "brand") p.set("sort", "brand");
   F.brand.forEach((v) => p.append("brand", v)); F.mold.forEach((v) => p.append("mold", v));
