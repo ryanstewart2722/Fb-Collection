@@ -85,7 +85,7 @@ function specs(i, owner) {
   const left = lines.slice(0, setupsSplit(i, lines));
   const right = lines.slice(left.length);
   const col = (arr, extra) => `<div>${arr.map((t) => cell(t)).join("")}${extra ? cell(extra, true) : ""}</div>`;
-  return col(left) + col(right, person);
+  return col(left) + col(right);
 }
 // setups keep deck, trucks and wheels together in the first column; the others split evenly
 const setupsSplit = (i, lines) => i.section === "setups" ? lines.length : Math.ceil(lines.length / 2);
