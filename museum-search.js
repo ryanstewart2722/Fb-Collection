@@ -11,8 +11,8 @@
   const STEP = 25;
   const paint = () => {
     const { best, close } = cache, part = best.slice(0, shown);
-    pop.innerHTML = (best.length ? `<p class="m-count">${best.length} result${best.length === 1 ? "" : "s"} \u00b7 <a href="${full()}">See all results</a></p>` + part.map(row).join("") : `<p class="m-note">Nothing matched exactly.</p>`)
-      + (best.length > shown ? `<a class="m-more" href="${full()}">See all ${best.length} results</a>` : "")
+    pop.innerHTML = (best.length ? `<p class="m-count">${best.length} result${best.length === 1 ? "" : "s"} \u00b7 <a href="${full()}" data-all>See all results</a></p>` + part.map(row).join("") : `<p class="m-note">Nothing matched exactly.</p>`)
+      + (best.length > shown ? `<a class="m-more" href="${full()}" data-all>See all ${best.length} results</a>` : "")
       + (close.length && best.length <= shown ? `<p class="m-note m-sep">Close, but not exact</p>` + close.map(row).join("") : "");
   };
   const run = async () => {
@@ -29,10 +29,13 @@
     paint();
     pop.scrollTop = 0;
   };
-    q.addEventListener("input", () => { clearTimeout(timer); timer = setTimeout(run, 200); });
+    pop.addEventListener("click", (e) => { if (e.target.closest("[data-all]")) { e.preventDefault(); filterPage(); } });
+  { const first = new URLSearchParams(location.search).get("q"); if (first) q.value = first; }
+  q.addEventListener("input", () => { clearTimeout(timer); timer = setTimeout(run, 200); });
   q.addEventListener("focus", () => { if (q.value.trim().length >= 2) run(); });
-  const full = () => `search.html?q=${encodeURIComponent(q.value.trim())}${only ? "&type=" + only : ""}`;
-  form.addEventListener("submit", (e) => { e.preventDefault(); if (q.value.trim().length >= 2) location.href = full(); });
+  const full = () => `${location.pathname}?q=${encodeURIComponent(q.value.trim())}`;
+  const filterPage = () => { pop.hidden = true; q.blur(); if (window.momsSearch) window.momsSearch(q.value); else location.href = full(); };
+  form.addEventListener("submit", (e) => { e.preventDefault(); if (q.value.trim().length >= 2) filterPage(); });
   document.addEventListener("click", (e) => { if (!form.contains(e.target) && !pop.contains(e.target)) pop.hidden = true; });
   document.addEventListener("keydown", (e) => { if (e.key === "Escape") { pop.hidden = true; q.blur(); } });
 })();
