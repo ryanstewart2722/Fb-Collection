@@ -126,11 +126,10 @@ async function load() {
     ${prev ? `<a class="board-nav prev" href="${esc(link(prev))}">Previous</a><a class="board-nav next" href="${esc(link(next))}">Next</a>` : ""}
     <div class="board-info">
       <h1>${esc(title)}</h1>
-      ${i.status !== "approved" ? `<p class="board-use-msg">This is waiting for review, so only you can see it.</p>` : ""}
       <div class="board-specs">${specs(i, owner)}</div>
       <div class="board-dock">
-        <div class="board-use"><p class="board-use-head">In Museum${canLink ? ` <button type="button" class="board-submit" id="im-edit">Edit</button> <button type="button" class="board-submit im-edonly" id="im-find">Find in museum</button>` : ""}</p>
-          ${canLink ? `<form class="board-use-form" id="im-form" hidden><input type="search" id="im-q" placeholder="Search the museum by name or brand" autocomplete="off" aria-label="Search the museum"> <button type="submit">Search</button> <span class="board-use-msg" id="im-msg" aria-live="polite"></span><div class="im-results" id="im-res"></div></form>` : ""}
+        <div class="board-use"><p class="board-use-head">In Museum</p>
+          ${canLink ? `<form class="board-use-form" id="im-form"><input type="search" id="im-q" placeholder="Search the museum: name, brand, year, size, colour" autocomplete="off" aria-label="Search the museum"> <button type="submit">Search</button> <span class="board-use-msg" id="im-msg" aria-live="polite"></span><div class="im-results" id="im-res"></div></form>` : ""}
           <div class="board-use-list" id="im-list"></div></div>
         <div class="board-brand">
           <span class="board-more-head">More in ${owner ? `<a class="board-brand-link" href="/u/${encodeURIComponent(owner.username)}">${esc(owner.display_name || owner.username)}'s</a> ` : ""}Collection</span>
@@ -145,17 +144,10 @@ async function load() {
   let current = museum;   // what is linked right now
   const paintMuseum = () => {
     const box = root.querySelector("#im-list");
-    box.innerHTML = current.map((m) => `<span class="im-one"><a class="ready${TALL.has(m.t) ? "" : " sq"}" href="${esc(museumLink(m.t, m.r))}" title="${esc(m.name)}"><img src="${esc(m.r.image_path || "")}" alt="${esc(m.name)}" loading="lazy"></a>
-      <span class="im-cap">${esc(MUSEUM_KIND[m.t])}${m.status !== "approved" ? ` <i class="im-pend">waiting for review</i>` : ""}${canLink ? ` <button type="button" class="im-x" data-t="${m.t}" data-id="${m.r.id}" title="Remove this link">remove</button>` : ""}</span></span>`).join("")
+    box.innerHTML = current.map((m) => `<span class="im-one"><a class="ready${TALL.has(m.t) ? "" : " sq"}" href="${esc(museumLink(m.t, m.r))}" title="${esc(m.name)}"><img src="${esc(m.r.image_path || "")}" alt="${esc(m.name)}" loading="lazy"></a>`).join("")
       || `<span class="board-use-empty">${canLink ? "Not linked to the museum yet." : "Not linked to the museum yet."}</span>`;
   };
   paintMuseum();
-  const ed = root.querySelector("#im-edit");   // owner's edit mode: find / remove / review notes show only while it is on
-  if (ed) ed.addEventListener("click", () => {
-    const on = root.classList.toggle("im-editing");
-    ed.textContent = on ? "Done" : "Edit";
-    if (!on) { const f = root.querySelector("#im-form"); if (f) f.hidden = true; }
-  });
   if (canLink) setupLinking(i, () => current, async () => { current = await loadMuseum(await linksP2(i.id)); paintMuseum(); });
 }
 const linksP2 = (itemId) => sb.from("collection_item_links").select("museum_type,museum_id,link_status").eq("item_id", itemId).then((r) => r.data || []);
@@ -187,14 +179,14 @@ async function loadMuseum(links) {
 
 // ---------- find it in the museum, and link it (or remove the link) ----------
 function setupLinking(i, getCurrent, refresh) {
-  const form = root.querySelector("#im-form"), find = root.querySelector("#im-find"), q = root.querySelector("#im-q"), msg = root.querySelector("#im-msg"), res = root.querySelector("#im-res");
+  const form = root.querySelector("#im-form"), q = root.querySelector("#im-q"), msg = root.querySelector("#im-msg"), res = root.querySelector("#im-res");
   const kinds = LINKABLE[i.section] || [];
-  find.addEventListener("click", () => { form.hidden = !form.hidden; if (!form.hidden) { if (!q.value) q.value = String(i.name || "").replace(/[,*()%]/g, " ").replace(/\s+/g, " ").trim().slice(0, 40); q.focus(); } });
+  let timer; q.addEventListener("input", () => { clearTimeout(timer); timer = setTimeout(() => form.requestSubmit(), 350); });   // searches as you type
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
     const term = q.value.replace(/[,*()%\\]/g, " ").replace(/\s+/g, " ").trim();
     msg.textContent = ""; res.innerHTML = "";
-    if (term.length < 2) return (msg.textContent = "Type at least two letters.");
+    if (term.length < 2) return;
     msg.textContent = "Searching…";
     try {
       // word by word: every word is looked for in the name or the brand, and the best matches (the most words) come first
@@ -230,15 +222,6 @@ function setupLinking(i, getCurrent, refresh) {
     msg.textContent = data?.link_status === "approved" ? "Linked." : "Sent. It shows for everyone once it's approved.";
     b.textContent = "Linked";
     await refresh();
-  });
-  root.querySelector("#im-list").addEventListener("click", async (e) => {
-    const b = e.target.closest(".im-x");
-    if (!b) return;
-    b.disabled = true;
-    const { error } = await sb.from("collection_item_links").delete().eq("item_id", i.id).eq("museum_type", b.dataset.t).eq("museum_id", Number(b.dataset.id));
-    if (error) { msg.textContent = "Couldn't remove that. " + error.message; form.hidden = false; b.disabled = false; return; }
-    await refresh();
-    res.innerHTML = "";
   });
 }
 
