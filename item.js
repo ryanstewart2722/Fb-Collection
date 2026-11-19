@@ -129,7 +129,7 @@ async function load() {
       <div class="board-specs">${specs(i, owner)}</div>
       <div class="board-dock">
         <div class="board-use"><p class="board-use-head">In Museum</p>
-          ${canLink ? `<form class="im-find" id="im-form" autocomplete="off"><div class="im-parts" id="im-parts"></div><input type="search" id="im-q" placeholder="Search the museum" aria-label="Search the museum"><div class="im-pop" id="im-pop" hidden><div class="im-head"><label>Brand <select id="im-brand"><option value="">All</option></select></label></div><div class="im-list" id="im-res"></div><a class="im-foot" id="im-add" href="submit.html" target="_blank" rel="noopener">Can\u2019t find it? Add it to the museum</a></div></form>` : ""}
+          ${canLink ? `<form class="im-find" id="im-form" autocomplete="off"><div class="im-parts" id="im-parts"></div><input type="search" id="im-q" placeholder="Search the museum" aria-label="Search the museum"><div class="im-pop" id="im-pop" hidden><div class="im-head"><label>Brand <select id="im-brand"><option value="">All</option></select></label> <label>Colour <select id="im-color"><option value="">All</option></select></label></div><div class="im-list" id="im-res"></div><a class="im-foot" id="im-add" href="submit.html" target="_blank" rel="noopener">Can\u2019t find it? Add it to the museum</a></div></form>` : ""}
           <div class="board-use-list" id="im-list"></div></div>
         <div class="board-brand">
           <span class="board-more-head">More in ${owner ? `<a class="board-brand-link" href="/u/${encodeURIComponent(owner.username)}">${esc(owner.display_name || owner.username)}'s</a> ` : ""}Collection</span>
@@ -196,7 +196,7 @@ function loadTable(t) {
       const brand = r.brands?.name || "", yr = r.release_date ? String(r.release_date).slice(0, 4) : "";
       const text = [museumName(t, r), brand, r.color, r.material, r.mold_code, r.drop_title, r.drop_no ? "drop " + r.drop_no : ""].join(" ");
       const size = parseFloat(r.size);   // e.g. "32.5mm" -> 32.5
-      return { t, r, words: norm(text), nums: new Set([...(text.match(/\d+(\.\d+)?/g) || []), yr, Number.isFinite(size) ? String(size) : "", r.duro ? String(parseFloat(r.duro)) : ""].filter(Boolean)), yr, brand, size };
+      return { t, r, words: norm(text), nums: new Set([...(text.match(/\d+(\.\d+)?/g) || []), yr, Number.isFinite(size) ? String(size) : "", r.duro ? String(parseFloat(r.duro)) : ""].filter(Boolean)), yr, brand, size, colors: String(r.color || "").split(/[\/,&]| and /i).map((c) => c.trim().toLowerCase()).filter(Boolean) };
     }));
   })());
 }
@@ -204,10 +204,11 @@ const STOP = new Set(["x", "the", "and", "of", "a", "mm", "deck", "decks", "whee
 const norm = (x) => String(x ?? "").toLowerCase().replace(/['\u2019]/g, "").replace(/[^a-z0-9.]+/g, " ").replace(/\.(?!\d)/g, "").trim().split(/\s+/).filter(Boolean);
 // how well one entry matches the words typed: whole words count most, starts-of-words next; numbers must match exactly (size, year, number)
 function score(entry, qs) {
-  let got = 0, pts = 0;
+  let got = 0, pts = 0, numHit = 0;
   for (const q of qs) {
     let best = 0;
-    if (/^\d+(\.\d+)?$/.test(q)) {
+    const isNum = /^\d+(\.\d+)?$/.test(q);
+    if (isNum) {
       if (entry.nums.has(q) || entry.nums.has(String(parseFloat(q)))) best = 4;
     } else {
       for (const w of entry.words) {
@@ -216,24 +217,25 @@ function score(entry, qs) {
         if (best === 3) break;
       }
     }
-    if (best) { got++; pts += best; }
+    if (best) { pts += best; if (isNum) numHit++; else got++; }
   }
-  return { got, pts };
+  return { got, pts, numHit };
 }
-async function searchMuseum(t, text, brand) {
+async function searchMuseum(t, text, brand, color) {
   const qs = [...new Set(norm(text).map((w) => w.replace(/mm$/, "")).filter((w) => w && !STOP.has(w)))].slice(0, 8);
-  if (!qs.length && !brand) return [];
-  const need = qs.length <= 3 ? qs.length : Math.ceil(qs.length * 0.6);
-  const table = (await loadTable(t)).filter((e) => !brand || e.brand === brand);
+  if (!qs.length && !brand && !color) return [];
+  const words = qs.filter((w) => !/^\d+(\.\d+)?$/.test(w));   // numbers (size, year, deck number) only help the ranking: many people leave them out
+  const need = Math.min(words.length, words.length <= 3 ? words.length : Math.ceil(words.length * 0.6));
+  const table = (await loadTable(t)).filter((e) => (!brand || e.brand === brand) && (!color || e.colors.includes(color)));
   if (!qs.length) return table.slice().sort((a, b) => String(b.r.release_date || "").localeCompare(String(a.r.release_date || ""))).slice(0, 40);   // just a brand picked: newest first
   const scored = table.map((e) => ({ e, ...score(e, qs) }));
-  const pick = (n) => scored.filter((x) => x.got >= n).sort((a, b) => b.got - a.got || b.pts - a.pts).slice(0, 40).map((x) => x.e);
+  const pick = (n) => scored.filter((x) => x.got >= n && (x.got > 0 || x.numHit > 0)).sort((a, b) => b.got - a.got || b.pts - a.pts).slice(0, 40).map((x) => x.e);
   const hits = pick(need);
-  return hits.length || qs.length < 2 ? hits : pick(Math.max(1, need - 1));   // nothing matched every word: show the closest ones
+  return hits.length || words.length < 2 ? hits : pick(Math.max(1, need - 1));   // nothing matched every word: show the closest ones
 }
 
 function setupLinking(i, getCurrent, refresh) {
-  const form = root.querySelector("#im-form"), q = root.querySelector("#im-q"), pop = root.querySelector("#im-pop"), list = root.querySelector("#im-res"), partsBox = root.querySelector("#im-parts"), brandSel = root.querySelector("#im-brand"), add = root.querySelector("#im-add");
+  const form = root.querySelector("#im-form"), q = root.querySelector("#im-q"), pop = root.querySelector("#im-pop"), list = root.querySelector("#im-res"), partsBox = root.querySelector("#im-parts"), brandSel = root.querySelector("#im-brand"), colorSel = root.querySelector("#im-color"), add = root.querySelector("#im-add");
   const kinds = LINKABLE[i.section] || [];
   const d = i.details || {};
   let part = kinds[0], seq = 0, timer;
@@ -246,30 +248,32 @@ function setupLinking(i, getCurrent, refresh) {
   const paintBrands = async () => {   // every brand that has entries of this kind
     const table = await loadTable(part), n = {};
     table.forEach((e) => { if (e.brand) n[e.brand] = (n[e.brand] || 0) + 1; });
+    const cn = new Set(table.flatMap((e) => e.colors));
+    colorSel.innerHTML = `<option value="">All</option>` + [...cn].sort().map((c) => `<option value="${esc(c)}">${esc(c[0].toUpperCase() + c.slice(1))}</option>`).join("");
     brandSel.innerHTML = `<option value="">All</option>` + Object.keys(n).sort((a, b) => a.localeCompare(b)).map((b) => `<option>${esc(b)}</option>`).join("");
   };
   const run = async () => {
     const n = ++seq, have = new Set(getCurrent().map((m) => m.t));
     pop.hidden = false;
     let found = [];
-    try { found = await searchMuseum(part, q.value, brandSel.value); } catch (err) { console.error(err); }
+    try { found = await searchMuseum(part, q.value, brandSel.value, colorSel.value); } catch (err) { console.error(err); }
     if (n !== seq) return;
     list.innerHTML = found.map(({ t, r, yr }) => {
       const more = [r.brands?.name, yr, r.size, r.color].filter(Boolean).join(" \u00b7 ");
       const linked = have.has(t);
       return `<div class="im-res"><span class="im-pic"><img src="${esc(r.image_path || "")}" alt="" loading="lazy"></span><span class="im-txt"><b>${esc(museumName(t, r))}</b><br>${esc(more)}</span><button type="button" data-t="${t}" data-id="${r.id}"${linked ? " disabled" : ""}>${linked ? "Linked" : "Link"}</button></div>`;
-    }).join("") || `<p class="im-note">${norm(q.value).length || brandSel.value ? "Nothing matched. Try fewer words, or pick a brand." : "Type a name, or pick a brand."}</p>`;
+    }).join("") || `<p class="im-note">${norm(q.value).length || brandSel.value || colorSel.value ? "Nothing matched. Try fewer words, or pick a brand." : "Type a name, or pick a brand."}</p>`;
   };
   const open = async () => { if (!q.value) q.value = start(part); pop.hidden = false; await paintBrands(); run(); };
   paintParts();
   q.addEventListener("focus", open);
   q.addEventListener("input", () => { clearTimeout(timer); timer = setTimeout(run, 200); });
-  brandSel.addEventListener("change", run);
+  brandSel.addEventListener("change", run); colorSel.addEventListener("change", run);
   form.addEventListener("submit", (e) => { e.preventDefault(); run(); });
   partsBox.addEventListener("click", async (e) => {
     const bt = e.target.closest("button[data-p]");
     if (!bt) return;
-    part = bt.dataset.p; paintParts(); q.value = start(part); await paintBrands(); brandSel.value = ""; q.focus(); run();
+    part = bt.dataset.p; paintParts(); q.value = start(part); await paintBrands(); brandSel.value = ""; colorSel.value = ""; q.focus(); run();
   });
   document.addEventListener("click", (e) => { if (!form.contains(e.target)) pop.hidden = true; });
   document.addEventListener("keydown", (e) => { if (e.key === "Escape") pop.hidden = true; });
