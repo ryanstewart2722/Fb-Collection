@@ -5,8 +5,7 @@ The staging site is the same code as the real one, with three differences, all m
 and merging a tested change into the real site never carries staging settings with it):
   1. It talks to the separate STAGING database, never the real one.
   2. It is hidden from search engines and shows a small "STAGING" label.
-  3. It leaves out the big files the real site needs but staging doesn't (preview pictures, product-page copies, user cut-outs,
-     old museum photos), and loads the cut-out models from the real site instead of copying them (Cloudflare's free limit is 25 MB a file).
+  3. It leaves out the big files the real site needs but staging doesn't (preview pictures, product-page copies, old museum photos), and loads the cut-out models from the real site instead of copying them (Cloudflare's free limit is 25 MB a file).
 
 Run from anywhere:  python3 staging/build.py
 Cloudflare Pages runs this for you on every push to the staging branch (see staging/README.md).
@@ -22,7 +21,7 @@ PROD_KEY = "sb_publishable_fpAMGrL1QxRngyGLfvgy1Q_DByMA1ww"
 STAGING_KEY = "sb_publishable_7wbr94j_YaqHV0hd-AhRPw_9NeYYUhw"      # a public key, like the real one; it only allows what staging's own rules allow
 LIVE_SITE = "https://museumofminiskateboards.org"
 
-SKIP_DIRS = {"og", "p", "u", "user-cuts", "Images", "models", "exports", "node_modules", "scripts", "staging", ".git", ".github", ".claude"}
+SKIP_DIRS = {"og", "p", "u", "Images", "models", "exports", "node_modules", "scripts", "staging", ".git", ".github", ".claude"}
 SKIP_FILES = {"CNAME", ".gitignore"}
 TEXT = {".html", ".js", ".css", ".json", ".txt", ".xml"}
 
