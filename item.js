@@ -130,7 +130,7 @@ async function load() {
       <div class="board-dock">
         <div class="board-use"><p class="board-use-head">In Museum</p>
           <div class="board-use-list" id="im-list"></div>
-          ${canLink ? `<form class="im-find" id="im-form" autocomplete="off" hidden><p class="im-title"><span id="im-title"></span> <button type="button" class="im-cancel" id="im-cancel">Cancel</button></p><input type="search" id="im-q" placeholder="Type a name, or just a few words" aria-label="Search the museum"><div class="im-pop" id="im-pop" hidden><div class="im-head"><label>Brand <select id="im-brand"><option value="">All</option></select></label> <label>Colour <select id="im-color"><option value="">All</option></select></label></div><div class="im-list" id="im-res"></div><p class="im-foot">Can\u2019t find it? <a href="./" target="_blank" rel="noopener">Browse the whole museum</a> or <a id="im-add" href="submit.html" target="_blank" rel="noopener">add it to the museum</a></p></div></form>` : ""}</div>
+          ${canLink ? `<form class="im-find" id="im-form" autocomplete="off" hidden><p class="im-title"><span id="im-title"></span> <button type="button" class="im-cancel" id="im-cancel">Cancel</button></p><input type="search" id="im-q" placeholder="Type a name, or just a few words" aria-label="Search the museum"><div class="im-pop" id="im-pop" hidden><div class="im-list" id="im-res"></div><p class="im-foot">Can\u2019t find it? <a href="./" target="_blank" rel="noopener">Browse the whole museum</a> or <a id="im-add" href="submit.html" target="_blank" rel="noopener">add it to the museum</a></p></div></form>` : ""}</div>
         <div class="board-brand">
           <span class="board-more-head">More in ${owner ? `<a class="board-brand-link" href="/u/${encodeURIComponent(owner.username)}">${esc(owner.display_name || owner.username)}'s</a> ` : ""}Collection</span>
           <div class="board-more" id="im-more"></div>
@@ -186,94 +186,33 @@ async function loadMuseum(links) {
 }
 
 // ---------- find it in the museum, and link it ----------
-// Each kind of entry is loaded once (a light list), then matched here on the page so results come back as you type.
-const TABLE = {}, tableP = {};
-function loadTable(t) {
-  return (tableP[t] ||= (async () => {
-    const rows = [];
-    for (let from = 0; ; from += 1000) {
-      const { data, error } = await sb.from(t).select(MUSEUM_SEL[t]).not("image_path", "is", null).order("id").range(from, from + 999);
-      if (error || !data) break;
-      rows.push(...data);
-      if (data.length < 1000) break;
-    }
-    return (TABLE[t] = rows.map((r) => {
-      const brand = r.brands?.name || "", yr = r.release_date ? String(r.release_date).slice(0, 4) : "";
-      const text = [museumName(t, r), brand, r.color, r.material, r.mold_code, [].concat(r.molds || []).join(" "), r.graphic, r.shape, r.drop_title, r.drop_no ? "drop " + r.drop_no : ""].join(" ");
-      const size = parseFloat(r.size);   // e.g. "32.5mm" -> 32.5
-      return { t, r, words: norm(text), nums: new Set([...(text.match(/\d+(\.\d+)?/g) || []), yr, Number.isFinite(size) ? String(size) : "", r.duro ? String(parseFloat(r.duro)) : ""].filter(Boolean)), yr, brand, size, colors: String(r.color || "").split(/[\/,&]| and /i).map((c) => c.trim().toLowerCase()).filter(Boolean) };
-    }));
-  })());
-}
-const STOP = new Set(["x", "the", "and", "of", "a", "mm", "deck", "decks", "wheels", "wheel", "trucks", "truck"]);
-const norm = (x) => String(x ?? "").toLowerCase().replace(/['\u2019]/g, " ").replace(/(?<!\d)\.|\.(?!\d)/g, " ").replace(/[^a-z0-9. ]+/g, " ").trim().split(/\s+/).filter(Boolean);   // "Dr.M's" -> dr m s; "29.5mm" stays one number
-// how well one entry matches the words typed: whole words count most, starts-of-words next; numbers must match exactly (size, year, number)
-// how strongly one entry matches one typed word (0 = not at all)
-function strength(entry, q) {
-  if (/^\d+(\.\d+)?$/.test(q)) return entry.nums.has(q) || entry.nums.has(String(parseFloat(q))) ? 4 : 0;
-  let best = 0;
-  for (const w of entry.words) {
-    const p = w === q ? 3 : q.length >= 3 && w.startsWith(q) ? 2 : q.length >= 5 && w.includes(q) ? 1 : 0;
-    if (p > best) best = p;
-    if (best === 3) break;
-  }
-  return best;
-}
-async function searchMuseum(t, text, brand, color) {
-  const qs = [...new Set(norm(text).map((w) => w.replace(/mm$/, "")).filter((w) => w && !STOP.has(w)))].slice(0, 8);
-  if (!qs.length && !brand && !color) return [];
-  const words = qs.filter((w) => !/^\d+(\.\d+)?$/.test(w));   // numbers (size, year, deck number) only help the ranking: many people leave them out
-  const need = Math.min(words.length, words.length <= 3 ? words.length : Math.ceil(words.length * 0.6));
-  const table = (await loadTable(t)).filter((e) => (!brand || e.brand === brand) && (!color || e.colors.includes(color)));
-  if (!qs.length) return table.slice().sort((a, b) => String(b.r.release_date || "").localeCompare(String(a.r.release_date || ""))).slice(0, 40);   // just a brand picked: newest first
-  // a rare word ("blank", "freshwater") tells entries apart much better than a common one ("dr", "m"), so it counts for more
-  const mat = table.map((e) => qs.map((q) => strength(e, q)));
-  const wt = qs.map((q, k) => Math.log(1 + table.length / (1 + mat.reduce((n, row) => n + (row[k] ? 1 : 0), 0))));
-  const scored = table.map((e, r) => {
-    let got = 0, pts = 0, numHit = 0;
-    qs.forEach((q, k) => { const st = mat[r][k]; if (!st) return; pts += st * wt[k]; if (/^\d/.test(q)) numHit++; else got++; });
-    pts -= e.words.length * 0.02;   // between equals, the shorter (more exact) name wins
-    return { e, got, pts, numHit };
-  });
-  const pick = (n) => scored.filter((x) => x.got >= n && (x.got > 0 || x.numHit > 0)).sort((a, b) => b.pts - a.pts).slice(0, 40).map((x) => x.e);
-  const hits = pick(need);
-  return hits.length || words.length < 2 ? hits : pick(Math.max(1, need - 1));   // nothing matched every word: show the closest ones
-}
-
+// (the matching itself lives in msearch.js, so the museum page can use the same search)
 function setupLinking(i, getCurrent, refresh) {
-  const form = root.querySelector("#im-form"), q = root.querySelector("#im-q"), pop = root.querySelector("#im-pop"), list = root.querySelector("#im-res"), titleEl = root.querySelector("#im-title"), cancel = root.querySelector("#im-cancel"), listBox = root.querySelector("#im-list"), brandSel = root.querySelector("#im-brand"), colorSel = root.querySelector("#im-color"), add = root.querySelector("#im-add");
+  const form = root.querySelector("#im-form"), q = root.querySelector("#im-q"), pop = root.querySelector("#im-pop"), list = root.querySelector("#im-res"), titleEl = root.querySelector("#im-title"), cancel = root.querySelector("#im-cancel"), listBox = root.querySelector("#im-list"), add = root.querySelector("#im-add");
   const kinds = LINKABLE[i.section] || [];
   const d = i.details || {};
   let part = kinds[0], seq = 0, timer;
   // what to look for to begin with: what the owner typed about this part
   const start = (t) => String(t === "decks" ? [i.name, d.maker, d.mold, d.size, d.color].filter(Boolean).join(" ") : t === "trucks" ? (d.trucks || (i.section === "trucks" ? [i.name, d.size, d.color].join(" ") : "")) : t === "wheels" ? (d.wheels || (i.section === "wheels" ? [i.name, d.color].join(" ") : "")) : [i.name, d.maker, d.material].filter(Boolean).join(" ")).trim();
   const paintParts = () => { titleEl.textContent = "Find the " + (MUSEUM_KIND[part] || "item").toLowerCase().replace(/\.$/, ""); add.href = "submit.html?type=" + part; };
-  const paintBrands = async () => {   // every brand that has entries of this kind
-    const table = await loadTable(part), n = {};
-    table.forEach((e) => { if (e.brand) n[e.brand] = (n[e.brand] || 0) + 1; });
-    const cn = new Set(table.flatMap((e) => e.colors));
-    colorSel.innerHTML = `<option value="">All</option>` + [...cn].sort().map((c) => `<option value="${esc(c)}">${esc(c[0].toUpperCase() + c.slice(1))}</option>`).join("");
-    brandSel.innerHTML = `<option value="">All</option>` + Object.keys(n).sort((a, b) => a.localeCompare(b)).map((b) => `<option>${esc(b)}</option>`).join("");
-  };
   const run = async () => {
     const n = ++seq, have = new Set(getCurrent().map((m) => m.t));
     pop.hidden = false;
     let found = [];
-    try { found = await searchMuseum(part, q.value, brandSel.value, colorSel.value); } catch (err) { console.error(err); }
+    try { found = await searchMuseum(part, q.value); } catch (err) { console.error(err); }
     if (n !== seq) return;
     list.innerHTML = found.map(({ t, r, yr }) => {
       const mold = r.mold_code || [].concat(r.molds || []).join(", ");
       const more = [r.brands?.name, yr, r.size, r.color, mold && "Mold: " + mold, r.shape, r.material, r.duro && r.duro + (/d$/i.test(r.duro) ? "" : "d"), r.drop_no && "Drop " + r.drop_no].filter(Boolean).join(" \u00b7 ");
       const linked = have.has(t);
       return `<div class="im-res"><span class="im-pic"><img src="${esc(r.image_path || "")}" alt="" loading="lazy"></span><span class="im-txt"><b>${esc(museumName(t, r))}</b><br>${esc(more)}</span><button type="button" data-t="${t}" data-id="${r.id}"${linked ? " disabled" : ""}>${linked ? "Linked" : "This one"}</button></div>`;
-    }).join("") || `<p class="im-note">${norm(q.value).length || brandSel.value || colorSel.value ? "Nothing matched. Try fewer words, or pick a brand." : "Type a name, or pick a brand."}</p>`;
+    }).join("") || `<p class="im-note">${norm(q.value).length ? "Nothing matched. Try fewer words." : "Type a few words: a name, brand, colour or size."}</p>`;
   };
-    const choose = async (t) => { part = t; paintParts(); form.hidden = false; brandSel.value = ""; colorSel.value = ""; q.value = start(part); q.focus(); pop.hidden = false; await paintBrands(); run(); form.scrollIntoView({ block: "nearest", behavior: "smooth" }); };
+    const choose = async (t) => { part = t; paintParts(); form.hidden = false; q.value = start(part); q.focus(); pop.hidden = false; run(); form.scrollIntoView({ block: "nearest", behavior: "smooth" }); };
   listBox.addEventListener("click", (e) => { const sl = e.target.closest(".im-slot"); if (sl) choose(sl.dataset.p); });
   cancel.addEventListener("click", () => { form.hidden = true; pop.hidden = true; });
   q.addEventListener("focus", () => { if (!pop.hidden || !q.value) return; run(); });
   q.addEventListener("input", () => { clearTimeout(timer); timer = setTimeout(run, 200); });
-  brandSel.addEventListener("change", run); colorSel.addEventListener("change", run);
   form.addEventListener("submit", (e) => { e.preventDefault(); run(); });
   document.addEventListener("click", (e) => { if (!form.contains(e.target)) pop.hidden = true; });
   document.addEventListener("keydown", (e) => { if (e.key === "Escape") pop.hidden = true; });

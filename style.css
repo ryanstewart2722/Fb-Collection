@@ -516,3 +516,6 @@ body > main.auth { width: 100%; box-sizing: border-box; }
 .im-head label { display: flex; gap: 6px; align-items: center; }
 .im-head select { max-width: 150px; }
 .im-foot a { color: #000; text-decoration: underline; text-underline-offset: 3px; }
+
+/* phones: the matches sit in the page (not over it) so the footer never covers them */
+@media (max-width: 760px) { .im-pop { position: static; max-height: 60vh; } }
