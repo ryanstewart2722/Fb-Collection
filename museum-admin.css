@@ -132,3 +132,7 @@
 .me-filter { margin: 0 0 12px; display: flex; flex-wrap: wrap; gap: 8px; }
 .me-filter .active { background: #000; color: #fff; }
 .me-rv[hidden], .me-bulk button[hidden] { display: none; }
+.me-sort { align-items: center; }
+.me-rv-user { margin: 22px 0 6px; font-size: 14px; font-weight: normal; }
+.me-rv-user[hidden] { display: none; }
+.me-sort .active { background: #000; color: #fff; }

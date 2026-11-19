@@ -876,8 +876,39 @@ function applyReviewFilter() {
   reviewItems.forEach((x) => { if (x) counts[x.r.section] = (counts[x.r.section] || 0) + 1; });
   if (rvFilter !== "all" && !counts[rvFilter]) rvFilter = "all";
   document.querySelectorAll(".me-filter button").forEach((b) => b.classList.toggle("active", b.dataset.sec === rvFilter));
-  document.querySelectorAll(".me-rv").forEach((c) => { c.hidden = rvFilter !== "all" && c.dataset.sec !== rvFilter; });
+  document.querySelectorAll(".me-rv").forEach((c) => { c.hidden = (rvFilter !== "all" && c.dataset.sec !== rvFilter) || (rvUser && c.dataset.user !== rvUser); });
+  document.querySelectorAll(".me-rv-user").forEach((h) => { const mine = [...document.querySelectorAll(`.me-rv[data-user="${CSS.escape(h.dataset.user)}"]`)].some((c) => !c.hidden); h.hidden = !mine; });
+  document.querySelectorAll(".me-sort button[data-s]").forEach((b) => b.classList.toggle("active", b.dataset.s === rvSort));
+  const pick = document.getElementById("rv-userpick"); if (pick) pick.innerHTML = rvUser ? ` Showing only ${esc(rvUser)} <button class="ad-btn" data-act="rv-user" data-user="">Show everyone</button>` : "";
   document.querySelectorAll(".me-bulk button[data-section]").forEach((b) => { b.hidden = rvFilter !== "all" && b.dataset.section !== rvFilter; });
+}
+let rvSort = "oldest", rvUser = "";   // how the Review list is ordered, and (optionally) one submitter to show
+const rvWho = (x) => x.r.profiles?.username || "someone";
+// the cards, in the chosen order; "By user" puts each person's submissions together under their name
+function rvCards() {
+  const order = reviewItems.map((x, i) => ({ x, i })).filter((o) => o.x);
+  if (rvSort === "newest") order.reverse();
+  if (rvSort === "user") order.sort((a, b) => rvWho(a.x).toLowerCase().localeCompare(rvWho(b.x).toLowerCase()) || a.i - b.i);
+  const per = {}; order.forEach(({ x }) => { per[rvWho(x)] = (per[rvWho(x)] || 0) + 1; });
+  let last = null;
+  return (order.map(({ x, i }) => {
+    const head = rvSort === "user" && rvWho(x) !== last ? `<h3 class="me-rv-user" data-user="${esc(rvWho(x))}"><button class="ad-btn" data-act="rv-user" data-user="${esc(rvWho(x))}">${esc(rvWho(x))} (${per[rvWho(x)]})</button></h3>` : "";
+    last = rvWho(x);
+    return head + rvCard(x, i);
+  }).join("") || `<p class="me-empty">Nothing waiting.</p>`);
+}
+function rvCard(x, i) {
+
+    const r = x.r, who = r.profiles?.username || "someone";
+    const f = x.kind === "item" ? { section: r.section, name: r.name, ...r.details } : { section: r.section, ...r.fields };
+    return `<div class="me-rv" data-i="${i}" data-sec="${esc(r.section)}" data-user="${esc(who)}">
+      <div class="me-rv-img">${x.url ? `<img src="${esc(x.url)}" alt="">` : `<span>No photo</span>`}${x.url2 ? `<img src="${esc(x.url2)}" alt="" title="Second photo">` : ""}</div>
+      <div class="me-rv-info">
+        <b>${esc(f.name || "(no name)")}</b> <em>${x.kind === "item" ? "collection · " + esc(r.section) : "museum submission · " + esc(r.section)}</em>
+        <span>by <a href="/u/${esc(who)}" target="_blank" rel="noopener">${esc(who)}</a></span>
+        <span>${Object.entries(f).filter(([k, v]) => v && !["name", "section"].includes(k)).map(([k, v]) => `${esc(k)}: ${esc(v)}`).join(" · ")}</span>
+        <div class="me-rv-act"><button class="ad-btn ad-btn-dark" data-act="rv-ok">${x.kind === "sub" ? "Add to museum" : "Approve"}</button> <button class="ad-btn me-danger" data-act="rv-no">Reject</button></div>
+      </div></div>`;
 }
 async function renderReview() {
   app.innerHTML = `<p class="me-count">Loading…</p>`;
@@ -899,18 +930,8 @@ async function renderReview() {
   const secCounts = {}; reviewItems.forEach((x) => { secCounts[x.r.section] = (secCounts[x.r.section] || 0) + 1; });
   const kinds = [["all", "All"], ["decks", "Decks"], ["trucks", "Trucks"], ["wheels", "Wheels"], ["obstacles", "Obstacles"], ["misc", "Misc."]];
   const filterBar = `<p class="me-filter">` + kinds.map(([k, label]) => `<button class="ad-btn" data-act="rv-filter" data-sec="${k}">${label}${k === "all" ? ` (${reviewItems.length})` : secCounts[k] ? ` (${secCounts[k]})` : ""}</button>`).join(" ") + `</p>`;
-  app.innerHTML = `<p class="me-count">${reviewItems.length} waiting for review</p>${filterBar}${bulk ? `<p class="me-bulk">${bulk}</p>` : ""}<div class="me-review">` + (reviewItems.map((x, i) => {
-    const r = x.r, who = r.profiles?.username || "someone";
-    const f = x.kind === "item" ? { section: r.section, name: r.name, ...r.details } : { section: r.section, ...r.fields };
-    return `<div class="me-rv" data-i="${i}" data-sec="${esc(r.section)}">
-      <div class="me-rv-img">${x.url ? `<img src="${esc(x.url)}" alt="">` : `<span>No photo</span>`}${x.url2 ? `<img src="${esc(x.url2)}" alt="" title="Second photo">` : ""}</div>
-      <div class="me-rv-info">
-        <b>${esc(f.name || "(no name)")}</b> <em>${x.kind === "item" ? "collection · " + esc(r.section) : "museum submission · " + esc(r.section)}</em>
-        <span>by <a href="/u/${esc(who)}" target="_blank" rel="noopener">${esc(who)}</a></span>
-        <span>${Object.entries(f).filter(([k, v]) => v && !["name", "section"].includes(k)).map(([k, v]) => `${esc(k)}: ${esc(v)}`).join(" · ")}</span>
-        <div class="me-rv-act"><button class="ad-btn ad-btn-dark" data-act="rv-ok">${x.kind === "sub" ? "Add to museum" : "Approve"}</button> <button class="ad-btn me-danger" data-act="rv-no">Reject</button></div>
-      </div></div>`;
-  }).join("") || `<p class="me-empty">Nothing waiting.</p>`) + `</div>`;
+  const sortBar = `<p class="me-filter me-sort">Sort: ` + [["oldest", "Oldest first"], ["newest", "Newest first"], ["user", "By user"]].map(([k, label]) => `<button class="ad-btn" data-act="rv-sort" data-s="${k}">${label}</button>`).join(" ") + `<span class="me-userpick" id="rv-userpick"></span></p>`;
+  app.innerHTML = `<p class="me-count">${reviewItems.length} waiting for review</p>${filterBar}${sortBar}${bulk ? `<p class="me-bulk">${bulk}</p>` : ""}<div class="me-review">${rvCards()}</div>`;
   applyReviewFilter();
 }
 // A museum submission that came from someone's collection should show (and publish) the better re-cut of that photo, not the first quick one.
@@ -1068,6 +1089,8 @@ async function addAllSubmissions(section, btn) {
 }
 app.addEventListener("click", (e) => {
   const a = e.target.closest("[data-act]")?.dataset.act;
+  if (a === "rv-sort") { rvSort = e.target.closest("[data-act]").dataset.s; document.querySelector(".me-review").innerHTML = rvCards(); applyReviewFilter(); return; }
+  if (a === "rv-user") { const u = e.target.closest("[data-act]").dataset.user; rvUser = rvUser === u ? "" : u; applyReviewFilter(); return; }
   if (a === "rv-filter") { rvFilter = e.target.closest("[data-act]").dataset.sec; applyReviewFilter(); return; }
   if (a === "rv-all") return addAllSubmissions(e.target.closest("[data-act]").dataset.section).catch(fail("Couldn't add them all"));
   if (a === "rv-ok" || a === "rv-no") reviewAct(e.target.closest(".me-rv"), a === "rv-ok");
