@@ -63,7 +63,7 @@ function typo(q, w) {
   return d;
 }
 // how strongly one entry matches one typed word (0 = not at all): whole word > start of a word > a typo; a colour hit counts for less
-function strength(entry, q) {
+function strength(entry, q, fuzzy) {
   if (isNum(q)) return entry.nums.has(q) || entry.nums.has(String(parseFloat(q))) ? 4 : 0;
   let best = 0;
   for (const w of entry.words) {
@@ -73,7 +73,7 @@ function strength(entry, q) {
   }
   if (!best) for (const w of entry.cwords) if (w === q || (q.length >= 3 && w.startsWith(q))) return 1;   // colour only: a weak hint
   if (!best && entry.dwords.has(q)) return 0.8;   // only in the description: a weaker hint
-  if (!best && q.length >= 4) { let bd = Infinity; for (const w of entry.words) { const d = typo(q, w); if (d < bd) bd = d; if (bd <= 1) break; } if (bd <= 1) return 1.5; if (bd <= 1.5) return 1.3; if (bd <= 2) return 1.2; }
+  if (!best && fuzzy && q.length >= 4) { let bd = Infinity; for (const w of entry.words) { const d = typo(q, w); if (d < bd) bd = d; if (bd <= 1) break; } if (bd <= 1) return 1.5; if (bd <= 1.5) return 1.3; if (bd <= 2) return 1.2; }
   return best;
 }
 // Results: the best matches first, then a few close ones (marked close: true) for when nothing is exact.
@@ -84,10 +84,15 @@ async function searchMuseum(t, text) {
   const need = Math.min(words.length, words.length <= 3 ? words.length : Math.ceil(words.length * 0.6));
   const table = await loadTable(t);
   // a rare word ("blank", "freshwater") tells entries apart much better than a common one ("dr", "m"), so it counts for more
+  // a word that is spelled right matches exactly; typo-matching is only a fallback for a word nothing contains as typed
   const mat = table.map((e) => {
-    const row = qs.map((q) => strength(e, q));
+    const row = qs.map((q) => strength(e, q, false));
     for (let k = 0; k + 1 < qs.length; k++) if (!isNum(qs[k]) && !isNum(qs[k + 1]) && e.wset.has(qs[k] + qs[k + 1])) { row[k] = Math.max(row[k], 3); row[k + 1] = Math.max(row[k + 1], 3); }   // "dr m" finds "drm"
     return row;
+  });
+  qs.forEach((q, k) => {
+    if (isNum(q) || mat.some((row) => row[k])) return;
+    table.forEach((e, r) => { mat[r][k] = strength(e, q, true); });
   });
   const wt = qs.map((q, k) => Math.log(1 + table.length / (1 + mat.reduce((n, row) => n + (row[k] ? 1 : 0), 0))));
   const scored = table.map((e, r) => {
