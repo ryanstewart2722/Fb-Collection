@@ -302,6 +302,12 @@
 "src": "4288eb2a-cb61-4f42-bd3d-d863223cb883/3bda217a-ec8b-4df3-80b2-f550e8274fd7.png",
 "w": 216
 },
+"0e05a719-9794-4e91-b88c-ab533aa4b8ce": {
+"file": "user-cuts/tight/0e05a719-9794-4e91-b88c-ab533aa4b8ce-bb39ed67.webp",
+"h": 600,
+"src": "833410b9-6f3b-4c66-ad05-77e1b0c82c5f/0c2386e5-bf39-4c20-a097-d85799d4c6f5.png",
+"w": 197
+},
 "0e7950fb-f6c3-4f89-ac3b-f3d72329c62a": {
 "file": "user-cuts/tight/0e7950fb-f6c3-4f89-ac3b-f3d72329c62a-677fa58f.webp",
 "h": 600,
@@ -2846,6 +2852,12 @@
 "src": "833410b9-6f3b-4c66-ad05-77e1b0c82c5f/bac34d94-e880-470c-94e6-f5ef54578fbe.png",
 "w": 262
 },
+"821ae9cb-f1a4-4793-879f-45a635a64cdf": {
+"file": "user-cuts/tight/821ae9cb-f1a4-4793-879f-45a635a64cdf-56ec5b4e.webp",
+"h": 600,
+"src": "833410b9-6f3b-4c66-ad05-77e1b0c82c5f/abd6c07b-d9ed-445f-ac25-02d1d07ed37c.png",
+"w": 207
+},
 "82414ab3-aa8d-4784-8a29-2c7e91c95b97": {
 "file": "user-cuts/tight/82414ab3-aa8d-4784-8a29-2c7e91c95b97-3c191182.webp",
 "h": 600,
@@ -4309,6 +4321,12 @@
 "h": 600,
 "src": "833410b9-6f3b-4c66-ad05-77e1b0c82c5f/4cf96596-3885-4ade-88e3-45f861ca60dd.png",
 "w": 377
+},
+"bf821d06-500a-4e8e-a394-424d7d5d9716": {
+"file": "user-cuts/tight/bf821d06-500a-4e8e-a394-424d7d5d9716-7e4ba0f8.webp",
+"h": 600,
+"src": "833410b9-6f3b-4c66-ad05-77e1b0c82c5f/67dee5cf-a67f-4244-8010-9ccb8a135565.png",
+"w": 198
 },
 "bfc95fe5-c463-410a-9526-921f396a0bb9": {
 "file": "user-cuts/tight/bfc95fe5-c463-410a-9526-921f396a0bb9-b31f51f0.webp",
@@ -5803,6 +5821,10 @@
 1200
 ],
 "user-cuts/0dc807d7-0ea8-4d3b-8aab-2d501579fb98-2c58b6c9-v2.webp": [
+530,
+1200
+],
+"user-cuts/0e05a719-9794-4e91-b88c-ab533aa4b8ce-f3e1f477-v2.webp": [
 530,
 1200
 ],
@@ -7530,6 +7552,10 @@
 530,
 1200
 ],
+"user-cuts/821ae9cb-f1a4-4793-879f-45a635a64cdf-205677a3-v2.webp": [
+530,
+1200
+],
 "user-cuts/82414ab3-aa8d-4784-8a29-2c7e91c95b97-f5660b5b-v2.webp": [
 530,
 1200
@@ -8509,6 +8535,10 @@
 "user-cuts/bf2cd445-cd9b-4a2f-8658-213b3386250a-b0dd349f-v2.webp": [
 800,
 800
+],
+"user-cuts/bf821d06-500a-4e8e-a394-424d7d5d9716-2ce1ca77-v2.webp": [
+530,
+1200
 ],
 "user-cuts/bfc95fe5-c463-410a-9526-921f396a0bb9-efa49bc0-v2.webp": [
 530,
