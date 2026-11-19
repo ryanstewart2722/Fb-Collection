@@ -495,3 +495,6 @@ body > main.auth { width: 100%; box-sizing: border-box; }
 .im-res button:disabled { opacity: 0.45; cursor: default; }
 
 .im-find[hidden] { display: none; }
+
+/* item page: squares sit centred beside the tall decks, not on the bottom line */
+#im-more, #im-list { align-items: center; }
