@@ -137,7 +137,7 @@ async function load() {
       </div>
     </div>`;
 
-  let shownMore = matchMedia("(max-width: 1100px)").matches ? more.slice(0, 6) : more;
+  let shownMore = matchMedia("(max-width: 1100px)").matches ? more.slice(0, 5) : more;
   root.querySelector("#im-more").innerHTML = shownMore.map((m) => `<a${TALL.has(m.section) ? "" : ' class="sq"'} href="${esc(link(m.id))}" title="${esc(m.name)}"><img src="${esc(m.url)}" alt="${esc(m.name)}" loading="lazy"></a>`).join("") || `<span class="board-use-empty">Nothing else here yet.</span>`;
 
   let current = museum;   // what is linked right now

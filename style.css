@@ -572,3 +572,10 @@ body > main.auth { width: 100%; box-sizing: border-box; }
 .controls .m-find { flex: 1; align-self: stretch; margin-right: 0; cursor: text; }
 /* no little x inside the search box */
 .m-find input[type="search"]::-webkit-search-cancel-button, .m-find input[type="search"]::-webkit-search-decoration, .im-find input[type="search"]::-webkit-search-cancel-button { -webkit-appearance: none; appearance: none; display: none; }
+/* phones: the suggested pictures are one row of five, each sharing the width */
+@media (max-width: 760px) {
+  .board-more { flex-wrap: nowrap; gap: 10px; }
+  .board-more a, .board-more a.sq { flex: 1 1 0; min-width: 0; width: auto; height: auto; display: flex; align-items: center; justify-content: center; }
+  .board-more a.sq { aspect-ratio: 1; }
+  .board-more img, .board-more a.sq img { max-width: 100%; width: auto; height: auto; max-height: 145px; object-fit: contain; }
+}
