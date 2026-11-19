@@ -209,7 +209,7 @@ function setupLinking(i, getCurrent, refresh) {
       const more = museumInfo(t, r);
       const linked = have.has(t);
       const head = close && !sawClose ? (sawClose = true, `<p class="im-note im-sep">Close, but not exact</p>`) : "";
-      return head + `<div class="im-res"><span class="im-pic">${museumPic(r)}</span><span class="im-txt"><b>${esc(museumName(t, r))}</b><br><span class="im-sub">${esc(more)}</span></span><button type="button" data-t="${t}" data-id="${r.id}"${linked ? " disabled" : ""}>${linked ? "Linked" : "This one"}</button></div>`;
+      return head + `<div class="im-res"><span class="im-pic">${museumPic(r)}</span><span class="im-txt"><b>${esc(museumName(t, r))}</b><br><span class="im-sub">${esc(more)}</span></span><button type="button" data-t="${t}" data-id="${r.id}"${linked ? " disabled" : ""}>${linked ? "Linked" : "Select"}</button></div>`;
     }).join("") + (cache.length > shownN ? `<button type="button" class="im-more-btn" id="im-more-btn">Show more (${cache.length - shownN} left)</button>` : "")
       || `<p class="im-note">${norm(q.value).length ? "Nothing matched. Try fewer words." : "Type a few words: a name, brand, colour or size."}</p>`;
   };
