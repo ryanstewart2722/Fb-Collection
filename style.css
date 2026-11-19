@@ -564,5 +564,6 @@ body > main.auth { width: 100%; box-sizing: border-box; }
 /* phones: Safari zooms into a text box under 16px, so the box is 16px but drawn at 12px; nothing zooms */
 @media (hover: none) and (pointer: coarse) {
   .m-find input[type="search"] { font-size: 16px; width: min(226px, 60vw); transform: scale(0.75); transform-origin: left center; margin-right: calc(min(226px, 60vw) * -0.25); }
-  .im-find input[type="search"], .board-use-form input[type="search"] { font-size: 16px; }
+  .im-find input[type="search"] { display: block; font-size: 16px; line-height: 1.2; padding: 9px 13px; width: 133.333%; transform: scale(0.75); transform-origin: left top; margin-bottom: -10px; }
+  .board-use-form input[type="search"] { font-size: 16px; }
 }
