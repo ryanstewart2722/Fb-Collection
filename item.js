@@ -144,9 +144,13 @@ async function load() {
   let current = museum;   // what is linked right now
   let paintMuseum = () => {
     const box = root.querySelector("#im-list");
-    const slots = canLink ? (LINKABLE[i.section] || []).filter((t) => !current.some((m) => m.t === t)).map((t) => `<button type="button" class="im-slot" data-p="${t}"><span>+</span>${esc(MUSEUM_KIND[t])}</button>`).join("") : "";   // an empty box to tap for each part that is still missing
-    box.innerHTML = current.map((m) => `<a class="ready${TALL.has(m.t) ? "" : " sq"}" href="${esc(museumLink(m.t, m.r))}" title="${esc(m.name)}"><img src="${esc(m.r.image_path || "")}" alt="${esc(m.name)}" loading="lazy"></a>`).join("") + slots
-      || `<span class="board-use-empty">Not linked to the museum yet.</span>`;
+    const kinds = canLink ? (LINKABLE[i.section] || []) : [];
+    const one = (m) => `<a class="ready${TALL.has(m.t) ? "" : " sq"}" href="${esc(museumLink(m.t, m.r))}" title="${esc(m.name)}"><img src="${esc(m.r.image_path || "")}" alt="${esc(m.name)}" loading="lazy"></a>`;
+    // the owner sees one place for each part, in order: the picture when it is linked, otherwise an empty box to tap
+    const html = kinds.length
+      ? kinds.map((t) => { const m = current.find((x) => x.t === t); return m ? one(m) : `<button type="button" class="im-slot" data-p="${t}"><span>+</span>${esc(MUSEUM_KIND[t])}</button>`; }).join("") + current.filter((m) => !kinds.includes(m.t)).map(one).join("")
+      : current.map(one).join("");
+    box.innerHTML = html || `<span class="board-use-empty">Not linked to the museum yet.</span>`;
   };
   const fullCheck = () => { const f = root.querySelector("#im-form"); if (f) { if ((LINKABLE[i.section] || []).every((t) => current.some((m) => m.t === t))) f.hidden = true; } };   // everything is linked: no search needed
   const paint0 = paintMuseum;
