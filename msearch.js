@@ -81,7 +81,7 @@ async function searchMuseum(t, text) {
     return { e, got, pts, numHit };
   });
   const rank = (a, b) => b.pts - a.pts;
-  const best = scored.filter((x) => x.got >= need && (x.got > 0 || x.numHit > 0)).sort(rank).slice(0, 40);
+  const best = scored.filter((x) => x.got + Math.min(x.numHit, 1) >= need && (x.got > 0 || x.numHit > 0))   // a matching number (deck #, size, year) can stand in for one missing word.sort(rank).slice(0, 40);
   const ids = new Set(best.map((x) => x.e));
   const close = words.length < 2 && best.length ? [] : scored.filter((x) => !ids.has(x.e) && x.got >= Math.max(1, need - 1) && x.got > 0).sort(rank).slice(0, best.length ? 12 : 24);
   return [...best.map((x) => x.e), ...close.map((x) => Object.assign({}, x.e, { close: true }))];
