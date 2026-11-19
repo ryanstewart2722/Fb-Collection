@@ -570,3 +570,5 @@ body > main.auth { width: 100%; box-sizing: border-box; }
 .board-use[hidden] { display: none; }
 /* the whole search bar is the target */
 .controls .m-find { flex: 1; align-self: stretch; margin-right: 0; cursor: text; }
+/* no little x inside the search box */
+.m-find input[type="search"]::-webkit-search-cancel-button, .m-find input[type="search"]::-webkit-search-decoration, .im-find input[type="search"]::-webkit-search-cancel-button { -webkit-appearance: none; appearance: none; display: none; }
