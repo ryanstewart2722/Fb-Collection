@@ -54,3 +54,10 @@ async function searchMuseum(t, text) {
   return hits.length || words.length < 2 ? hits : pick(Math.max(1, need - 1));   // nothing matched every word: show the closest ones
 }
 
+
+// For the museum page: the same words scanned across every kind at once (decks, trucks, wheels, obstacles, misc.), best few of each.
+async function searchAllMuseum(text, perKind = 8) {
+  const kinds = Object.keys(MUSEUM_SEL);
+  const lists = await Promise.all(kinds.map((t) => searchMuseum(t, text).then((rows) => rows.slice(0, perKind))));
+  return lists.flat();
+}
