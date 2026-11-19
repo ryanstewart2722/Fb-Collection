@@ -541,6 +541,3 @@ body > main.auth { width: 100%; box-sizing: border-box; }
 .m-more { display: block; width: 100%; font: inherit; font-size: 14px; padding: 12px; background: #fff; border: 0; border-top: 1px solid #000; cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
 .m-more:hover { background: #f3f3f3; }
 .im-more-btn { display: block; width: 100%; font: inherit; font-size: 14px; padding: 12px; background: #fff; border: 0; border-top: 1px solid #000; cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
-
-/* the search row stays put under the top bar while the lists scroll */
-.controls { position: sticky; top: 50px; z-index: 40; background: #fff; margin-top: 0; padding-top: 14px; }
