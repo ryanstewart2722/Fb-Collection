@@ -201,7 +201,7 @@ function loadTable(t) {
   })());
 }
 const STOP = new Set(["x", "the", "and", "of", "a", "mm", "deck", "decks", "wheels", "wheel", "trucks", "truck"]);
-const norm = (x) => String(x ?? "").toLowerCase().replace(/['\u2019]/g, "").replace(/[^a-z0-9.]+/g, " ").replace(/\.(?!\d)/g, "").trim().split(/\s+/).filter(Boolean);
+const norm = (x) => String(x ?? "").toLowerCase().replace(/['\u2019]/g, " ").replace(/(?<!\d)\.|\.(?!\d)/g, " ").replace(/[^a-z0-9. ]+/g, " ").trim().split(/\s+/).filter(Boolean);   // "Dr.M's" -> dr m s; "29.5mm" stays one number
 // how well one entry matches the words typed: whole words count most, starts-of-words next; numbers must match exactly (size, year, number)
 function score(entry, qs) {
   let got = 0, pts = 0, numHit = 0;
