@@ -43,7 +43,9 @@ const SAMPLE = {
 };
 
 const viewOf = () => /list$/.test(location.hash) ? "list" : "image";
-const favMode = () => location.hash.startsWith("#favorites");   // #favorites and #favorites-list: the person's favorite museum products
+const likesMode = () => location.hash.startsWith("#likes");   // #likes and #likes-list: the collection items a person has liked
+const favMode = () => location.hash.startsWith("#favorites") || likesMode();   // #favorites and #favorites-list: the person's favorite museum products (likes use the same screen)
+const modeName = () => (likesMode() ? "likes" : "favorites");
 let view = viewOf();   // collection pages open on the image view
 let state = null;   // { profile, items, owner }
 
@@ -140,7 +142,7 @@ function sections() {
 function headHtml() {
   const { profile, owner } = state;
   return `<section class="p-head">
-    <p class="p-user">museumofminiskateboards.org/u/${esc(profile.username)}${profile.is_private ? ` · <b>Private</b>` : ""}${state.fav ? ` · <a class="p-fav-link" href="#${view === "list" ? "list" : "image"}">← Back to collection</a>` : ` · <a class="p-fav-link" href="#favorites">Favorites${state.favItems ? ` (${state.favItems.length})` : ""}</a>`}</p>
+    <p class="p-user">museumofminiskateboards.org/u/${esc(profile.username)}${profile.is_private ? ` · <b>Private</b>` : ""}${state.fav ? ` · <a class="p-fav-link" href="#${view === "list" ? "list" : "image"}">← Back to collection</a>` : ` · <a class="p-fav-link" href="#favorites">Favorites${state.favItems ? ` (${state.favItems.length})` : ""}</a> · <a class="p-fav-link" href="#likes">Likes${state.likeItems ? ` (${state.likeItems.length})` : ""}</a>`}</p>
     ${owner ? ownerBar() : ""}
   </section>`;
 }
@@ -155,14 +157,8 @@ function ownerBar() {
   </div>`;
   return `<div class="p-owner">
     <button class="auth-link" data-act="editimg">${state.edit ? "Done editing" : "Edit"}</button> ·
-    <button class="auth-link" data-act="edit">Edit name and bio</button> ·
     <button class="auth-link" data-act="private">${p.is_private ? "Make my collection public" : "Make my collection private"}</button> ·
     <button class="auth-link" data-act="signout">Sign out</button>
-    <form id="edit-form" class="auth-form p-edit" hidden>
-      <input id="ed-name" type="text" placeholder="Display name" maxlength="60" value="${esc(p.display_name || "")}">
-      <textarea id="ed-bio" placeholder="A short bio (optional)" maxlength="300" rows="3">${esc(p.bio || "")}</textarea>
-      <button class="auth-btn" type="submit">Save</button>
-    </form>
     <p id="owner-msg" class="auth-note" aria-live="polite"></p>
   </div>`;
 }
@@ -245,10 +241,10 @@ function paintItems() {
   document.body.classList.remove("scrub"); scrubGrids = []; scrubEl = null; activeOpen = null;
   if (state.owner && !state.items.length) view = "list";   // nothing to show as pictures yet
   clearActive();
-  document.querySelectorAll("#views a").forEach((a) => { a.classList.toggle("active", a.dataset.view === view); a.setAttribute("href", (state.fav ? "#favorites" : "#") + (state.fav ? (a.dataset.view === "list" ? "-list" : "") : a.dataset.view)); });
+  document.querySelectorAll("#views a").forEach((a) => { a.classList.toggle("active", a.dataset.view === view); a.setAttribute("href", (state.fav ? "#" + modeName() : "#") + (state.fav ? (a.dataset.view === "list" ? "-list" : "") : a.dataset.view)); });
   document.body.classList.toggle("list-view", view === "list");
   if (!state.items.length && !state.owner) {
-    box.innerHTML = `<p class="p-empty">${state.fav ? "No favorites yet." : state.owner ? "You haven't added anything yet." : "Nothing here yet."}</p>`;
+    box.innerHTML = `<p class="p-empty">${state.fav ? (likesMode() ? "No likes yet." : "No favorites yet.") : state.owner ? "You haven't added anything yet." : "Nothing here yet."}</p>`;
     return;
   }
   const editing = state.edit && state.owner;
@@ -338,16 +334,28 @@ async function loadFavs() {
     state.favItems = out;
   } catch (e) { console.error(e); }
 }
+async function loadLikes() {   // the collection items this person has liked (the database only shows likes on approved items of public collections)
+  state.likeItems = [];
+  try {
+    const { data: lk } = await sb.from("item_likes").select("item_id,created_at").eq("user_id", state.profile.id).order("created_at", { ascending: false });
+    if (!lk || !lk.length) return;
+    const { data: rows } = await sb.from("collection_items").select("*").in("id", lk.map((l) => l.item_id)).eq("status", "approved");
+    const out = rows || [];
+    await Promise.all(out.map(async (i) => { i.url = await photoUrl(i); i.url2 = i.image_path_2 ? await photoUrl2(i) : ""; i.link = "/item.html?id=" + encodeURIComponent(i.id); i.at = (lk.find((l) => l.item_id === i.id) || {}).created_at || ""; }));
+    out.sort((a, b) => String(b.at).localeCompare(String(a.at)));
+    state.likeItems = out;
+  } catch (e) { console.error(e); }
+}
 // Swap the page between the collection and the favorites list (same list and image views for both).
 function applyMode() {
   if (!state) return;
   document.body.classList.toggle("fav-mode", favMode());
-  if (favMode() && !state.fav) { state.fav = true; state.keep = { items: state.items, owner: state.owner, edit: state.edit, draft: state.draft }; state.items = state.favItems || []; state.owner = false; state.edit = false; state.draft = null; }
-  else if (!favMode() && state.fav) { state.fav = false; Object.assign(state, state.keep); state.keep = null; }
+  if (state.fav && state.favKind !== (favMode() ? modeName() : "")) { state.fav = false; Object.assign(state, state.keep); state.keep = null; }   // leaving one list (or switching between Favorites and Likes): back to the collection first
+  if (favMode() && !state.fav) { state.fav = true; state.favKind = modeName(); state.keep = { items: state.items, owner: state.owner, edit: state.edit, draft: state.draft }; state.items = (likesMode() ? state.likeItems : state.favItems) || []; state.owner = false; state.edit = false; state.draft = null; }
 }
 function favTop() {   // the page title, in the same big text as the section titles
   const back = view === "list" ? "list" : "image";   // the name takes you back to the collection
-  return `<h2 class="fav-title"><a href="#${back}">${esc(state.profile.display_name || state.profile.username)}</a>'s Favorites</h2>`;
+  return `<h2 class="fav-title"><a href="#${back}">${esc(state.profile.display_name || state.profile.username)}</a>'s ${likesMode() ? "Likes" : "Favorites"}</h2>`;
 }
 // A favorite opens its museum page (on touch screens: first tap shows it, second tap opens it)
 document.addEventListener("click", (e) => {
@@ -756,8 +764,8 @@ async function load() {
   const rows = (items || []).filter((i) => staff || i.status !== "removed");   // hidden entries show only to the museum's owner
   await loadRecuts();
   await Promise.all(rows.map(async (i) => { i.url = await photoUrl(i); i.url2 = i.image_path_2 ? await photoUrl2(i) : ""; }));
-  state = { profile, items: rows, owner, staff, isAdmin, viewer: session?.user.id };
-  await loadFavs();
+  state = { profile, items: rows, owner, staff, isAdmin, self, viewer: session?.user.id };
+  await Promise.all([loadFavs(), loadLikes()]);
   paint();
 }
 

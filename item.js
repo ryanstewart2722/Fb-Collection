@@ -144,16 +144,15 @@ async function load() {
   // likes: anyone can see the count; signed-in people can like or un-like
   (async () => {
     const btn = root.querySelector("#im-like"); if (!btn) return;
-    const count = async () => (await sb.from("item_likes").select("item_id", { count: "exact", head: true }).eq("item_id", i.id)).count || 0;
-    let n = await count(), on = false;
+    let on = false;
     if (me) { const { data } = await sb.from("item_likes").select("item_id").eq("item_id", i.id).eq("user_id", me).maybeSingle(); on = !!data; }
-    const paint = () => { btn.innerHTML = `<span class="star" aria-hidden="true">${on ? "\u2665" : "\u2661"}</span> ${on ? "Liked" : "Like"}${n ? ` \u00b7 ${n}` : ""}`; btn.hidden = false; };
+    const paint = () => { btn.innerHTML = `<span class="star" aria-hidden="true">${on ? "\u2665" : "\u2661"}</span> ${on ? "Liked" : "Like"}`; btn.hidden = false; };
     paint();
     btn.addEventListener("click", async () => {
       if (!me) return (location.href = "/signin.html");
       btn.disabled = true;
       const res = on ? await sb.from("item_likes").delete().eq("item_id", i.id).eq("user_id", me) : await sb.from("item_likes").insert({ item_id: i.id });
-      if (!res.error) { on = !on; n = Math.max(0, n + (on ? 1 : -1)); }
+      if (!res.error) { on = !on; }
       btn.disabled = false; paint();
     });
   })();
@@ -167,7 +166,8 @@ async function load() {
     const html = kinds.length
       ? kinds.map((t) => { const m = current.find((x) => x.t === t); return m ? one(m) : `<button type="button" class="im-slot" data-p="${t}"><span>+</span>${esc(MUSEUM_KIND[t])}</button>`; }).join("") + current.filter((m) => !kinds.includes(m.t)).map(one).join("")
       : current.map(one).join("");
-    box.innerHTML = html || `<span class="board-use-empty">Not linked to the museum yet.</span>`;
+    box.innerHTML = html || "";
+    box.closest(".board-use")?.classList.toggle("use-none", !html);   // nothing linked: no text, and the empty row folds away like on museum pages
     // visitors only see "In Museum" when something is linked; the owner (and staff) always do, to add entries
     root.querySelector("#im-section").hidden = !canLink && !current.length;
   };
