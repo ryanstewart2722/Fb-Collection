@@ -68,19 +68,22 @@ window.momsKeepScroll = function (box, fn, anchor) {
 
 // Shared bits on every page: the footer, and the sign-in link that says "Sign in" until you are signed in.
 (function () {
-  var BOARD = '<svg class="fb-board" viewBox="0 0 140 36" aria-hidden="true"><path class="fb-deck" d="M4 6 Q6 14 16 15 L124 15 Q134 14 136 5"/><circle cx="38" cy="27" r="5"/><circle cx="104" cy="27" r="5"/></svg>';
-  var ANGLES = [-23, -7, 0, 8, 20];
+  // the row of boards at the bottom right: [x, y of the board's centre, turn] on the 1440-wide design; the last one is the MoMS board
+  var ROW = [[696, 480, 8], [840, 456, -12], [1014, 412, 6], [1192, 420, 12], [1350, 464, 20]];
   var footer = document.createElement("footer");
   footer.className = "site-footer";
   footer.innerHTML =
-    '<img class="fb-logo" src="/footer-logo.png" alt="MoMS" width="783" height="735">' +
+    '<img class="fb-logo" src="/footer-character.webp" alt="" width="900" height="946">' +
     '<p class="fb-credit">Designed, curated and developed by <a href="https://ryanforprez.org" target="_blank" rel="noopener">Ryan Stewart</a> view his collection <a href="/u/r">here</a></p>' +
     '<nav class="fb-links" aria-label="Site">' +
-      '<div><a href="/">Museum</a><a href="/submit.html">Submit</a><a href="/users.html">Users</a><a href="https://www.instagram.com/museum.of.mini.skateboards/" target="_blank" rel="noopener">Instagram</a></div>' +
-      '<div><a href="/account.html">My Account</a><a href="/signin.html" data-me>My Collection</a><a href="/privacy.html">Privacy</a><a href="mailto:contact@museumofminiskateboards.org">Contact</a></div>' +
+      '<div><a href="/">Museum</a><a href="/?order=added">Recently Added</a><span class="fb-soon">Featured Setups</span></div>' +
+      '<div><a href="/">View All</a><a href="/decks/">Decks</a><a href="/trucks/">Trucks</a><a href="/obstacles/">Obstacles</a><a href="/wheels/">Wheels</a><a href="/misc/">Misc.</a><span class="fb-soon">Brands</span></div>' +
+      '<div><a href="/account.html">My Account</a><a href="/users.html">Users</a><a href="/signin.html" data-me>My Collection</a></div>' +
+      '<div><a href="/signin.html" data-me data-hash="#favorites">Favorites</a><a href="/signin.html" data-me data-hash="#likes">Likes</a><span class="fb-soon">Following</span><a href="/" data-logout hidden>Logout</a><a href="/submit.html">Submit</a><a href="mailto:contact@museumofminiskateboards.org">Contact</a><a href="/privacy.html">Privacy Policy</a></div>' +
     '</nav>' +
-    '<div class="fb-boards" aria-hidden="true">' + ANGLES.map(function (a) { return '<span style="--r:' + a + 'deg">' + BOARD + '</span>'; }).join("") + '</div>' +
-    '<p class="fb-title">The Museum of Mini Skateboards</p>';
+    '<div class="fb-boards" aria-hidden="true">' + ROW.map(function (p) { return '<img src="/footer-board.svg" alt="" style="--x:' + p[0] + ';--y:' + p[1] + ';--r:' + p[2] + 'deg">'; }).join("") +
+      '<img class="fb-moms" src="/footer-moms.svg" alt="" style="--x:1092;--y:484;--r:0deg"></div>' +
+    '<p class="fb-title">The<br>Museum<br>of<br>Mini<br>Skateboards</p>';
   document.body.appendChild(footer);
 
   // Signed in? The saved sign-in tells us who without loading the whole sign-in library.
@@ -95,7 +98,9 @@ window.momsKeepScroll = function (box, fn, anchor) {
     .then(function (rows) {
       var u = rows[0] && rows[0].username; if (!u) return;
       if (top) { top.href = "/u/" + u; if (top.dataset.prev !== undefined) top.dataset.prev = "My Collection"; else top.textContent = "My Collection"; }
-      footer.querySelectorAll("[data-me]").forEach(function (a) { a.href = "/u/" + u; });
+      footer.querySelectorAll("[data-me]").forEach(function (a) { a.href = "/u/" + u + (a.dataset.hash || ""); });
+      var out = footer.querySelector("[data-logout]");
+      if (out) { out.hidden = false; out.addEventListener("click", function () { try { localStorage.removeItem("sb-alfsnqpxmptvuvakyzcl-auth-token"); } catch (e) {} }); }
     }).catch(function () {});
 })();
 
