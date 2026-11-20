@@ -69,7 +69,7 @@ window.momsKeepScroll = function (box, fn, anchor) {
 // Shared bits on every page: the footer, and the sign-in link that says "Sign in" until you are signed in.
 (function () {
   // the row of boards at the bottom right: [x, y of the board's centre, turn] on the 1440-wide design; the last one is the MoMS board
-  var ROW = [[696, 480, 8], [840, 456, -12], [1014, 412, 6], [1192, 420, 12], [1350, 464, 20]];
+  var ROW = [[696, 454, 8], [840, 426, -12], [1014, 380, 6], [1192, 390, 12], [1350, 434, 20]];
   var footer = document.createElement("footer");
   footer.className = "site-footer";
   footer.innerHTML =
@@ -82,7 +82,7 @@ window.momsKeepScroll = function (box, fn, anchor) {
       '<div><a href="/signin.html" data-me data-hash="#favorites">Favorites</a><a href="/signin.html" data-me data-hash="#likes">Likes</a><span class="fb-soon">Following</span><a href="/" data-logout hidden>Logout</a><a href="/submit.html">Submit</a><a href="mailto:contact@museumofminiskateboards.org">Contact</a><a href="/privacy.html">Privacy Policy</a></div>' +
     '</nav>' +
     '<div class="fb-boards" aria-hidden="true">' + ROW.map(function (p) { return '<img src="/footer-board.svg" alt="" style="--x:' + p[0] + ';--y:' + p[1] + ';--r:' + p[2] + 'deg">'; }).join("") +
-      '<img class="fb-moms" src="/footer-moms.svg" alt="" style="--x:1092;--y:484;--r:0deg"></div>' +
+      '<img class="fb-moms" src="/footer-moms.svg" alt="" style="--x:1092;--y:452;--r:0deg"></div>' +
     '<p class="fb-title">The<br>Museum<br>of<br>Mini<br>Skateboards</p>';
   document.body.appendChild(footer);
 
