@@ -585,14 +585,14 @@ body > main.auth { width: 100%; box-sizing: border-box; }
 .topbar.mnav { padding: 0 var(--gutter); }
 .has-refine .topbar.mnav { padding-right: 10px; transition: right 0.42s var(--rf-ease, ease), padding-right 0.42s var(--rf-ease, ease); }   /* the right edge follows the list, which leaves room for the Refine tab */
 .has-refine.rf-open .topbar.mnav { padding-right: var(--gutter); }
-.mnav-left { display: flex; align-items: center; gap: 22px; justify-self: start; font-size: max(10.5px, calc(12 * 100vw / 1440)); }   /* same size rule as the footer links */
+.mnav-left { display: flex; align-items: center; gap: 22px; justify-self: start; font-size: min(11px, max(10.5px, calc(12 * 100vw / 1440))); }   /* never bigger than the 11px used by the rows below it */
 .mnav-menu { font: inherit; color: inherit; background: none; border: 0; padding: 8px 0; margin: 0; cursor: pointer; }
 .mnav-menu:hover, .mnav-left a:hover { text-decoration: underline; text-underline-offset: 2px; }
 .mnav-title { display: block; line-height: 0; }
 .topbar.mnav { --logo-h: 30px; }
 .mnav-title img { display: block; height: var(--logo-h); width: auto; }
 
-.mnav-right { justify-self: end; font-size: max(10.5px, calc(12 * 100vw / 1440)); }
+.mnav-right { justify-self: end; font-size: min(11px, max(10.5px, calc(12 * 100vw / 1440))); }
 .mnav-right .insta { font-size: inherit; }
 .mnav-menu, .mnav-title, .mnav-right { transition: opacity 0.25s ease; }
 body.mnav-open .mnav-menu, body.mnav-open .mnav-right { opacity: 0; pointer-events: none; }
