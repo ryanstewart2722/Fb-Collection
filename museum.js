@@ -5,7 +5,7 @@ const canHover = matchMedia("(hover: hover)").matches;
 // "Mobile" = a touch screen or a narrow window: the image view then follows your scrolling instead of hovering.
 const narrow = matchMedia("(max-width: 760px)");
 const isMobile = () => !canHover || narrow.matches;
-const PAGE = 50; // rows loaded per section at a time
+const PAGE = 25; // rows loaded per section at a time
 
 const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
 const spans = (list) => list.map((c) => `<span>${esc(c)}</span>`).join("");
