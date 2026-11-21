@@ -657,7 +657,9 @@ body.mnav-open .mnav-title img { visibility: hidden; }   /* the big copy in the 
 body.mnav-push { --push: calc(max(254 * 100vw / 1440, 236px) - var(--bar-h)); }
 body.mnav-peek:not(.mnav-push) { --push: 26px; }
 body > :not(.topbar):not(.mnav-panel):not(script):not(style) { transition: transform 0.5s cubic-bezier(0.45, 0, 0.2, 1); }
-body.mnav-push > :not(.topbar):not(.mnav-panel):not(script):not(style), body.mnav-peek > :not(.topbar):not(.mnav-panel):not(script):not(style) { transform: translateY(var(--push)); }
+body.mnav-push > :not(.topbar):not(.mnav-panel):not(.preview):not(script):not(style), body.mnav-peek > :not(.topbar):not(.mnav-panel):not(.preview):not(script):not(style) { transform: translateY(var(--push)); }
+/* the big hover photo is not pushed (that bumped it off-centre); it centres itself in the part of the page below the menu */
+@media (min-width: 761px) { body.mnav-push .preview, body.mnav-peek .preview { top: calc(50% + var(--push) / 2); } .preview { transition: left 0.42s var(--rf-ease, ease), top 0.5s cubic-bezier(0.45, 0, 0.2, 1); } }
 @media (max-width: 760px) { body.mnav-push { --push: 0px; } }
 
 /* hover peek: the bar gets a little taller and the logo grows, hinting that the menu opens */

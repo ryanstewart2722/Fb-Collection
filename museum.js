@@ -90,7 +90,7 @@ const orderBy = () => {
   return (sort === "brand" ? "brands(name).asc," : "") + `release_date.${dir}.nullslast,id.${dir}`;
 };
 // A line goes between two rows only when the brand changes (in both Newest and Brand order).
-const groupKey = (r) => (F.order === "added" || sort === "shuffle" ? "" : r.brands?.slug);   // no brand dividers when ordered by upload or shuffled   // no brand dividers when ordered by upload
+const groupKey = (r) => r.brands?.slug;   // a line goes between boards of different brands, in every order (Newest, Brand, Shuffle, upload order)   // no brand dividers when ordered by upload or shuffled   // no brand dividers when ordered by upload
 const boardUrl = (s, r) => `board.html?type=${s.type}&slug=${encodeURIComponent(r.slug)}`;
 
 // Refine filters applied to search matches (the same rules filterParams sends to the database)
