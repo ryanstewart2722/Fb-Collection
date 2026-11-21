@@ -38,7 +38,7 @@
     const it = first.get(u)?.i; if (!it) return "";
     const rc = cuts[it.id];   // the cleaner cut-out, when there is one that passed the check
     let url = "";
-    if (rc && rc.file && rc.src === (it.source_path || it.image_path) && !rc.bad && it.details?.cut !== "quick") url = "/" + rc.file;
+    if (rc && rc.file && rc.src === it.source_path && !rc.bad && it.details?.cut !== "quick") url = "/" + rc.file;
     else if (/^https?:/.test(it.image_path)) url = it.image_path;
     else {
       try {

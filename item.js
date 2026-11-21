@@ -35,7 +35,7 @@ async function signed(path) {
 }
 const refinedFor = (i) => {
   const rc = RECUTS[i.id], pick = i.details?.cut;
-  return rc && rc.file && rc.src === (i.source_path || i.image_path) && pick !== "quick" && (!rc.bad || pick === "refined") ? rc : null;
+  return rc && rc.file && i.source_path && rc.src === i.source_path && pick !== "quick" && (!rc.bad || pick === "refined") ? rc : null;
 };
 // the big photo on the page
 async function bigPhoto(i) {

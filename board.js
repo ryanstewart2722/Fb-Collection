@@ -165,7 +165,7 @@ let TIGHT = { quick: {}, sizes: {} };
 const SHOW_H = 145;
 async function itemPhoto(i) {
   const rc = RECUTS[i.id], pick = i.details?.cut;
-  if (rc && rc.file && rc.src === (i.source_path || i.image_path) && pick !== "quick" && (!rc.bad || pick === "refined")) {   // the second cut, exactly as the other pages choose it
+  if (rc && rc.file && i.source_path && rc.src === i.source_path && pick !== "quick" && (!rc.bad || pick === "refined")) {   // the second cut, exactly as the other pages choose it
     const sz = TIGHT.sizes?.[rc.file];
     i.size = sz ? [sz[0], sz[1]] : null;
     return "/" + rc.file + "?c=1";
