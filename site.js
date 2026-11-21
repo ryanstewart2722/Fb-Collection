@@ -75,7 +75,28 @@ window.momsKeepScroll = function (box, fn, anchor) {
   if (view) {
     var controls = document.querySelector(".controls");
     if (controls) controls.appendChild(view);   // Image / List sits last (far right), so it lines up the same on pages that have no Newest / Brand
-    else { var tools = document.createElement("div"); tools.className = "page-tools"; tools.appendChild(view); bar.insertAdjacentElement("afterend", tools); }
+    else {   // collection pages get the same sticky row: Search on the left, Image / List on the right
+      var row = document.createElement("div"); row.className = "controls";
+      row.innerHTML = '<form class="m-find" autocomplete="off"><svg class="m-glass" viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="6.5" cy="6.5" r="5" fill="none" stroke="currentColor" stroke-width="1.2"/><path d="M10.3 10.3 15 15" stroke="currentColor" stroke-width="1.2" fill="none"/></svg><input id="m-q" type="search" placeholder="Search" aria-label="Search this collection"></form>';
+      row.appendChild(view); bar.insertAdjacentElement("afterend", row);
+      var box = row.querySelector("#m-q"), main = document.getElementById("app"), busy = false;
+      row.querySelector("form").addEventListener("submit", function (e) { e.preventDefault(); });
+      var apply = function () {   // hide what doesn't match, and any section left with nothing
+        if (!main) return; busy = true;
+        var q = box.value.trim().toLowerCase();
+        main.querySelectorAll(".row:not(.head), .item").forEach(function (el) {
+          var img = el.querySelector("img"), t = (img ? img.alt + " " : "") + el.textContent;
+          el.style.display = !q || t.toLowerCase().indexOf(q) > -1 ? "" : "none";
+        });
+        main.querySelectorAll("section").forEach(function (sec) {
+          var items = sec.querySelectorAll(".row:not(.head), .item");
+          if (items.length) sec.style.display = !q || Array.prototype.some.call(items, function (el) { return el.style.display !== "none"; }) ? "" : "none";
+        });
+        busy = false;
+      };
+      box.addEventListener("input", apply);
+      if (main) new MutationObserver(function () { if (!busy && box.value.trim()) apply(); }).observe(main, { childList: true, subtree: true });
+    }
   }
   bar.innerHTML = "";
   var left = document.createElement("div"); left.className = "mnav-left";
