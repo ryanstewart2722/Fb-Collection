@@ -655,12 +655,14 @@ body.mnav-open .mnav-title img { visibility: hidden; }   /* the big copy in the 
 /* when the big menu opens (or the bar is hovered) the page slides down as one piece, so nothing jumps or lags */
 body.mnav-push { --push: calc(254 * 100vw / 1440 - var(--bar-h)); }
 body.mnav-peek:not(.mnav-push) { --push: 26px; }
-body > :not(.topbar):not(.mnav-panel):not(script):not(style) { transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1); }
+body > :not(.topbar):not(.mnav-panel):not(script):not(style) { transition: transform 0.5s cubic-bezier(0.45, 0, 0.2, 1); }
 body.mnav-push > :not(.topbar):not(.mnav-panel):not(script):not(style), body.mnav-peek > :not(.topbar):not(.mnav-panel):not(script):not(style) { transform: translateY(var(--push)); }
 @media (max-width: 760px) { body.mnav-push { --push: 0px; } }
 
 /* hover peek: the bar gets a little taller and the logo grows, hinting that the menu opens */
-.topbar.mnav { transition: height 0.5s cubic-bezier(0.16, 1, 0.3, 1), right 0.42s var(--rf-ease, ease), padding-right 0.42s var(--rf-ease, ease); }
-.topbar.mnav .mnav-title img { transition: height 0.5s cubic-bezier(0.16, 1, 0.3, 1); }
+.topbar.mnav { transition: height 0.5s cubic-bezier(0.45, 0, 0.2, 1), right 0.42s var(--rf-ease, ease), padding-right 0.42s var(--rf-ease, ease); }
+.topbar.mnav .mnav-title img { transition: height 0.5s cubic-bezier(0.45, 0, 0.2, 1); }
 .topbar.mnav.peek { height: calc(var(--bar-h) + 26px); }
 .topbar.mnav.peek .mnav-title img { height: calc(var(--logo-h) + 24px); }
+
+.topbar.mnav, .has-refine .topbar.mnav { transition: height 0.5s cubic-bezier(0.45, 0, 0.2, 1), right 0.42s var(--rf-ease, ease), padding-right 0.42s var(--rf-ease, ease); }
