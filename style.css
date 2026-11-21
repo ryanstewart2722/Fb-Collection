@@ -426,10 +426,10 @@ html { scrollbar-color: #000 #fff; scrollbar-width: thin; }
     top: calc(var(--bar-h) + (100svh - var(--bar-h)) / 2); max-height: calc((100svh - var(--bar-h)) * 0.88);
   }
   /* phones: the search row sits under the header too, so the free space starts below BOTH; centred in it (from the small viewport, so it stays put as Safari's toolbar moves), nudged down a little */
-  .list-view .preview {
+  .preview, .list-view .preview {
     top: calc(var(--bar-h) + var(--controls-h) + (100svh - var(--bar-h) - var(--controls-h)) / 2 + 10px);
-    max-height: calc((100svh - var(--bar-h) - var(--controls-h)) * 0.84);
-  }
+    max-height: calc((100svh - var(--bar-h) - var(--controls-h)) * 0.84); max-width: 86vw;
+  }   /* same for the image view's hover/tap photo, so it sits in the same spot in both views */
   .museum.list-view main#app { padding-top: 14px; }
 }
 .submit-row { margin-top: 18px; border-top: 1px solid var(--line); }
