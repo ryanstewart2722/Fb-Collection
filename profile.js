@@ -177,6 +177,8 @@ const cutNow = (i) => i.cutInfo && (i.cutInfo.pick === "quick" || (i.cutInfo.bad
 const cutSwitch = (i) => state.staff && i && i.cutInfo ? `<a href="#" class="orig-dl" data-act="cutview" data-id="${esc(i.id)}" title="${i.cutInfo.bad ? "The refined cut failed the quality check" : "Both cuts are kept"}${i.cutInfo.q ? " (shape score " + i.cutInfo.q + ")" : ""}">${cutNow(i) === "quick" ? "Quick cut" : "Refined cut"} · compare</a>` : "";
 const mainLink = (i) => state.owner && i && i.id && !String(i.id).startsWith("s") && i.image_path ? `<a href="#" class="orig-dl" data-act="main" data-id="${esc(i.id)}" title="${i.details?.main ? "This is the photo shown when someone hovers your name on the Users page. Click to go back to your first setup." : "Show this when someone hovers your name on the Users page"}">${i.details?.main ? "Main ✓" : "Make main"}</a>` : "";
 const origLink = (i) => state.staff && i && (i.source_path || i.image_path) ? `<a href="#" class="orig-dl" data-act="dl" data-id="${esc(i.id)}" title="Download the photo they uploaded, before any cut-out">Original Photo</a>` : "";
+const photo2Link = (i) => state.staff && i && (i.source_path_2 || i.image_path_2) ? `<a href="#" class="orig-dl" data-act="dl2" data-id="${esc(i.id)}" title="Download the second photo they uploaded, before any cut-out">Photo 2</a>` : "";
+const refinedLink = (i) => state.staff && i && i.cutInfo && RECUTS[i.id] && RECUTS[i.id].file ? `<a class="orig-dl" href="/${esc(RECUTS[i.id].file)}" download="${esc((state.profile.username + "-" + (i.name || "photo")).replace(/[^A-Za-z0-9._-]+/g, "-").slice(0, 80))}-refined.webp" title="Download the refined cut-out">Refined cut</a>` : "";
 const PLY = { decks: ["Photo 1: bottom ply (the graphic side)", "Photo 2: top ply"], setups: ["Photo 1: bottom ply (the graphic side)", "Photo 2: top ply"] };
 function elThumb(i, sec) { return `<label class="el-thumb" title="${esc((PLY[sec] || ["Photo"])[0])}">${i && i.url ? `<img src="${esc(i.url)}" alt="">` : "+"}<input class="ed-file" type="file" accept="image/*"></label>`; }
 // an optional second photo: for decks the first is the bottom ply and this one is the top ply
@@ -210,7 +212,7 @@ function renderListEdit() {
     <h2>${esc(s.title)}</h2>
     <div class="list-wrap"><div class="list el-list el-n${SCHEMA[s.id].fields.length}${s.items.length || state.draft === s.id ? "" : " is-empty"}" data-s="${s.id}" style="--cols:${colsFor(SCHEMA[s.id].fields.length)}">
       <div class="el-row el-head"><span></span>${SCHEMA[s.id].fields.map((f) => `<span class="el-h">${esc(f[1])}</span>`).join("")}<span></span></div>
-      ${s.items.map((i, n) => `<div class="el-row${n > 0 && brandOf(s.id, i) !== brandOf(s.id, s.items[n - 1]) ? " divide" : ""}${i.status === "removed" ? " is-hidden" : ""}" data-id="${esc(i.id)}"><span class="el-tcell">${elThumb(i, s.id)}${elThumb2(i, s.id)}${mainLink(i)}${origLink(i)}${cutSwitch(i)}</span>${elInputs(s.id, i)}<span class="el-acts"><button class="el-mv" data-act="up" title="Move up">↑</button><button class="el-mv" data-act="down" title="Move down">↓</button>${state.staff ? `<button class="el-x el-hide" data-act="hide" data-id="${esc(i.id)}" title="${i.status === "removed" ? "Show again" : "Hide from the site"}">${i.status === "removed" ? "Show" : "Hide"}</button>` : `<button class="el-x" data-act="remove" data-id="${esc(i.id)}" title="Remove">×</button>`}</span></div>`).join("")}
+      ${s.items.map((i, n) => `<div class="el-row${n > 0 && brandOf(s.id, i) !== brandOf(s.id, s.items[n - 1]) ? " divide" : ""}${i.status === "removed" ? " is-hidden" : ""}" data-id="${esc(i.id)}"><span class="el-tcell">${elThumb(i, s.id)}${elThumb2(i, s.id)}${mainLink(i)}${origLink(i)}${photo2Link(i)}${refinedLink(i)}${cutSwitch(i)}</span>${elInputs(s.id, i)}<span class="el-acts"><button class="el-mv" data-act="up" title="Move up">↑</button><button class="el-mv" data-act="down" title="Move down">↓</button>${state.staff ? `<button class="el-x el-hide" data-act="hide" data-id="${esc(i.id)}" title="${i.status === "removed" ? "Show again" : "Hide from the site"}">${i.status === "removed" ? "Show" : "Hide"}</button>` : `<button class="el-x" data-act="remove" data-id="${esc(i.id)}" title="Remove">×</button>`}</span></div>`).join("")}
       ${state.draft === s.id ? `<div class="el-row el-new" data-section="${s.id}"><span class="el-tcell">${elThumb(null, s.id)}${elThumb2(null, s.id)}</span>${elInputs(s.id, null)}<button class="ed-btn el-save" data-act="savenew">Add</button></div>` : ""}
       <button class="ed-btn el-add" data-act="newrow" data-section="${s.id}">+ Add to My ${esc(s.title)}</button>
     </div></div></section>`).join("");
@@ -221,7 +223,7 @@ function renderEdit() {
     <button class="ed-btn el-add" data-act="newrow" data-section="${s.id}">+ Add to My ${esc(s.title)}</button>
     <div class="ed-grid">${s.items.map((i) => `<div class="ed-card${i.status === "removed" ? " is-hidden" : ""}" data-id="${esc(i.id)}">
       <div class="ed-img">${i.url ? `<img src="${esc(i.url)}" alt="">` : "No photo"}</div>
-      ${mainLink(i)}${origLink(i)}${cutSwitch(i)}
+      ${mainLink(i)}${origLink(i)}${photo2Link(i)}${refinedLink(i)}${cutSwitch(i)}
       <div class="ed-name">${esc(i.name)}</div>
       <div class="ed-btns">
         <label class="ed-btn">${i.url ? "Replace" : "Add photo"}<input class="ed-file" type="file" accept="image/*"></label>
@@ -494,15 +496,15 @@ app.addEventListener("click", async (e) => {
     if (it) openCutPicker(it);
     return;
   }
-  if (act === "dl" && state.staff) {   // admin: the photo as they uploaded it (before the cut-out), so it can be cut by hand and put back with Replace
+  if ((act === "dl" || act === "dl2") && state.staff) {   // admin: the photo as they uploaded it (before the cut-out), so it can be cut by hand and put back with Replace
     e.preventDefault();
     const id = e.target.closest("[data-id]").dataset.id, it = state.items.find((i) => i.id === id);
-    const p = it && (it.source_path || it.image_path);
+    const p = it && (act === "dl2" ? it.source_path_2 || it.image_path_2 : it.source_path || it.image_path);
     if (!p) return;
     let url = p;
     if (!/^https?:/.test(p)) {
       const ext = (p.split(".").pop() || "jpg").toLowerCase();
-      const nm = (state.profile.username + "-" + (it.name || "photo")).replace(/[^A-Za-z0-9._-]+/g, "-").slice(0, 80) + "." + ext;
+      const nm = (state.profile.username + "-" + (it.name || "photo") + (act === "dl2" ? "-photo2" : "")).replace(/[^A-Za-z0-9._-]+/g, "-").slice(0, 80) + "." + ext;
       const { data, error } = await sb.storage.from("uploads").createSignedUrl(p, 300, { download: nm });
       if (error || !data?.signedUrl) return (msg.textContent = "Couldn't get the original. " + (error?.message || ""));
       url = data.signedUrl;
