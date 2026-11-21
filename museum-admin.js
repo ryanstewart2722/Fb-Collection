@@ -217,10 +217,12 @@ function renderForm() {
         <div class="me-photo-box">${img ? `<img src="${esc(img)}" alt="">` : `<span>No photo yet</span>`}</div>
         <button class="ad-btn" data-act="photo">${img ? "Replace photo" : "Add photo"}</button>
         ${img ? `<button class="ad-btn" data-act="rotate" title="Turn the photo upside down">Rotate 180°</button>` : ""}
+        ${r.id && r.image_path ? `<button class="ad-btn" data-act="dl-photo" title="Download the photo that is on the site now, to edit it and put it back with Replace photo">Download photo</button>` : ""}
         ${tab === "brands" ? "" : `        <div class="me-photo2">
           ${(photo2?.preview || (!drop2 && r.image_path_2)) ? `<div class="me-photo-box"><img src="${esc(photo2?.preview || r.image_path_2)}" alt=""></div>` : ""}
           <button class="ad-btn" data-act="photo2">${(photo2?.preview || (!drop2 && r.image_path_2)) ? "Replace second photo" : "+ Add a second photo"}</button>
           ${(photo2 || (!drop2 && r.image_path_2)) ? `<button class="ad-btn" data-act="rm-photo2">Remove second photo</button>` : ""}
+          ${r.id && !drop2 && r.image_path_2 ? `<button class="ad-btn" data-act="dl-photo2" title="Download the second photo that is on the site now">Download second photo</button>` : ""}
         </div>`}
         <small>Transparent PNGs are kept exactly as they are, just sized to match. Photos on a plain backdrop (white, grey, any single colour) have the backdrop removed.</small>
       </div>`}
@@ -597,6 +599,16 @@ async function rotateCard(card) {
 }
 
 // Turn the current photo (the one being added, or the saved one) upside down. Nothing goes live until Save.
+async function downloadPhoto(url, suffix) {   // the photo as it is on the site now, saved to the computer (so it can be edited and put back with Replace)
+  if (!url) return;
+  const ext = ((url.split("?")[0].split(".").pop() || "png").toLowerCase().replace(/[^a-z0-9]/g, "") || "png").slice(0, 4);
+  const nm = ((editing.slug || editing.name || "photo") + suffix).replace(/[^A-Za-z0-9._-]+/g, "-").slice(0, 80) + "." + ext;
+  try {
+    const blob = await (await fetch(url, { cache: "no-store" })).blob();
+    const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = nm; document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+  } catch { window.open(url, "_blank", "noopener"); }   // if the browser won't fetch it, open it so it can be saved from there
+}
 async function rotatePhoto() {
   const src = photo?.preview || editing?.image_path;
   if (!src) return;
@@ -758,6 +770,8 @@ app.addEventListener("click", async (e) => {
   if (act === "photo2") { target = 2; fileInput.value = ""; fileInput.click(); }
   if (act === "rm-photo2") { photo2 = null; drop2 = true; renderForm2(); }
   if (act === "rotate") rotatePhoto();
+  if (act === "dl-photo") downloadPhoto(editing.image_path, "");
+  if (act === "dl-photo2") downloadPhoto(editing.image_path_2, "-photo2");
   if (act === "save") save();
   if (act === "duplicate" && leaveForm()) {   // a new entry with the same info; photos start empty
     const v = readForm(), copy = { ...editing };
