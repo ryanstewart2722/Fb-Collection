@@ -727,3 +727,6 @@ body.museum .grid .item img.in { animation: imgIn 0.6s ease; }
   .controls .m-find input[type="search"] { width: 100%; min-width: 0; }
   .controls { gap: 12px; }
 }
+
+/* pages without the Refine tab (user collections): Image / List lines up with the top bar, no gap kept for the tab */
+body:not(.has-refine) .controls { padding-right: 0; }
