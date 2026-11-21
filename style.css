@@ -589,7 +589,10 @@ body > main.auth { width: 100%; box-sizing: border-box; }
 .mnav-menu { font: inherit; color: inherit; background: none; border: 0; padding: 8px 0; margin: 0; cursor: pointer; }
 .mnav-menu:hover, .mnav-left a:hover { text-decoration: underline; text-underline-offset: 2px; }
 .mnav-title { display: block; line-height: 0; }
-.mnav-title img { display: block; height: 30px; width: auto; }
+.topbar.mnav { --logo-h: 30px; }
+.mnav-title img { display: block; height: var(--logo-h); width: auto; }
+/* Menu, Back and My Collection sit on the baseline of the title's last line ("Mini Skateboards") */
+.mnav-left, .mnav-right { transform: translateY(calc(var(--logo-h) * 0.475 - 4px)); }
 .mnav-right { justify-self: end; font-size: 12px; }
 .mnav-right .insta { font-size: 12px; }
 .mnav-menu, .mnav-title, .mnav-right { transition: opacity 0.25s ease; }
@@ -631,7 +634,7 @@ body.mnav-open .mnav-title img { visibility: hidden; }   /* the big copy in the 
 
 @media (max-width: 760px) {
   :root { --bar-h: 46px; }
-  .mnav-title img { height: 26px; }
+  .topbar.mnav { --logo-h: 26px; }
   .mnav-left, .mnav-right, .mnav-right .insta { font-size: 11.5px; }
   .mnav-left { gap: 14px; }
   .mnav-panel { --u: 1px; height: 100vh; height: 100dvh; overflow-y: auto; font-size: 13px; padding: 56px var(--gutter) 28px; display: flex; flex-direction: column; align-items: center; }
