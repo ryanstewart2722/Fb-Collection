@@ -172,7 +172,7 @@ window.momsKeepScroll = function (box, fn, anchor) {
   var footer = document.createElement("footer");
   footer.className = "site-footer";
   footer.innerHTML =
-    '<img class="fb-logo" src="/footer-character.webp?v=3c009a1c" alt="" width="900" height="944">' +
+    '<img class="fb-logo" src="/footer-character.webp?v=577c2d58" alt="" width="900" height="944">' +
     '<p class="fb-credit">Designed, curated and developed by <a href="https://ryanforprez.org" target="_blank" rel="noopener">Ryan Stewart</a> view his collection <a href="/u/r">here</a></p>' +
     '<nav class="fb-links" aria-label="Site">' +
       '<div><a href="/">Museum</a><a href="/?order=added">Recently Added</a><span class="fb-soon">Featured Setups</span></div>' +
