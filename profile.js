@@ -119,8 +119,8 @@ function dropFiles(...paths) { const list = [...new Set(paths.filter(stored))]; 
 async function photoUrl(item) {
   const rc = RECUTS[item.id], pick = item.details?.cut;   // pick: an admin's choice, "quick" or "refined"; otherwise the refined cut is used when it passed the quality check
   item.cutInfo = null;
-  if (rc && rc.file && item.source_path && rc.src === item.source_path) item.cutInfo = { q: rc.q, bad: !!rc.bad, pick };
-  if (rc && rc.file && item.source_path && rc.src === item.source_path && pick !== "quick" && (!rc.bad || pick === "refined")) {
+  if (rc && rc.file && rc.src === (item.source_path || item.image_path)) item.cutInfo = { q: rc.q, bad: !!rc.bad, pick };
+  if (rc && rc.file && rc.src === (item.source_path || item.image_path) && pick !== "quick" && (!rc.bad || pick === "refined")) {
     const u = "/" + rc.file + "?c=1";   // a new address, so a copy of the page that was cached before the file existed can't get in the way
     // use the better cut-out only once it really loads; if the site is still publishing it, keep showing the quick one
     if (await new Promise((ok) => { const im = new Image(); im.onload = () => ok(true); im.onerror = () => ok(false); im.src = u; })) return u;

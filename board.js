@@ -78,8 +78,12 @@ async function load() {
   // Previous / Next walk through this brand in the museum's order (newest first), wrapping at the ends.
   let prev = null, next = null;
   if (r.brand_id) {
-    const { rows: all } = await momsFetch(
-      `${type}?select=slug&brand_id=eq.${r.brand_id}&order=release_date.desc.nullslast,id.desc&limit=5000`);
+    const all = [];   // the database gives at most 1000 rows per request (one brand has more than that), so read page by page
+    for (;;) {
+      const { rows: page } = await momsFetch(`${type}?select=slug&brand_id=eq.${r.brand_id}&order=release_date.desc.nullslast,id.desc&limit=1000&offset=${all.length}`);
+      all.push(...page);
+      if (page.length < 1000) break;
+    }
     const i = all.findIndex((x) => x.slug === r.slug);
     if (i >= 0 && all.length > 1) {
       prev = all[(i - 1 + all.length) % all.length].slug;
@@ -161,7 +165,7 @@ let TIGHT = { quick: {}, sizes: {} };
 const SHOW_H = 145;
 async function itemPhoto(i) {
   const rc = RECUTS[i.id], pick = i.details?.cut;
-  if (rc && rc.file && i.source_path && rc.src === i.source_path && pick !== "quick" && (!rc.bad || pick === "refined")) {   // the second cut, exactly as the other pages choose it
+  if (rc && rc.file && rc.src === (i.source_path || i.image_path) && pick !== "quick" && (!rc.bad || pick === "refined")) {   // the second cut, exactly as the other pages choose it
     const sz = TIGHT.sizes?.[rc.file];
     i.size = sz ? [sz[0], sz[1]] : null;
     return "/" + rc.file + "?c=1";

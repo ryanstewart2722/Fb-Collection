@@ -808,7 +808,7 @@ async function renderLinks() {
   try { const r = await fetch("/user-cuts/index.json?" + Date.now()); if (r.ok) index = await r.json(); } catch { /* quick cuts only */ }
   linkItems.forEach((i) => {
     const e = index[i.id];
-    i.url = e && e.file && !e.bad && i.source_path && e.src === i.source_path && i.details?.cut !== "quick" ? "/" + e.file : /^https?:/.test(i.image_path || "") ? i.image_path : urls[i.image_path] || "";
+    i.url = e && e.file && !e.bad && e.src === (i.source_path || i.image_path) && i.details?.cut !== "quick" ? "/" + e.file : /^https?:/.test(i.image_path || "") ? i.image_path : urls[i.image_path] || "";
     i.prod = prods[i.museum_type + ":" + i.museum_id];
   });
   setLinksBadge(linkItems.length);
