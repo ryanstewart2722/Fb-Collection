@@ -18,7 +18,7 @@
     ]);
   } catch { box.innerHTML = `<p class="p-empty">Couldn't load the list. Please refresh.</p>`; return; }
 
-  // For each brand: how many products, and its picture. A "featured_image" set on the brand wins;
+  // For each brand: how many products, and its picture. A photo set on the brand (admin > Brands) wins;
   // until one is set, the picture is its most recent product that has a photo.
   const info = new Map();
   per.forEach((rows) => rows.forEach((r) => {
@@ -31,7 +31,7 @@
     }
     info.set(r.brand_id, b);
   }));
-  const list = brands.map((b) => ({ ...b, count: info.get(b.id)?.count || 0, pic: b.featured_image || info.get(b.id)?.pic || "" }))
+  const list = brands.map((b) => ({ ...b, count: info.get(b.id)?.count || 0, pic: b.image_path || info.get(b.id)?.pic || "" }))
     .filter((b) => b.count > 0)
     .sort((a, b) => String(a.name).localeCompare(String(b.name), undefined, { sensitivity: "base" }));
   const cnt = document.getElementById("u-count"); if (cnt) cnt.textContent = `${list.length} ${list.length === 1 ? "brand" : "brands"}`;
