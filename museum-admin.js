@@ -78,9 +78,9 @@ async function loadList(reset = true) {
       : sb.from(tab).select("*,brands(name)", { count: "exact" }).order("release_date", { ascending: false, nullsFirst: false }).order("id", { ascending: false });
   if (list.search) q = q.ilike("name", `%${list.search}%`);
   if (list.brand && tab !== "brands") q = q.eq("brand_id", list.brand);
-  if (list.photo === "without" && tab !== "brands") q = q.is("image_path", null);
-  if (list.photo === "with" && tab !== "brands") q = q.not("image_path", "is", null);
-  const size = view === "images" && tab !== "brands" ? 120 : PAGE;
+  if (list.photo === "without") q = q.is("image_path", null);
+  if (list.photo === "with") q = q.not("image_path", "is", null);
+  const size = view === "images" ? 120 : PAGE;
   const { data, error, count } = await q.range(list.rows.length, list.rows.length + size - 1);
   if (error) throw error;
   list.rows.push(...data);
@@ -102,14 +102,14 @@ function renderListNow() {
   app.innerHTML = `
     <div class="me-toolbar">
       <input id="search" type="search" placeholder="Search ${tab}…" value="${esc(list.search)}">
-      ${tab === "brands" ? "" : `<select id="photo-filter" aria-label="Filter by photo"><option value="">All boards</option><option value="without" ${list.photo === "without" ? "selected" : ""}>No photo yet</option><option value="with" ${list.photo === "with" ? "selected" : ""}>Has a photo</option></select>`}
+      ${`<select id="photo-filter" aria-label="Filter by photo"><option value="">${tab === "brands" ? "All brands" : "All boards"}</option><option value="without" ${list.photo === "without" ? "selected" : ""}>No photo yet</option><option value="with" ${list.photo === "with" ? "selected" : ""}>Has a photo</option></select>`}
       ${tab === "brands" ? "" : `<select id="brand-filter" aria-label="Filter by brand"><option value="">All brands</option>${brands.map((b) => `<option value="${b.id}" ${String(b.id) === String(list.brand) ? "selected" : ""}>${esc(b.name)}</option>`).join("")}</select>`}
       <select id="sort-by" aria-label="Sort"><option value="release" ${list.sort === "release" ? "selected" : ""}>${tab === "brands" ? "A to Z" : "By release date"}</option><option value="added" ${list.sort === "added" ? "selected" : ""}>Recently added</option></select>
       ${tab === "brands" ? "" : `<button class="ad-btn${selMode ? " ad-btn-dark" : ""}" data-act="sel-toggle">${selMode ? "Done selecting" : "Select"}</button>`}
       <button class="ad-btn ad-btn-dark" data-act="new">+ Add ${t.one}</button>
     </div>
-    <p class="me-count">${list.total} ${list.total === 1 ? t.one : tab}${tab === "brands" ? "" : `<span class="me-views"><button class="ad-link${view === "list" ? " on" : ""}" data-act="view-list">List</button> / <button class="ad-link${view === "images" ? " on" : ""}" data-act="view-images">Images</button></span>`}</p>
-    ${view === "images" && tab !== "brands" ? `<div class="me-grid">
+    <p class="me-count">${list.total} ${list.total === 1 ? t.one : tab}${`<span class="me-views"><button class="ad-link${view === "list" ? " on" : ""}" data-act="view-list">List</button> / <button class="ad-link${view === "images" ? " on" : ""}" data-act="view-images">Images</button></span>`}</p>
+    ${view === "images" ? `<div class="me-grid">
       ${list.rows.map((r, i) => `<div class="me-card${sel.has(r.id) ? " picked" : ""}" data-i="${i}">
         <button class="me-card-img${r.image_path ? "" : " none"}" data-act="open" title="Open ${esc(r.name)}">${r.image_path ? `<img src="${esc(r.image_path)}" alt="${esc(r.name)}" loading="lazy">` : `<span>No photo yet</span>`}</button>
         <span class="me-card-name">${esc(momsDeckName(r))}</span>
@@ -117,7 +117,7 @@ function renderListNow() {
       </div>`).join("") || `<p class="me-empty">Nothing here.</p>`}
     </div>` : `<div class="me-list">
       ${list.rows.map((r, i) => `<button class="me-item${sel.has(r.id) ? " picked" : ""}" data-i="${i}">
-        ${tab === "brands" ? "" : `<span class="me-thumb">${r.image_path ? `<img src="${esc(r.image_path)}" alt="" loading="lazy">` : ""}</span>`}
+        ${`<span class="me-thumb">${r.image_path ? `<img src="${esc(r.image_path)}" alt="" loading="lazy">` : ""}</span>`}
         <span class="me-name">${esc(momsDeckName(r))}${r.color ? ` <em>${esc(r.color)}</em>` : ""}</span>
         <span class="me-meta">${esc(tab === "brands" ? r.made_in : [r.brands?.name, year(r), !r.image_path && "no photo: not on the site yet"].filter(Boolean).join(" · "))}</span>
       </button>`).join("") || `<p class="me-empty">Nothing here yet.</p>`}
@@ -213,15 +213,15 @@ function renderForm() {
     </div>
     <h2 class="me-title">${isNew ? `New ${t.one}` : esc(r.name)}</h2>
     <div class="me-form">
-      ${tab === "brands" ? "" : `<div class="me-photo">
+      ${`<div class="me-photo">
         <div class="me-photo-box">${img ? `<img src="${esc(img)}" alt="">` : `<span>No photo yet</span>`}</div>
         <button class="ad-btn" data-act="photo">${img ? "Replace photo" : "Add photo"}</button>
         ${img ? `<button class="ad-btn" data-act="rotate" title="Turn the photo upside down">Rotate 180°</button>` : ""}
-        <div class="me-photo2">
+        ${tab === "brands" ? "" : `        <div class="me-photo2">
           ${(photo2?.preview || (!drop2 && r.image_path_2)) ? `<div class="me-photo-box"><img src="${esc(photo2?.preview || r.image_path_2)}" alt=""></div>` : ""}
           <button class="ad-btn" data-act="photo2">${(photo2?.preview || (!drop2 && r.image_path_2)) ? "Replace second photo" : "+ Add a second photo"}</button>
           ${(photo2 || (!drop2 && r.image_path_2)) ? `<button class="ad-btn" data-act="rm-photo2">Remove second photo</button>` : ""}
-        </div>
+        </div>`}
         <small>Transparent PNGs are kept exactly as they are, just sized to match. Photos on a plain backdrop (white, grey, any single colour) have the backdrop removed.</small>
       </div>`}
       <div class="me-fields">${t.fields.map((f) => fieldHtml(f, r)).join("")}</div>

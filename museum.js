@@ -5,7 +5,7 @@ const canHover = matchMedia("(hover: hover)").matches;
 // "Mobile" = a touch screen or a narrow window: the image view then follows your scrolling instead of hovering.
 const narrow = matchMedia("(max-width: 760px)");
 const isMobile = () => !canHover || narrow.matches;
-const PAGE = 50; // rows loaded per section at a time
+const FIRST = 25, PAGE = 50; // the first batch per section is short so the page stays short; each "Show more" adds PAGE
 
 const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
 const spans = (list) => list.map((c) => `<span>${esc(c)}</span>`).join("");
@@ -40,7 +40,7 @@ const params = new URLSearchParams(location.search);
 let view = params.get("view") === "image" ? "image" : "list";
 let Q = (params.get("q") || "").trim();   // a search: the lists show only matching entries, in the same list / image views
 const searching = () => Q.length >= 2;
-let sort = ["brand", "newest", "match"].includes(params.get("sort")) ? params.get("sort") : (Q.length >= 2 ? "match" : "newest");
+let sort = ["brand", "newest", "match", "shuffle"].includes(params.get("sort")) ? params.get("sort") : (Q.length >= 2 ? "match" : "newest");
 if (sort === "match" && Q.length < 2) sort = "newest";
 let MATCH = null;   // the entries each kind matched for the current search
 // ?type=wheels shows only that kind (used by "Browse the museum" on an item page); no ?type shows everything as before
@@ -90,7 +90,7 @@ const orderBy = () => {
   return (sort === "brand" ? "brands(name).asc," : "") + `release_date.${dir}.nullslast,id.${dir}`;
 };
 // A line goes between two rows only when the brand changes (in both Newest and Brand order).
-const groupKey = (r) => (F.order === "added" ? "" : r.brands?.slug);   // no brand dividers when ordered by upload
+const groupKey = (r) => (F.order === "added" || sort === "shuffle" ? "" : r.brands?.slug);   // no brand dividers when ordered by upload or shuffled   // no brand dividers when ordered by upload
 const boardUrl = (s, r) => `board.html?type=${s.type}&slug=${encodeURIComponent(r.slug)}`;
 
 // Refine filters applied to search matches (the same rules filterParams sends to the database)
@@ -115,17 +115,38 @@ function poolFor(s) {
   return rows.sort((a, b) => (sort === "brand" ? String(a.brands?.name || "").localeCompare(String(b.brands?.name || "")) : 0) || (date(a) < date(b) ? -dir : date(a) > date(b) ? dir : 0));
 }
 async function loadSection(s, reset) {
-  if (reset) s.rows = [];
+  if (reset) { s.rows = []; if (sort !== "shuffle") s.shuf = null; }
+  const take = s.rows.length ? PAGE : FIRST;
   if (searching()) {
     if (reset || !s.pool) s.pool = poolFor(s);
-    s.rows.push(...s.pool.slice(s.rows.length, s.rows.length + PAGE));
+    s.rows.push(...s.pool.slice(s.rows.length, s.rows.length + take));
     s.total = s.pool.length;
     return;
   }
   const fp = filterParams(s);
   if (fp === null) { s.rows = []; s.total = 0; return; }
+  if (sort === "shuffle") {   // a random order: get every matching id once, mix them, then fetch the boards a batch at a time
+    if (reset || !s.shuf) {
+      const ids = [];
+      for (let off = 0; ; off += 1000) {
+        const { rows } = await momsFetch(`${s.type}?select=id&order=id.asc&limit=1000&offset=${off}${fp ? "&" + fp : ""}`);
+        ids.push(...rows.map((r) => r.id));
+        if (rows.length < 1000) break;
+      }
+      for (let i = ids.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [ids[i], ids[j]] = [ids[j], ids[i]]; }
+      s.shuf = ids;
+    }
+    s.total = s.shuf.length;
+    const next = s.shuf.slice(s.rows.length, s.rows.length + take);
+    if (next.length) {
+      const { rows } = await momsFetch(`${s.type}?select=${s.select}&id=in.(${next.join(",")})`);
+      const at = new Map(next.map((id, i) => [id, i]));
+      s.rows.push(...rows.sort((a, b) => at.get(a.id) - at.get(b.id)));
+    }
+    return;
+  }
   const { rows, total } = await momsFetch(
-    `${s.type}?select=${s.select}&order=${orderBy()}&limit=${PAGE}&offset=${s.rows.length}${fp ? "&" + fp : ""}`, { count: true });
+    `${s.type}?select=${s.select}&order=${orderBy()}&limit=${take}&offset=${s.rows.length}${fp ? "&" + fp : ""}`, { count: true });
   s.rows.push(...rows);
   s.total = total;
 }
@@ -275,6 +296,7 @@ function fitGif(img) {
   });
 }
 const markWide = (img) => {
+  img.classList.add("in");
   fitGif(img);
   if (img.closest(".grid.square")) normalizeSquare(img);
   fitItem(img.closest(".item"));
@@ -343,6 +365,7 @@ if (canHover) {
   }, { passive: true });
 }
 
+let animFrom = null;
 const moreButton = (s, si) => s.rows.length < s.total
   ? `<button class="more" data-s="${si}">Show more ${esc(s.title.toLowerCase())} (${s.total - s.rows.length})</button><button class="more all" data-s="${si}" data-all>Show all</button>` : "";
 
@@ -475,6 +498,19 @@ function render() {
   if (newestLink) newestLink.textContent = F.order === "added" ? "Recent uploads" : F.order === "old" ? "Oldest" : chronological() ? "Chronological" : "Newest";
   const draw = () => (view === "list" ? renderList() : renderGrid());
   window.momsKeepScroll ? window.momsKeepScroll(app, draw) : draw();   // redraw without the page jumping (e.g. after "Show more")
+  if (animFrom) {   // after "Show more": the boards already there stay still, the new ones fade in one after another
+    const from = animFrom; animFrom = null;
+    app.querySelectorAll(".list[data-s], .grid[data-s]").forEach((box) => {
+      let k = 0;
+      box.querySelectorAll(".row:not(.head), .item").forEach((el) => {
+        if (+el.dataset.i < (from[+box.dataset.s] || 0)) el.classList.add("seen");
+        else { el.classList.add("fresh"); el.style.setProperty("--d", Math.min(k++, 24) * 0.03 + "s"); }
+      });
+    });
+  }
+  // photos fade in as they arrive (a safety timer shows any that never report back)
+  app.querySelectorAll(".grid .item img").forEach((img) => { if (img.complete && img.naturalWidth) img.classList.add("in"); });
+  setTimeout(() => app.querySelectorAll(".grid .item img:not(.in)").forEach((img) => img.classList.add("in")), 5000);
 }
 
 function saveState() {
@@ -482,6 +518,7 @@ function saveState() {
   if (ONLY && !window.MOMS_ONLY) p.set("type", ONLY);
   if (searching()) p.set("q", Q);
   if (searching() && sort === "newest") p.set("sort", "newest");
+  if (sort === "shuffle") p.set("sort", "shuffle");
   if (view === "image") p.set("view", "image");
   if (sort === "brand") p.set("sort", "brand");
   F.brand.forEach((v) => p.append("brand", v)); F.mold.forEach((v) => p.append("mold", v));
@@ -498,7 +535,7 @@ document.querySelectorAll("[data-view]").forEach((a) => a.addEventListener("clic
 }));
 document.querySelectorAll("[data-sort]").forEach((a) => a.addEventListener("click", (e) => {
   e.preventDefault();
-  if (sort === a.dataset.sort) return;
+  if (sort === a.dataset.sort && sort !== "shuffle") return;   // pressing Shuffle again mixes them again
   sort = a.dataset.sort; saveState(); loadAll();
 }));
 app.addEventListener("click", async (e) => {
@@ -506,6 +543,7 @@ app.addEventListener("click", async (e) => {
   if (!btn) return;
   e.stopPropagation();
   btn.disabled = true;
+  animFrom = SECTIONS.map((x) => x.rows.length);   // so only the boards that get added slide in
   const s = SECTIONS[btn.dataset.s];
   if (btn.hasAttribute("data-all")) {
     let before = -1;
