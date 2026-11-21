@@ -393,14 +393,14 @@ body.has-refine.rf-open { --tab-edge: calc(var(--rf-w) + 12px); }
   .site-footer { --u: 1px; height: auto; padding: 26px var(--gutter) 16px; display: grid; grid-template-columns: 1fr auto; row-gap: 14px; column-gap: 16px; font-size: 12px; }
     .fb-logo, .fb-credit, .fb-links, .fb-boards, .fb-title { position: static; transform: none; }
   .fb-title { display: none; }
-  .fb-logo { grid-column: 1; grid-row: 1; width: 100%; max-width: 260px; align-self: center; }
-  .fb-links { grid-column: 2; grid-row: 1; display: block; }
+  .fb-links { grid-column: 1 / -1; grid-row: 1; display: grid; grid-template-columns: max(25vw, 100px) auto; justify-content: start; column-gap: 0; }   /* two columns of links, like the menu */
   .fb-links div { margin-bottom: 0.9em; }
-  .fb-boards { grid-column: 1 / -1; grid-row: 2; display: flex; justify-content: space-between; align-items: center; padding: 8px 4px 0; }
+  .fb-logo { grid-column: 1 / -1; grid-row: 2; width: 100%; max-width: 260px; align-self: center; margin-top: 8px; }
+  .fb-boards { grid-column: 1 / -1; grid-row: 3; display: flex; justify-content: space-between; align-items: center; padding: 8px 4px 0; }
   .fb-boards img { position: static; width: 24%; transform: rotate(var(--r, 0deg)); }
   .fb-boards img.fb-moms { width: 26%; }
   .fb-boards img:nth-child(n+4):not(.fb-moms) { display: none; }
-  .fb-credit { grid-column: 1 / -1; grid-row: 3; text-align: left; white-space: normal; }
+  .fb-credit { grid-column: 1 / -1; grid-row: 4; text-align: left; white-space: normal; }
 }
 
 /* black scrollbar */
@@ -718,3 +718,9 @@ body.museum .grid .item img.in { animation: imgIn 0.6s ease; }
 @media (prefers-reduced-motion: reduce) { .grid .item img.in { animation: none; } }
 /* Menu and My Collection stay exactly where they are while the bar peeks, so they are never a moving target */
 .topbar.mnav .mnav-left, .topbar.mnav .mnav-right { align-self: start; height: var(--bar-h); display: flex; align-items: center; }
+/* phones: let the Search box shrink so Newest / Brand / Shuffle and Image / List all fit on one row */
+@media (max-width: 760px) {
+  .controls .m-find { min-width: 0; flex: 1 1 0; margin-right: 0; }
+  .controls .m-find input[type="search"] { width: 100%; min-width: 0; }
+  .controls { gap: 12px; }
+}
