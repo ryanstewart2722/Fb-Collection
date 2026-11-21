@@ -666,3 +666,39 @@ body.mnav-push > :not(.topbar):not(.mnav-panel):not(script):not(style), body.mna
 .topbar.mnav.peek .mnav-title img { height: calc(var(--logo-h) + 24px); }
 
 .topbar.mnav, .has-refine .topbar.mnav { transition: height 0.5s cubic-bezier(0.45, 0, 0.2, 1), right 0.42s var(--rf-ease, ease), padding-right 0.42s var(--rf-ease, ease); }
+
+/* lists and image grids fade and rise in one after another, like the menu links */
+@keyframes listIn { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+.row:not(.head), .grid .item { animation: listIn 0.7s cubic-bezier(0.16, 1, 0.3, 1) backwards; }
+.row:not(.head):nth-child(2), .grid .item:nth-child(1) { animation-delay: 0.08s; }
+.row:not(.head):nth-child(3), .grid .item:nth-child(2) { animation-delay: 0.11s; }
+.row:not(.head):nth-child(4), .grid .item:nth-child(3) { animation-delay: 0.14s; }
+.row:not(.head):nth-child(5), .grid .item:nth-child(4) { animation-delay: 0.17s; }
+.row:not(.head):nth-child(6), .grid .item:nth-child(5) { animation-delay: 0.2s; }
+.row:not(.head):nth-child(7), .grid .item:nth-child(6) { animation-delay: 0.23s; }
+.row:not(.head):nth-child(8), .grid .item:nth-child(7) { animation-delay: 0.26s; }
+.row:not(.head):nth-child(9), .grid .item:nth-child(8) { animation-delay: 0.29s; }
+.row:not(.head):nth-child(10), .grid .item:nth-child(9) { animation-delay: 0.32s; }
+.row:not(.head):nth-child(11), .grid .item:nth-child(10) { animation-delay: 0.35s; }
+.row:not(.head):nth-child(12), .grid .item:nth-child(11) { animation-delay: 0.38s; }
+.row:not(.head):nth-child(13), .grid .item:nth-child(12) { animation-delay: 0.41s; }
+.row:not(.head):nth-child(14), .grid .item:nth-child(13) { animation-delay: 0.44s; }
+.row:not(.head):nth-child(15), .grid .item:nth-child(14) { animation-delay: 0.47s; }
+.row:not(.head):nth-child(16), .grid .item:nth-child(15) { animation-delay: 0.5s; }
+.row:not(.head):nth-child(17), .grid .item:nth-child(16) { animation-delay: 0.53s; }
+.row:not(.head):nth-child(18), .grid .item:nth-child(17) { animation-delay: 0.56s; }
+.row:not(.head):nth-child(19), .grid .item:nth-child(18) { animation-delay: 0.59s; }
+.row:not(.head):nth-child(20), .grid .item:nth-child(19) { animation-delay: 0.62s; }
+.row:not(.head):nth-child(21), .grid .item:nth-child(20) { animation-delay: 0.65s; }
+.row:not(.head):nth-child(22), .grid .item:nth-child(21) { animation-delay: 0.68s; }
+.row:not(.head):nth-child(23), .grid .item:nth-child(22) { animation-delay: 0.71s; }
+.row:not(.head):nth-child(24), .grid .item:nth-child(23) { animation-delay: 0.74s; }
+.row:not(.head):nth-child(25), .grid .item:nth-child(24) { animation-delay: 0.77s; }
+.row:not(.head):nth-child(26), .grid .item:nth-child(25) { animation-delay: 0.8s; }
+.row:not(.head):nth-child(27), .grid .item:nth-child(26) { animation-delay: 0.83s; }
+.row:not(.head):nth-child(28), .grid .item:nth-child(27) { animation-delay: 0.86s; }
+.row:not(.head):nth-child(29), .grid .item:nth-child(28) { animation-delay: 0.89s; }
+.row:not(.head):nth-child(30), .grid .item:nth-child(29) { animation-delay: 0.92s; }
+.row:not(.head):nth-child(31), .grid .item:nth-child(30) { animation-delay: 0.95s; }
+.row:not(.head):nth-child(n+32), .grid .item:nth-child(n+31) { animation: none; }
+@media (prefers-reduced-motion: reduce) { .row:not(.head), .grid .item { animation: none; } }
