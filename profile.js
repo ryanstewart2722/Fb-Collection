@@ -389,7 +389,7 @@ function paintNow() {
   document.title = `${state.profile.display_name || state.profile.username} · MoMS`;
   applyMode();
   $("#views").hidden = !state.items.length && !state.owner;
-  $("#views-gap").hidden = !!state.items.length || state.owner;
+  { const gap = $("#views-gap"); if (gap) gap.hidden = !!state.items.length || state.owner; }   // the new top bar no longer has this spacer
   applyMode();
   app.innerHTML = (state.fav ? favTop() : "") + `<div id="items"></div>` + headHtml();   // the link and owner links sit at the bottom of the page
   paintItems();
