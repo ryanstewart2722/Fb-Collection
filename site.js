@@ -74,7 +74,7 @@ window.momsKeepScroll = function (box, fn, anchor) {
   // the Image / List switch moves onto the page (next to Search and Sort on the museum pages)
   if (view) {
     var controls = document.querySelector(".controls");
-    if (controls) controls.insertBefore(view, controls.querySelector(".sort") || null);
+    if (controls) controls.appendChild(view);   // Image / List sits last (far right), so it lines up the same on pages that have no Newest / Brand
     else { var tools = document.createElement("div"); tools.className = "page-tools"; tools.appendChild(view); bar.insertAdjacentElement("afterend", tools); }
   }
   bar.innerHTML = "";
