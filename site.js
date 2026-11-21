@@ -156,8 +156,8 @@ window.momsKeepScroll = function (box, fn, anchor) {
     '<nav class="fb-links" aria-label="Site">' +
       '<div><a href="/">Museum</a><a href="/?order=added">Recently Added</a><span class="fb-soon">Featured Setups</span></div>' +
       '<div><a href="/">View All</a><a href="/decks/">Decks</a><a href="/trucks/">Trucks</a><a href="/obstacles/">Obstacles</a><a href="/wheels/">Wheels</a><a href="/misc/">Misc.</a><span class="fb-soon">Brands</span></div>' +
-      '<div><a href="/account.html">My Account</a><a href="/users.html">Users</a><a href="/signin.html" data-me>My Collection</a></div>' +
-      '<div><a href="/signin.html" data-me data-hash="#favorites">Favorites</a><a href="/signin.html" data-me data-hash="#likes">Likes</a><span class="fb-soon">Following</span><a href="/" data-logout hidden>Logout</a><a href="/submit.html">Submit</a><a href="mailto:contact@museumofminiskateboards.org">Contact</a><a href="/privacy.html">Privacy Policy</a></div>' +
+      '<div><a href="/signin.html" data-me>My Collection</a><a href="/users.html">Users</a><a href="/signin.html" data-me data-hash="#favorites">Favorites</a></div>' +
+      '<div><a href="/signin.html" data-me data-hash="#likes">Likes</a><span class="fb-soon">Following</span><a href="/account.html">My Account</a><a href="/" data-logout hidden>Logout</a><a href="/submit.html">Submit</a><a href="mailto:contact@museumofminiskateboards.org">Contact</a><a href="/privacy.html">Privacy Policy</a></div>' +
     '</nav>' +
     '<div class="fb-boards" aria-hidden="true">' + ROW.map(function (p) { return '<img src="/footer-board.svg" alt="" style="--x:' + p[0] + ';--y:' + p[1] + ';--r:' + p[2] + 'deg">'; }).join("") + '</div>' +
     '<img class="fb-title" src="/footer-title.svg" alt="The Museum of Mini Skateboards" width="331" height="259">';
