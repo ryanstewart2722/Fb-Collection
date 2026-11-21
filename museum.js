@@ -5,7 +5,7 @@ const canHover = matchMedia("(hover: hover)").matches;
 // "Mobile" = a touch screen or a narrow window: the image view then follows your scrolling instead of hovering.
 const narrow = matchMedia("(max-width: 760px)");
 const isMobile = () => !canHover || narrow.matches;
-const PAGE = 25; // rows loaded per section at a time
+const FIRST = 25, PAGE = 50; // the first batch per section is short so the page stays short; each "Show more" adds PAGE
 
 const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
 const spans = (list) => list.map((c) => `<span>${esc(c)}</span>`).join("");
@@ -116,16 +116,17 @@ function poolFor(s) {
 }
 async function loadSection(s, reset) {
   if (reset) s.rows = [];
+  const take = s.rows.length ? PAGE : FIRST;
   if (searching()) {
     if (reset || !s.pool) s.pool = poolFor(s);
-    s.rows.push(...s.pool.slice(s.rows.length, s.rows.length + PAGE));
+    s.rows.push(...s.pool.slice(s.rows.length, s.rows.length + take));
     s.total = s.pool.length;
     return;
   }
   const fp = filterParams(s);
   if (fp === null) { s.rows = []; s.total = 0; return; }
   const { rows, total } = await momsFetch(
-    `${s.type}?select=${s.select}&order=${orderBy()}&limit=${PAGE}&offset=${s.rows.length}${fp ? "&" + fp : ""}`, { count: true });
+    `${s.type}?select=${s.select}&order=${orderBy()}&limit=${take}&offset=${s.rows.length}${fp ? "&" + fp : ""}`, { count: true });
   s.rows.push(...rows);
   s.total = total;
 }
