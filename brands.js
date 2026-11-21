@@ -36,7 +36,7 @@
     .sort((a, b) => String(a.name).localeCompare(String(b.name), undefined, { sensitivity: "base" }));
   const cnt = document.getElementById("u-count"); if (cnt) cnt.textContent = `${list.length} ${list.length === 1 ? "brand" : "brands"}`;
   box.innerHTML = `<div class="row head"><span>Brand</span><span>Products</span><span>Made in</span><span>Website</span></div>` + list.map((b) =>
-    `<a class="row" href="/?brand=${b.id}" data-pic="${esc(b.pic)}"><span>${esc(b.name)}</span><span>${b.count}</span><span>${esc(b.made_in || "")}</span><span>${esc((b.website || "").replace(/^https?:\/\/(www\.)?/, "").replace(/\/$/, ""))}</span></a>`).join("");
+    `<a class="row" href="/?brand=${b.id}" data-pic="${esc(b.pic)}"><span>${esc(b.name)}</span><span>${b.count}</span><span>${esc(b.made_in || "Not Listed")}</span><span>${esc((b.website || "").replace(/^https?:\/\/(www\.)?/, "").replace(/\/$/, "") || "Not Listed")}</span></a>`).join("");
   list.forEach((b) => { if (b.pic) { const im = new Image(); im.src = b.pic; } });   // start loading pictures now so hovering never waits
 
   // Hover a brand to see its picture big, like the Users page and the museum list.
