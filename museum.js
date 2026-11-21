@@ -275,6 +275,7 @@ function fitGif(img) {
   });
 }
 const markWide = (img) => {
+  img.classList.add("in");
   fitGif(img);
   if (img.closest(".grid.square")) normalizeSquare(img);
   fitItem(img.closest(".item"));
@@ -343,6 +344,7 @@ if (canHover) {
   }, { passive: true });
 }
 
+let animFrom = null;
 const moreButton = (s, si) => s.rows.length < s.total
   ? `<button class="more" data-s="${si}">Show more ${esc(s.title.toLowerCase())} (${s.total - s.rows.length})</button><button class="more all" data-s="${si}" data-all>Show all</button>` : "";
 
@@ -475,6 +477,19 @@ function render() {
   if (newestLink) newestLink.textContent = F.order === "added" ? "Recent uploads" : F.order === "old" ? "Oldest" : chronological() ? "Chronological" : "Newest";
   const draw = () => (view === "list" ? renderList() : renderGrid());
   window.momsKeepScroll ? window.momsKeepScroll(app, draw) : draw();   // redraw without the page jumping (e.g. after "Show more")
+  if (animFrom) {   // after "Show more": the boards already there stay still, the new ones fade in one after another
+    const from = animFrom; animFrom = null;
+    app.querySelectorAll(".list[data-s], .grid[data-s]").forEach((box) => {
+      let k = 0;
+      box.querySelectorAll(".row:not(.head), .item").forEach((el) => {
+        if (+el.dataset.i < (from[+box.dataset.s] || 0)) el.classList.add("seen");
+        else { el.classList.add("fresh"); el.style.setProperty("--d", Math.min(k++, 24) * 0.03 + "s"); }
+      });
+    });
+  }
+  // photos fade in as they arrive (a safety timer shows any that never report back)
+  app.querySelectorAll(".grid .item img").forEach((img) => { if (img.complete && img.naturalWidth) img.classList.add("in"); });
+  setTimeout(() => app.querySelectorAll(".grid .item img:not(.in)").forEach((img) => img.classList.add("in")), 5000);
 }
 
 function saveState() {
@@ -506,6 +521,7 @@ app.addEventListener("click", async (e) => {
   if (!btn) return;
   e.stopPropagation();
   btn.disabled = true;
+  animFrom = SECTIONS.map((x) => x.rows.length);   // so only the boards that get added slide in
   const s = SECTIONS[btn.dataset.s];
   if (btn.hasAttribute("data-all")) {
     let before = -1;
