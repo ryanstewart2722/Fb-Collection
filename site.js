@@ -163,6 +163,17 @@ window.momsKeepScroll = function (box, fn, anchor) {
     if (isOpen && !panel.contains(e.target) && !menu.contains(e.target)) { e.preventDefault(); e.stopPropagation(); setOpen(false); }
   }, true);
   addEventListener("resize", function () { if (isOpen) { setOpen(false); } });
+  // starting to scroll (wheel, touch or keys) closes the open menu, using the same smooth close as the X
+  var openedAt = 0, y0 = 0;
+  var _set = setOpen; setOpen = function (v) { if (v && !isOpen) { openedAt = Date.now(); y0 = pageYOffset; } _set(v); };
+  function scrollIntent(e) {
+    if (!isOpen || Date.now() - openedAt < 400) return;
+    if (e && e.target && e.target.closest && e.target.closest(".mnav-panel") && panel.scrollHeight > panel.clientHeight + 2) return;   // a tall menu on a phone scrolls inside itself
+    setOpen(false);
+  }
+  addEventListener("wheel", scrollIntent, { passive: true });
+  addEventListener("touchmove", scrollIntent, { passive: true });
+  addEventListener("scroll", function () { if (isOpen && Math.abs(pageYOffset - y0) > 6) scrollIntent(); }, { passive: true });
 })();
 
 // Shared bits on every page: the footer, and the sign-in link that says "Sign in" until you are signed in.
