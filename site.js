@@ -127,8 +127,6 @@ window.momsKeepScroll = function (box, fn, anchor) {
       timer = setTimeout(function () { document.body.classList.remove("mnav-open"); }, 460);
     }
   }
-  var canHover = matchMedia("(hover: hover) and (pointer: fine)");
-  menu.addEventListener("mouseenter", function () { if (canHover.matches) setOpen(true); });   // moving away does not close it
   menu.addEventListener("click", function () { setOpen(!isOpen); });
   panel.querySelector(".mnav-x").addEventListener("click", function () { setOpen(false); menu.focus(); });
   document.addEventListener("keydown", function (e) { if (e.key === "Escape" && isOpen) { setOpen(false); menu.focus(); } });
