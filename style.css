@@ -591,8 +591,7 @@ body > main.auth { width: 100%; box-sizing: border-box; }
 .mnav-title { display: block; line-height: 0; }
 .topbar.mnav { --logo-h: 30px; }
 .mnav-title img { display: block; height: var(--logo-h); width: auto; }
-/* Menu, Back and My Collection sit on the baseline of the title's last line ("Mini Skateboards") */
-.mnav-left, .mnav-right { transform: translateY(calc(var(--logo-h) * 0.475 - 4px)); }
+
 .mnav-right { justify-self: end; font-size: 12px; }
 .mnav-right .insta { font-size: 12px; }
 .mnav-menu, .mnav-title, .mnav-right { transition: opacity 0.25s ease; }
