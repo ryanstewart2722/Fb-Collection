@@ -121,9 +121,9 @@ window.momsKeepScroll = function (box, fn, anchor) {
     menu.setAttribute("aria-expanded", v ? "true" : "false"); panel.setAttribute("aria-hidden", v ? "false" : "true");
     if (v) {
       aim(); void panel.offsetWidth;
-      document.body.classList.add("mnav-open"); panel.classList.add("open"); bar.classList.remove("peek");
+      document.body.classList.add("mnav-open", "mnav-push"); panel.classList.add("open"); bar.classList.remove("peek");
     } else {
-      panel.classList.remove("open");
+      panel.classList.remove("open"); document.body.classList.remove("mnav-push");
       timer = setTimeout(function () { document.body.classList.remove("mnav-open"); }, 460);
     }
   }
