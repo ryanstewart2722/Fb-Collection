@@ -702,3 +702,4 @@ body.mnav-push > :not(.topbar):not(.mnav-panel):not(script):not(style), body.mna
 .row:not(.head):nth-child(31), .grid .item:nth-child(30) { animation-delay: 0.95s; }
 .row:not(.head):nth-child(n+32), .grid .item:nth-child(n+31) { animation: none; }
 @media (prefers-reduced-motion: reduce) { .row:not(.head), .grid .item { animation: none; } }
+[data-logout].off { opacity: 0.4; pointer-events: none; cursor: default; }
