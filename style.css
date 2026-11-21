@@ -27,7 +27,7 @@ a { color: inherit; text-decoration: none; }
 
 /* ---------- Header ---------- */
 /* full-width bar, fixed to the top; the page below leaves room for it */
-:root { --bar-h: 56px; --controls-h: 43px; }
+:root { --bar-h: 50px; --controls-h: 43px; }
 body:has(> .topbar) { padding-top: var(--bar-h); }
 .topbar {
   position: fixed; top: 0; left: 0; right: var(--rf-open-w, 0px); z-index: 15;
@@ -589,7 +589,7 @@ body > main.auth { width: 100%; box-sizing: border-box; }
 .mnav-menu { font: inherit; color: inherit; background: none; border: 0; padding: 8px 0; margin: 0; cursor: pointer; }
 .mnav-menu:hover, .mnav-left a:hover { text-decoration: underline; text-underline-offset: 2px; }
 .mnav-title { display: block; line-height: 0; }
-.mnav-title img { display: block; height: 32px; width: auto; }
+.mnav-title img { display: block; height: 30px; width: auto; }
 .mnav-right { justify-self: end; font-size: 12px; }
 .mnav-right .insta { font-size: 12px; }
 .mnav-menu, .mnav-title, .mnav-right { transition: opacity 0.25s ease; }
@@ -630,8 +630,8 @@ body.mnav-open .mnav-title img { visibility: hidden; }   /* the big copy in the 
 @media (prefers-reduced-motion: reduce) { .mnav-panel, .mnav-panel *, .mnav-menu, .mnav-title, .mnav-right { transition-duration: 0.01s !important; transition-delay: 0s !important; } }
 
 @media (max-width: 760px) {
-  :root { --bar-h: 50px; }
-  .mnav-title img { height: 28px; }
+  :root { --bar-h: 46px; }
+  .mnav-title img { height: 26px; }
   .mnav-left, .mnav-right, .mnav-right .insta { font-size: 11.5px; }
   .mnav-left { gap: 14px; }
   .mnav-panel { --u: 1px; height: 100vh; height: 100dvh; overflow-y: auto; font-size: 13px; padding: 56px var(--gutter) 28px; display: flex; flex-direction: column; align-items: center; }
