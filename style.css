@@ -585,15 +585,15 @@ body > main.auth { width: 100%; box-sizing: border-box; }
 .topbar.mnav { padding: 0 var(--gutter); }
 .has-refine .topbar.mnav { padding-right: 10px; transition: right 0.42s var(--rf-ease, ease), padding-right 0.42s var(--rf-ease, ease); }   /* the right edge follows the list, which leaves room for the Refine tab */
 .has-refine.rf-open .topbar.mnav { padding-right: var(--gutter); }
-.mnav-left { display: flex; align-items: center; gap: 22px; justify-self: start; font-size: 12px; }
+.mnav-left { display: flex; align-items: center; gap: 22px; justify-self: start; font-size: max(10.5px, calc(12 * 100vw / 1440)); }   /* same size rule as the footer links */
 .mnav-menu { font: inherit; color: inherit; background: none; border: 0; padding: 8px 0; margin: 0; cursor: pointer; }
 .mnav-menu:hover, .mnav-left a:hover { text-decoration: underline; text-underline-offset: 2px; }
 .mnav-title { display: block; line-height: 0; }
 .topbar.mnav { --logo-h: 30px; }
 .mnav-title img { display: block; height: var(--logo-h); width: auto; }
 
-.mnav-right { justify-self: end; font-size: 12px; }
-.mnav-right .insta { font-size: 12px; }
+.mnav-right { justify-self: end; font-size: max(10.5px, calc(12 * 100vw / 1440)); }
+.mnav-right .insta { font-size: inherit; }
 .mnav-menu, .mnav-title, .mnav-right { transition: opacity 0.25s ease; }
 body.mnav-open .mnav-menu, body.mnav-open .mnav-right { opacity: 0; pointer-events: none; }
 body.mnav-open .mnav-title img { visibility: hidden; }   /* the big copy in the menu takes over, so the title seems to grow */
@@ -605,7 +605,7 @@ body.mnav-open .mnav-title img { visibility: hidden; }   /* the big copy in the 
 .mnav-panel {
   --u: calc(100vw / 1440); --tx: 0px; --ty: 0px; --ts: 1;
   position: fixed; top: 0; left: 0; right: 0; height: calc(254 * var(--u)); z-index: 80; background: #000; color: #fff;
-  font-size: max(11px, calc(12 * var(--u))); line-height: 1.38; overflow: hidden; visibility: hidden;
+  font-size: max(10.5px, calc(12 * var(--u))); line-height: 1.38; overflow: hidden; visibility: hidden;
   clip-path: inset(0 0 100% 0);
   transition: clip-path 0.46s cubic-bezier(0.55, 0, 0.7, 0.2), visibility 0s linear 0.46s;
 }
