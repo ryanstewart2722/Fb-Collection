@@ -654,14 +654,9 @@ body.mnav-open .mnav-title img { visibility: hidden; }   /* the big copy in the 
 .topbar.mnav.peek::after { height: 34px; opacity: 1; }
 .topbar.mnav.peek .mnav-menu { text-decoration: underline; text-underline-offset: 3px; }
 
-/* when the big menu opens, the page slides down to make room instead of the menu covering it */
-body:has(> .topbar) { transition: padding-right 0.42s var(--rf-ease, ease), padding-top 0.7s cubic-bezier(0.16, 1, 0.3, 1); }
-.controls { transition: top 0.7s cubic-bezier(0.16, 1, 0.3, 1); }
+/* when the big menu opens (or the bar is hovered) the page slides down as one piece, so nothing jumps or lags */
 body.mnav-push { --push: calc(254 * 100vw / 1440 - var(--bar-h)); }
-body.mnav-push:has(> .topbar) { padding-top: calc(var(--bar-h) + var(--push)); }
-body.mnav-push .controls { top: calc(var(--bar-h) + var(--push)); }
+body.mnav-peek:not(.mnav-push) { --push: 34px; }
+body > :not(.topbar):not(.mnav-panel):not(script):not(style) { transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1); }
+body.mnav-push > :not(.topbar):not(.mnav-panel):not(script):not(style), body.mnav-peek > :not(.topbar):not(.mnav-panel):not(script):not(style) { transform: translateY(var(--push)); }
 @media (max-width: 760px) { body.mnav-push { --push: 0px; } }
-
-/* the peek strip makes room too, so it never covers the search row */
-body.mnav-peek:not(.mnav-push):has(> .topbar) { padding-top: calc(var(--bar-h) + 34px); }
-body.mnav-peek:not(.mnav-push) .controls { top: calc(var(--bar-h) + 34px); }
