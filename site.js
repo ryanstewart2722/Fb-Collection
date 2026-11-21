@@ -117,8 +117,8 @@ window.momsKeepScroll = function (box, fn, anchor) {
     '<nav class="mnav-links" aria-label="Site">' +
       '<div class="mn-col"><div class="mn-grp">' + L("/", "Museum") + L("/?order=added", "Recently Added") + S("Featured Setups") + '</div>' +
         '<div class="mn-grp">' + L("/", "View All") + L("/decks/", "Decks") + L("/trucks/", "Trucks") + L("/obstacles/", "Obstacles") + L("/wheels/", "Wheels") + L("/misc/", "Misc.") + L("/brands.html", "Brands") + '</div></div>' +
-      '<div class="mn-col"><div class="mn-grp">' + L("/signin.html", "My Collection", " data-me") + L("/users.html", "Users") + L("/signin.html", "Favorites", ' data-me data-hash="#favorites"') + L("/signin.html", "Likes", ' data-me data-hash="#likes"') + S("Following") + L("/account.html", "My Account") + L("/", "Logout", ' data-logout class="off" aria-disabled="true" tabindex="-1"') + '</div>' +
-        '<div class="mn-grp">' + L("/submit.html", "Submit") + L("mailto:contact@museumofminiskateboards.org", "Contact") + L("/privacy.html", "Privacy Policy") + '</div></div>' +
+      '<div class="mn-col"><div class="mn-grp">' + L("/signin.html", "My Collection", " data-me") + L("/users.html", "Users") + L("/signin.html", "Favorites", ' data-me data-hash="#favorites"') + '</div>' +
+        '<div class="mn-grp">' + L("/signin.html", "Likes", ' data-me data-hash="#likes"') + S("Following") + L("/account.html", "My Account") + L("/", "Logout", ' data-logout class="off" aria-disabled="true" tabindex="-1"') + L("/submit.html", "Submit") + L("mailto:contact@museumofminiskateboards.org", "Contact") + L("/privacy.html", "Privacy Policy") + '</div></div>' +
     '</nav>' +
     '<img class="mnav-big" src="/title-wm.svg" alt="" width="609" height="140">' +
     '<p class="mnav-credit">Designed, curated and developed by <a href="https://ryanforprez.org" target="_blank" rel="noopener">Ryan Stewart</a> view collection <a href="/u/r" data-mine>here</a></p>' +
