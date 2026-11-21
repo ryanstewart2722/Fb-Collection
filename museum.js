@@ -377,7 +377,7 @@ function renderList() {
       <h2>${esc(s.title)}</h2>
       <div class="list-wrap"><div class="list" data-s="${si}">
         <div class="row head">${spans(s.cols.map((c) => c[0]))}</div>
-        ${s.rows.map((r, i) => `<div class="row link${i > 0 && groupKey(r) !== groupKey(s.rows[i - 1]) ? " divide" : ""}" data-i="${i}">${spans(s.cols.map((c) => c[1](r)))}</div>`).join("")}
+        ${s.rows.map((r, i) => `<div class="row link${i > 0 && (sort === "shuffle" || groupKey(r) !== groupKey(s.rows[i - 1])) ? " divide" : ""}" data-i="${i}">${spans(s.cols.map((c) => c[1](r)))}</div>`).join("")}
         <a class="add-new submit-row" href="submit.html?type=${esc(s.type)}">+ Submit</a>
       </div></div>
       ${moreButton(s, si)}
