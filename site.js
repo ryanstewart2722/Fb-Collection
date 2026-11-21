@@ -66,14 +66,86 @@ window.momsKeepScroll = function (box, fn, anchor) {
   }).observe(document.documentElement, { attributes: true, attributeFilter: ["class"], childList: true, subtree: true });
 })();
 
+// The top bar: "Menu", the title, and My Collection. Hovering or clicking Menu opens the big menu; the small title grows into the big one.
+(function () {
+  var bar = document.querySelector("header.topbar"); if (!bar) return;
+  var view = bar.querySelector("nav.toggle"), back = bar.querySelector(".build"), insta = bar.querySelector(".insta");
+  if (!insta) { insta = document.createElement("a"); insta.className = "insta"; insta.href = "/signin.html"; insta.textContent = "Sign in"; }
+  // the Image / List switch moves onto the page (next to Search and Sort on the museum pages)
+  if (view) {
+    var controls = document.querySelector(".controls");
+    if (controls) controls.insertBefore(view, controls.querySelector(".sort") || null);
+    else { var tools = document.createElement("div"); tools.className = "page-tools"; tools.appendChild(view); bar.insertAdjacentElement("afterend", tools); }
+  }
+  bar.innerHTML = "";
+  var left = document.createElement("div"); left.className = "mnav-left";
+  var menu = document.createElement("button"); menu.type = "button"; menu.className = "mnav-menu"; menu.textContent = "Menu";
+  menu.setAttribute("aria-expanded", "false"); menu.setAttribute("aria-controls", "mnav-panel");
+  left.appendChild(menu); if (back) left.appendChild(back);
+  var tl = document.createElement("a"); tl.className = "mnav-title"; tl.href = "/"; tl.setAttribute("aria-label", "The Museum of Mini Skateboards");
+  tl.innerHTML = '<img src="/title-wm.svg" alt="" width="609" height="140">';
+  var right = document.createElement("div"); right.className = "mnav-right"; right.appendChild(insta);
+  bar.appendChild(left); bar.appendChild(tl); bar.appendChild(right);
+  bar.classList.add("mnav");
+
+  var n = 0, L = function (href, label, extra) { return '<a href="' + href + '" style="--i:' + (n++) + '"' + (extra || "") + '>' + label + '</a>'; };
+  var S = function (label) { return '<span class="mn-soon" style="--i:' + (n++) + '">' + label + '</span>'; };
+  var panel = document.createElement("div"); panel.className = "mnav-panel"; panel.id = "mnav-panel"; panel.setAttribute("aria-hidden", "true");
+  panel.innerHTML =
+    '<button type="button" class="mnav-x" aria-label="Close menu">×</button>' +
+    '<nav class="mnav-links" aria-label="Site">' +
+      '<div class="mn-col"><div class="mn-grp">' + L("/", "Museum") + L("/?order=added", "Recently Added") + S("Featured Setups") + '</div>' +
+        '<div class="mn-grp">' + L("/", "View All") + L("/decks/", "Decks") + L("/trucks/", "Trucks") + L("/obstacles/", "Obstacles") + L("/wheels/", "Wheels") + L("/misc/", "Misc.") + S("Brands") + '</div></div>' +
+      '<div class="mn-col"><div class="mn-grp">' + L("/signin.html", "My Collection", " data-me") + L("/users.html", "Users") + L("/signin.html", "Favorites", ' data-me data-hash="#favorites"') + L("/signin.html", "Likes", ' data-me data-hash="#likes"') + S("Following") + L("/account.html", "My Account") + L("/", "Logout", " data-logout hidden") + '</div>' +
+        '<div class="mn-grp">' + L("/submit.html", "Submit") + L("mailto:contact@museumofminiskateboards.org", "Contact") + L("/privacy.html", "Privacy Policy") + '</div></div>' +
+    '</nav>' +
+    '<img class="mnav-big" src="/title-wm.svg" alt="" width="609" height="140">' +
+    '<p class="mnav-credit">Designed, curated and developed by <a href="https://ryanforprez.org" target="_blank" rel="noopener">Ryan Stewart</a> view collection <a href="/u/r" data-mine>here</a></p>' +
+    '<img class="mnav-fingers" src="/nav-fingers.svg" alt="" width="212" height="207">';
+  document.body.appendChild(panel);
+
+  var big = panel.querySelector(".mnav-big"), smallImg = tl.querySelector("img"), isOpen = false, timer;
+  function aim() {   // where the big title has to start from so it looks like the small one growing
+    big.style.transition = "none"; panel.style.setProperty("--tx", "0px"); panel.style.setProperty("--ty", "0px"); panel.style.setProperty("--ts", "1");
+    panel.classList.add("measure");
+    var s = smallImg.getBoundingClientRect(), b = big.getBoundingClientRect();
+    panel.classList.remove("measure");
+    if (!b.width || !s.width) return;
+    panel.style.setProperty("--tx", Math.round((s.left + s.width / 2) - (b.left + b.width / 2)) + "px");
+    panel.style.setProperty("--ty", Math.round((s.top + s.height / 2) - (b.top + b.height / 2)) + "px");
+    panel.style.setProperty("--ts", (s.width / b.width).toFixed(4));
+    void big.offsetWidth; big.style.transition = "";
+  }
+  function setOpen(v) {
+    if (v === isOpen) return; isOpen = v; clearTimeout(timer);
+    menu.setAttribute("aria-expanded", v ? "true" : "false"); panel.setAttribute("aria-hidden", v ? "false" : "true");
+    if (v) {
+      aim(); void panel.offsetWidth;
+      document.body.classList.add("mnav-open"); panel.classList.add("open");
+    } else {
+      panel.classList.remove("open");
+      timer = setTimeout(function () { document.body.classList.remove("mnav-open"); }, 460);
+    }
+  }
+  var canHover = matchMedia("(hover: hover) and (pointer: fine)");
+  menu.addEventListener("mouseenter", function () { if (canHover.matches) setOpen(true); });   // moving away does not close it
+  menu.addEventListener("click", function () { setOpen(!isOpen); });
+  panel.querySelector(".mnav-x").addEventListener("click", function () { setOpen(false); menu.focus(); });
+  document.addEventListener("keydown", function (e) { if (e.key === "Escape" && isOpen) { setOpen(false); menu.focus(); } });
+  document.addEventListener("click", function (e) {   // a click outside only closes the menu (it does not also open whatever was underneath)
+    if (isOpen && !panel.contains(e.target) && !menu.contains(e.target)) { e.preventDefault(); e.stopPropagation(); setOpen(false); }
+  }, true);
+  addEventListener("resize", function () { if (isOpen) { setOpen(false); } });
+})();
+
 // Shared bits on every page: the footer, and the sign-in link that says "Sign in" until you are signed in.
 (function () {
   // the row of boards at the bottom right: [x, y of the board's centre, turn] on the 1440-wide design; the last one is the MoMS board
-  var ROW = [[696, 454, 8], [840, 426, -12], [1014, 380, 6], [1192, 390, 12], [1350, 434, 20]];
+  var ROW = [[696, 454, 8], [841, 429, -12], [987, 382, 6], [1196, 390, 12], [1352, 441, 20]];
   var footer = document.createElement("footer");
   footer.className = "site-footer";
   footer.innerHTML =
-    '<img class="fb-logo" src="/footer-character.webp?v=c201254c" alt="" width="900" height="946">' +
+    '<img class="fb-logo" src="/footer-character.webp?v=9909f8d4" alt="" width="900" height="946">' +
     '<p class="fb-credit">Designed, curated and developed by <a href="https://ryanforprez.org" target="_blank" rel="noopener">Ryan Stewart</a> view his collection <a href="/u/r">here</a></p>' +
     '<nav class="fb-links" aria-label="Site">' +
       '<div><a href="/">Museum</a><a href="/?order=added">Recently Added</a><span class="fb-soon">Featured Setups</span></div>' +
@@ -81,8 +153,7 @@ window.momsKeepScroll = function (box, fn, anchor) {
       '<div><a href="/account.html">My Account</a><a href="/users.html">Users</a><a href="/signin.html" data-me>My Collection</a></div>' +
       '<div><a href="/signin.html" data-me data-hash="#favorites">Favorites</a><a href="/signin.html" data-me data-hash="#likes">Likes</a><span class="fb-soon">Following</span><a href="/" data-logout hidden>Logout</a><a href="/submit.html">Submit</a><a href="mailto:contact@museumofminiskateboards.org">Contact</a><a href="/privacy.html">Privacy Policy</a></div>' +
     '</nav>' +
-    '<div class="fb-boards" aria-hidden="true">' + ROW.map(function (p) { return '<img src="/footer-board.svg" alt="" style="--x:' + p[0] + ';--y:' + p[1] + ';--r:' + p[2] + 'deg">'; }).join("") +
-      '<img class="fb-moms" src="/footer-moms.svg" alt="" style="--x:1092;--y:452;--r:0deg"></div>' +
+    '<div class="fb-boards" aria-hidden="true">' + ROW.map(function (p) { return '<img src="/footer-board.svg" alt="" style="--x:' + p[0] + ';--y:' + p[1] + ';--r:' + p[2] + 'deg">'; }).join("") + '</div>' +
     '<p class="fb-title">The<br>Museum<br>of<br>Mini<br>Skateboards</p>';
   document.body.appendChild(footer);
 
@@ -98,9 +169,9 @@ window.momsKeepScroll = function (box, fn, anchor) {
     .then(function (rows) {
       var u = rows[0] && rows[0].username; if (!u) return;
       if (top) { top.href = "/u/" + u; if (top.dataset.prev !== undefined) top.dataset.prev = "My Collection"; else top.textContent = "My Collection"; }
-      footer.querySelectorAll("[data-me]").forEach(function (a) { a.href = "/u/" + u + (a.dataset.hash || ""); });
-      var out = footer.querySelector("[data-logout]");
-      if (out) { out.hidden = false; out.addEventListener("click", function () { try { localStorage.removeItem("sb-alfsnqpxmptvuvakyzcl-auth-token"); } catch (e) {} }); }
+      document.querySelectorAll("[data-me]").forEach(function (a) { a.href = "/u/" + u + (a.dataset.hash || ""); });
+      document.querySelectorAll("[data-mine]").forEach(function (a) { a.href = "/u/" + u; });
+      document.querySelectorAll("[data-logout]").forEach(function (out) { out.hidden = false; out.addEventListener("click", function () { try { localStorage.removeItem("sb-alfsnqpxmptvuvakyzcl-auth-token"); } catch (e) {} }); });
     }).catch(function () {});
 })();
 

@@ -27,7 +27,7 @@ a { color: inherit; text-decoration: none; }
 
 /* ---------- Header ---------- */
 /* full-width bar, fixed to the top; the page below leaves room for it */
-:root { --bar-h: 43px; }
+:root { --bar-h: 73px; --controls-h: 43px; }
 body:has(> .topbar) { padding-top: var(--bar-h); }
 .topbar {
   position: fixed; top: 0; left: 0; right: var(--rf-open-w, 0px); z-index: 15;
@@ -375,7 +375,7 @@ body.has-refine.rf-open { --tab-edge: calc(var(--rf-w) + 12px); }
 /* ---------- Footer ---------- */
 .site-footer { --u: calc(100vw / 1440); position: relative; background: #000; color: #fff; height: calc(510 * var(--u)); overflow: hidden; font-size: max(10.5px, calc(12 * var(--u))); line-height: 1.38; }
 .site-footer a { color: inherit; text-decoration: none; }
-.fb-logo { position: absolute; left: calc(38 * var(--u)); top: calc(40 * var(--u)); width: calc(424 * var(--u)); height: auto; display: block; }
+.fb-logo { position: absolute; left: calc(37 * var(--u)); top: calc(52 * var(--u)); width: calc(425 * var(--u)); height: auto; display: block; }
 .fb-credit { position: absolute; top: calc(30 * var(--u)); left: 50%; transform: translateX(-50%); margin: 0; white-space: nowrap; }
 .fb-credit a { text-decoration: underline; text-underline-offset: 2px; }
 .fb-links { position: absolute; top: calc(30 * var(--u)); left: calc(1194 * var(--u)); display: grid; grid-template-columns: calc(126 * var(--u)) auto; column-gap: 0; }
@@ -543,13 +543,13 @@ body > main.auth { width: 100%; box-sizing: border-box; }
 .im-more-btn { display: block; width: 100%; font: inherit; font-size: 14px; padding: 12px; background: #fff; border: 0; border-top: 1px solid #000; cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
 
 /* museum search, plain: a bar the height of the nav, directly under it; a magnifying glass and the word "Search" */
-.controls { position: sticky; top: var(--bar-h); z-index: 10; height: var(--bar-h); box-sizing: border-box; margin-top: 0; margin-bottom: 0; padding-top: 0; background: #fff; box-shadow: -50vw 0 0 #fff, 50vw 0 0 #fff; align-items: center; }
+.controls { position: sticky; top: var(--bar-h); z-index: 10; height: var(--controls-h); box-sizing: border-box; margin-top: 0; margin-bottom: 0; padding-top: 0; background: #fff; box-shadow: -50vw 0 0 #fff, 50vw 0 0 #fff; align-items: center; }
 .controls .m-find { display: flex; align-items: center; gap: 8px; margin-right: auto; }
 .m-glass { flex: none; }
 .m-find input[type="search"] { font: inherit; font-size: 12px; padding: 0; border: 0; outline: 0; background: transparent; width: min(170px, 45vw); -webkit-appearance: none; appearance: none; }
 .m-find input[type="search"]::placeholder { color: #000; opacity: 1; }
 .m-find input[type="search"]:focus::placeholder { color: transparent; }
-.m-pop { top: calc(var(--bar-h) * 2); }
+.m-pop { top: calc(var(--bar-h) + var(--controls-h)); }
 /* popup text is the same size as the list text */
 .m-pop, .m-res, .m-count, .m-note, .m-more, .m-pic .no-pic { font-size: 12px; line-height: 1.25; }
 .m-pic .no-pic { font-size: 10px; }
@@ -579,3 +579,66 @@ body > main.auth { width: 100%; box-sizing: border-box; }
   .board-more a.sq { aspect-ratio: 1; }
   .board-more img, .board-more a.sq img { max-width: 100%; width: auto; height: auto; max-height: 145px; object-fit: contain; }
 }
+
+
+/* ---------- Top bar and the big menu (Menu / title / My Collection) ---------- */
+.topbar.mnav { padding: 0 calc(20 * 1px + 0.9vw); }
+.mnav-left { display: flex; align-items: center; gap: 22px; justify-self: start; font-size: 12px; }
+.mnav-menu { font: inherit; color: inherit; background: none; border: 0; padding: 8px 0; cursor: pointer; }
+.mnav-menu:hover, .mnav-left a:hover { text-decoration: underline; text-underline-offset: 2px; }
+.mnav-title { display: block; line-height: 0; }
+.mnav-title img { display: block; height: 38px; width: auto; }
+.mnav-right { justify-self: end; font-size: 12px; }
+.mnav-right .insta { font-size: 12px; }
+.mnav-menu, .mnav-title, .mnav-right { transition: opacity 0.25s ease; }
+body.mnav-open .mnav-menu, body.mnav-open .mnav-right { opacity: 0; pointer-events: none; }
+body.mnav-open .mnav-title img { visibility: hidden; }   /* the big copy in the menu takes over, so the title seems to grow */
+
+.page-tools { display: flex; justify-content: flex-end; gap: 28px; padding: 14px var(--gutter) 0; font-size: 11px; }
+.page-tools:has(> [hidden]:only-child) { display: none; }
+.controls .toggle.view, .controls > .toggle { margin-left: 0; }
+
+.mnav-panel {
+  --u: calc(100vw / 1440); --tx: 0px; --ty: 0px; --ts: 1;
+  position: fixed; top: 0; left: 0; right: 0; height: calc(254 * var(--u)); z-index: 80; background: #000; color: #fff;
+  font-size: max(11px, calc(12 * var(--u))); line-height: 1.38; overflow: hidden; visibility: hidden;
+  clip-path: inset(0 0 100% 0);
+  transition: clip-path 0.46s cubic-bezier(0.55, 0, 0.7, 0.2), visibility 0s linear 0.46s;
+}
+.mnav-panel.open { visibility: visible; clip-path: inset(0 0 0 0); transition: clip-path 0.7s cubic-bezier(0.16, 1, 0.3, 1), visibility 0s; }
+.mnav-panel.measure { visibility: hidden; clip-path: none; transition: none; }
+.mnav-panel a { color: inherit; text-decoration: none; }
+.mnav-panel a:hover { text-decoration: underline; text-underline-offset: 2px; }
+.mnav-x { position: absolute; left: calc(20 * var(--u)); top: calc(10 * var(--u)); font: inherit; font-size: 22px; line-height: 1; color: inherit; background: none; border: 0; padding: 6px 8px; cursor: pointer; opacity: 0; transition: opacity 0.2s ease; }
+.mnav-panel.open .mnav-x { opacity: 1; transition: opacity 0.4s ease 0.35s; }
+.mnav-links { position: absolute; left: calc(23 * var(--u)); top: calc(44 * var(--u)); display: flex; gap: calc(26 * var(--u)); }
+.mn-col { display: flex; flex-direction: column; min-width: calc(124 * var(--u)); }
+.mn-grp { display: flex; flex-direction: column; margin-bottom: 1.4em; }
+.mn-grp > * { opacity: 0; transform: translateY(8px); transition: opacity 0.18s ease, transform 0.18s ease; }
+.mnav-panel.open .mn-grp > * { opacity: 1; transform: none; transition: opacity 0.5s ease calc(0.18s + var(--i, 0) * 0.025s), transform 0.6s cubic-bezier(0.16, 1, 0.3, 1) calc(0.18s + var(--i, 0) * 0.025s); }
+.mn-soon { opacity: 0; cursor: default; }
+.mnav-panel.open .mn-soon { opacity: 0.4; }
+.mnav-big { position: absolute; left: 50%; top: calc(20 * var(--u)); width: calc(609 * var(--u)); height: auto; margin-left: calc(-304.5 * var(--u)); transform-origin: 50% 50%; transform: translate(var(--tx), var(--ty)) scale(var(--ts)); transition: transform 0.46s cubic-bezier(0.55, 0, 0.7, 0.2); }
+.mnav-panel.open .mnav-big { transform: none; transition: transform 0.8s cubic-bezier(0.16, 1, 0.3, 1); }
+.mnav-credit { position: absolute; left: 50%; top: calc(224 * var(--u)); transform: translateX(-50%); margin: 0; white-space: nowrap; opacity: 0; transition: opacity 0.15s ease; }
+.mnav-credit a:not(:hover) { text-decoration: underline; text-underline-offset: 2px; }
+.mnav-panel.open .mnav-credit { opacity: 1; transition: opacity 0.6s ease 0.4s; }
+.mnav-fingers { position: absolute; left: calc(1190 * var(--u)); top: calc(27 * var(--u)); width: calc(212 * var(--u)); height: auto; opacity: 0; transform: translateX(calc(40 * var(--u))); transition: opacity 0.2s ease, transform 0.3s ease; }
+.mnav-panel.open .mnav-fingers { opacity: 1; transform: none; transition: opacity 0.6s ease 0.3s, transform 0.9s cubic-bezier(0.16, 1, 0.3, 1) 0.2s; }
+@media (prefers-reduced-motion: reduce) { .mnav-panel, .mnav-panel *, .mnav-menu, .mnav-title, .mnav-right { transition-duration: 0.01s !important; transition-delay: 0s !important; } }
+
+@media (max-width: 760px) {
+  :root { --bar-h: 56px; }
+  .mnav-title img { height: 30px; }
+  .mnav-left, .mnav-right, .mnav-right .insta { font-size: 11.5px; }
+  .mnav-left { gap: 14px; }
+  .mnav-panel { --u: 1px; height: 100vh; height: 100dvh; overflow-y: auto; font-size: 13px; padding: 56px var(--gutter) 28px; display: flex; flex-direction: column; align-items: center; }
+  .mnav-x { left: 12px; top: 8px; }
+  .mnav-links { position: static; width: 100%; justify-content: space-between; gap: 16px; order: 2; margin-top: 10px; }
+  .mn-col { min-width: 0; }
+  .mnav-big { position: static; order: 1; width: min(86vw, 420px); margin: 6px 0 0; }
+  .mnav-credit { position: static; order: 3; transform: none; white-space: normal; text-align: center; margin-top: 14px; }
+  .mnav-fingers { position: static; order: 4; width: 130px; margin: 18px 0 0 auto; transform: none; }
+}
+.toggle { white-space: nowrap; }
+@media (max-width: 760px) { .controls { gap: 14px; } }
