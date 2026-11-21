@@ -636,10 +636,10 @@ body.mnav-open .mnav-title img { visibility: hidden; }   /* the big copy in the 
   .topbar.mnav { --logo-h: 26px; }
   .mnav-left, .mnav-right, .mnav-right .insta { font-size: 12px; }
   .mnav-left { gap: 14px; }
-  .mnav-panel { --u: 1px; height: 100vh; height: 100dvh; overflow-y: auto; font-size: 12px; padding: 56px var(--gutter) 28px; display: flex; flex-direction: column; align-items: center; }
+  .mnav-panel { --u: 1px; height: 100vh; height: 100dvh; overflow-y: auto; font-size: 12px; padding: 48px var(--gutter) 28px; display: flex; flex-direction: column; align-items: center; }
   .mnav-x { left: 12px; top: 8px; }
   .mn-col a, .mn-col .mn-soon { line-height: 1.85; }   /* a little more room between the links on phones */
-  .mnav-links { position: static; width: 100%; justify-content: flex-start; gap: 0; order: 2; margin-top: 14px; }
+  .mnav-links { position: static; width: 100%; justify-content: flex-start; gap: 0; order: 2; margin-top: 22px; }   /* 8px more here, 8px less padding above: the logo moves up, everything else stays */
   .mn-col { min-width: max(25vw, 100px); }
   .mnav-big { position: static; order: 1; width: min(86vw, 420px); margin: 6px 0 0; }
   .mnav-credit { position: static; order: 4; transform: none; white-space: normal; text-align: center; margin-top: auto; padding-top: 28px; }
