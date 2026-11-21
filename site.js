@@ -122,7 +122,7 @@ window.momsKeepScroll = function (box, fn, anchor) {
     '</nav>' +
     '<img class="mnav-big" src="/title-wm.svg" alt="" width="609" height="140">' +
     '<p class="mnav-credit">Designed, curated and developed by <a href="https://ryanforprez.org" target="_blank" rel="noopener">Ryan Stewart</a> view collection <a href="/u/r" data-mine>here</a></p>' +
-    '<img class="mnav-fingers" src="/nav-fingers.svg?v=f9aa6328" alt="" width="535" height="525">';
+    '<img class="mnav-fingers" src="/nav-fingers.svg?v=72c95288" alt="" width="535" height="525">';
   document.body.appendChild(panel);
 
   var big = panel.querySelector(".mnav-big"), smallImg = tl.querySelector("img"), isOpen = false, timer;
