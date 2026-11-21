@@ -121,7 +121,7 @@ window.momsKeepScroll = function (box, fn, anchor) {
     menu.setAttribute("aria-expanded", v ? "true" : "false"); panel.setAttribute("aria-hidden", v ? "false" : "true");
     if (v) {
       aim(); void panel.offsetWidth;
-      document.body.classList.add("mnav-open", "mnav-push"); panel.classList.add("open"); bar.classList.remove("peek");
+      document.body.classList.add("mnav-open", "mnav-push"); panel.classList.add("open"); bar.classList.remove("peek"); document.body.classList.remove("mnav-peek");
     } else {
       panel.classList.remove("open"); document.body.classList.remove("mnav-push");
       timer = setTimeout(function () { document.body.classList.remove("mnav-open"); }, 460);
@@ -134,8 +134,8 @@ window.momsKeepScroll = function (box, fn, anchor) {
   menu.addEventListener("click", function () { clearTimeout(hoverTimer); setOpen(!isOpen); });
   // clicking anywhere on the bar (not on a link) opens the menu; hovering the bar gives a small sneak peek that it will
   bar.addEventListener("click", function (e) { if (!isOpen && !e.target.closest("a, button, input, select")) { clearTimeout(hoverTimer); setOpen(true); } });
-  bar.addEventListener("mouseenter", function () { if (canHover.matches && !isOpen) bar.classList.add("peek"); });
-  bar.addEventListener("mouseleave", function () { bar.classList.remove("peek"); });
+  bar.addEventListener("mouseenter", function () { if (canHover.matches && !isOpen) bar.classList.add("peek"); document.body.classList.add("mnav-peek"); });
+  bar.addEventListener("mouseleave", function () { bar.classList.remove("peek"); document.body.classList.remove("mnav-peek"); });
   panel.querySelector(".mnav-x").addEventListener("click", function () { setOpen(false); menu.focus(); });
   document.addEventListener("keydown", function (e) { if (e.key === "Escape" && isOpen) { setOpen(false); menu.focus(); } });
   document.addEventListener("click", function (e) {   // a click outside only closes the menu (it does not also open whatever was underneath)

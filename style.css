@@ -661,3 +661,7 @@ body.mnav-push { --push: calc(254 * 100vw / 1440 - var(--bar-h)); }
 body.mnav-push:has(> .topbar) { padding-top: calc(var(--bar-h) + var(--push)); }
 body.mnav-push .controls { top: calc(var(--bar-h) + var(--push)); }
 @media (max-width: 760px) { body.mnav-push { --push: 0px; } }
+
+/* the peek strip makes room too, so it never covers the search row */
+body.mnav-peek:not(.mnav-push):has(> .topbar) { padding-top: calc(var(--bar-h) + 34px); }
+body.mnav-peek:not(.mnav-push) .controls { top: calc(var(--bar-h) + 34px); }
