@@ -122,7 +122,7 @@ window.momsKeepScroll = function (box, fn, anchor) {
     '</nav>' +
     '<img class="mnav-big" src="/title-wm.svg" alt="" width="609" height="140">' +
     '<p class="mnav-credit">Designed, curated and developed by <a href="https://ryanforprez.org" target="_blank" rel="noopener">Ryan Stewart</a> view collection <a href="/u/r" data-mine>here</a></p>' +
-    '<img class="mnav-fingers" src="/nav-fingers.svg?v=161534f5" alt="" width="535" height="525">';
+    '<img class="mnav-fingers" src="/nav-fingers.svg?v=f9aa6328" alt="" width="535" height="525">';
   document.body.appendChild(panel);
 
   var big = panel.querySelector(".mnav-big"), smallImg = tl.querySelector("img"), isOpen = false, timer;
@@ -172,7 +172,7 @@ window.momsKeepScroll = function (box, fn, anchor) {
   var footer = document.createElement("footer");
   footer.className = "site-footer";
   footer.innerHTML =
-    '<img class="fb-logo" src="/footer-character.webp?v=1c0c5b53" alt="" width="900" height="913">' +
+    '<img class="fb-logo" src="/footer-character.webp?v=3c009a1c" alt="" width="900" height="944">' +
     '<p class="fb-credit">Designed, curated and developed by <a href="https://ryanforprez.org" target="_blank" rel="noopener">Ryan Stewart</a> view his collection <a href="/u/r">here</a></p>' +
     '<nav class="fb-links" aria-label="Site">' +
       '<div><a href="/">Museum</a><a href="/?order=added">Recently Added</a><span class="fb-soon">Featured Setups</span></div>' +
