@@ -646,3 +646,10 @@ body.mnav-open .mnav-title img { visibility: hidden; }   /* the big copy in the 
 }
 .toggle { white-space: nowrap; }
 @media (max-width: 760px) { .controls { gap: 14px; } }
+
+/* sneak peek: hovering the closed bar lets a little strip drop down to hint that it opens */
+.topbar.mnav { cursor: pointer; }
+.topbar.mnav a, .topbar.mnav button { cursor: pointer; }
+.topbar.mnav::after { content: ""; position: absolute; left: 0; right: 0; top: 100%; height: 0; background: inherit; opacity: 0; transition: height 0.35s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.25s ease; pointer-events: none; }
+.topbar.mnav.peek::after { height: 9px; opacity: 1; }
+.topbar.mnav.peek .mnav-menu { text-decoration: underline; text-underline-offset: 3px; }

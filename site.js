@@ -121,13 +121,21 @@ window.momsKeepScroll = function (box, fn, anchor) {
     menu.setAttribute("aria-expanded", v ? "true" : "false"); panel.setAttribute("aria-hidden", v ? "false" : "true");
     if (v) {
       aim(); void panel.offsetWidth;
-      document.body.classList.add("mnav-open"); panel.classList.add("open");
+      document.body.classList.add("mnav-open"); panel.classList.add("open"); bar.classList.remove("peek");
     } else {
       panel.classList.remove("open");
       timer = setTimeout(function () { document.body.classList.remove("mnav-open"); }, 460);
     }
   }
-  menu.addEventListener("click", function () { setOpen(!isOpen); });
+  // hovering over Menu for a moment (about a second and a half) opens it too; just passing over it does not
+  var canHover = matchMedia("(hover: hover) and (pointer: fine)"), hoverTimer;
+  menu.addEventListener("mouseenter", function () { if (canHover.matches && !isOpen) hoverTimer = setTimeout(function () { setOpen(true); }, 1500); });
+  menu.addEventListener("mouseleave", function () { clearTimeout(hoverTimer); });
+  menu.addEventListener("click", function () { clearTimeout(hoverTimer); setOpen(!isOpen); });
+  // clicking anywhere on the bar (not on a link) opens the menu; hovering the bar gives a small sneak peek that it will
+  bar.addEventListener("click", function (e) { if (!isOpen && !e.target.closest("a, button, input, select")) { clearTimeout(hoverTimer); setOpen(true); } });
+  bar.addEventListener("mouseenter", function () { if (canHover.matches && !isOpen) bar.classList.add("peek"); });
+  bar.addEventListener("mouseleave", function () { bar.classList.remove("peek"); });
   panel.querySelector(".mnav-x").addEventListener("click", function () { setOpen(false); menu.focus(); });
   document.addEventListener("keydown", function (e) { if (e.key === "Escape" && isOpen) { setOpen(false); menu.focus(); } });
   document.addEventListener("click", function (e) {   // a click outside only closes the menu (it does not also open whatever was underneath)
