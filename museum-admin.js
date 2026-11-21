@@ -222,6 +222,7 @@ function renderForm() {
           ${(photo2?.preview || (!drop2 && r.image_path_2)) ? `<div class="me-photo-box"><img src="${esc(photo2?.preview || r.image_path_2)}" alt=""></div>` : ""}
           <button class="ad-btn" data-act="photo2">${(photo2?.preview || (!drop2 && r.image_path_2)) ? "Replace second photo" : "+ Add a second photo"}</button>
           ${(photo2 || (!drop2 && r.image_path_2)) ? `<button class="ad-btn" data-act="rm-photo2">Remove second photo</button>` : ""}
+          ${r.id && r.image_path && r.image_path_2 && !photo && !photo2 && !drop2 ? `<button class="ad-btn" data-act="swap-photos" title="Make the second photo the first, and the first the second">Swap photos 1 and 2</button>` : ""}
           ${r.id && !drop2 && r.image_path_2 ? `<button class="ad-btn" data-act="dl-photo2" title="Download the second photo that is on the site now">Download second photo</button>` : ""}
         </div>`}
         <small>Transparent PNGs are kept exactly as they are, just sized to match. Photos on a plain backdrop (white, grey, any single colour) have the backdrop removed.</small>
@@ -599,6 +600,24 @@ async function rotateCard(card) {
 }
 
 // Turn the current photo (the one being added, or the saved one) upside down. Nothing goes live until Save.
+async function swapPhotos() {   // the first and second photo trade places on the site right away (no new upload, nothing is deleted)
+  const r = editing;
+  if (!r?.id || !r.image_path || !r.image_path_2 || photo || photo2 || drop2) return;
+  const btn = app.querySelector('[data-act="swap-photos"]'); if (btn) btn.disabled = true;
+  try {
+    const { data, error } = await sb.from(tab).update({ image_path: r.image_path_2, image_path_2: r.image_path }).eq("id", r.id).select();
+    if (error) throw error;
+    if (!data.length) throw { code: "42501", message: "not allowed" };
+    editing = { ...r, image_path: data[0].image_path, image_path_2: data[0].image_path_2 };
+    const li = list.tab === tab ? list.rows.findIndex((x) => x.id === r.id) : -1;
+    if (li >= 0) list.rows[li] = { ...list.rows[li], image_path: data[0].image_path, image_path_2: data[0].image_path_2 };
+    renderForm2();
+    setStatus(`Swapped the photos on “${r.name}” ✓ Live on the site.`);
+  } catch (err) {
+    if (btn) btn.disabled = false;
+    setStatus("Couldn't swap the photos: " + friendly(err), true);
+  }
+}
 async function downloadPhoto(url, suffix) {   // the photo as it is on the site now, saved to the computer (so it can be edited and put back with Replace)
   if (!url) return;
   const ext = ((url.split("?")[0].split(".").pop() || "png").toLowerCase().replace(/[^a-z0-9]/g, "") || "png").slice(0, 4);
@@ -770,6 +789,7 @@ app.addEventListener("click", async (e) => {
   if (act === "photo2") { target = 2; fileInput.value = ""; fileInput.click(); }
   if (act === "rm-photo2") { photo2 = null; drop2 = true; renderForm2(); }
   if (act === "rotate") rotatePhoto();
+  if (act === "swap-photos") swapPhotos();
   if (act === "dl-photo") downloadPhoto(editing.image_path, "");
   if (act === "dl-photo2") downloadPhoto(editing.image_path_2, "-photo2");
   if (act === "save") save();
