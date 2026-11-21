@@ -390,12 +390,12 @@ body.has-refine.rf-open { --tab-edge: calc(var(--rf-w) + 12px); }
 .fb-boards img.fb-moms { width: calc(143 * var(--u)); }
 .fb-title { position: absolute; left: 50%; top: calc(87 * var(--u)); transform: translateX(-50%); width: calc(331 * var(--u)); height: auto; margin: 0; display: block; }
 @media (max-width: 760px) {
-  .site-footer { --u: 1px; height: auto; padding: 26px var(--gutter) 16px; display: grid; grid-template-columns: 1fr auto; row-gap: 14px; column-gap: 16px; font-size: 12px; }
+  .site-footer { --u: 1px; height: auto; padding: 44px var(--gutter) 30px; display: grid; grid-template-columns: minmax(0, 1fr) auto; row-gap: 40px; column-gap: 14px; font-size: 12px; }
     .fb-logo, .fb-credit, .fb-links, .fb-boards, .fb-title { position: static; transform: none; }
   .fb-title { display: none; }
-  .fb-links { grid-column: 1 / -1; grid-row: 1; display: grid; grid-template-columns: max(25vw, 100px) auto; justify-content: start; column-gap: 0; }   /* two columns of links, like the menu */
+  .fb-links { grid-column: 2; grid-row: 1; display: grid; grid-template-columns: auto auto; justify-content: end; column-gap: 12px; align-self: start; }   /* two columns of links, top right, beside the drawing */
   .fb-links div { margin-bottom: 0.9em; }
-  .fb-logo { grid-column: 1 / -1; grid-row: 2; width: 100%; max-width: 260px; align-self: center; margin-top: 8px; }
+  .fb-logo { grid-column: 1; grid-row: 1; width: calc(100% + 26px); max-width: none; margin: 0 -6px 0 calc(-1 * var(--gutter)); align-self: center; }   /* as big as the links beside it allow */
   .fb-boards { grid-column: 1 / -1; grid-row: 3; display: flex; justify-content: space-between; align-items: center; padding: 8px 4px 0; }
   .fb-boards img { position: static; width: 24%; transform: rotate(var(--r, 0deg)); }
   .fb-boards img.fb-moms { width: 26%; }
