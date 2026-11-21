@@ -19,7 +19,7 @@ html, body {
   background: #fff;
   color: #000;
   font-family: "Areal", "Helvetica Neue", Arial, sans-serif;
-  font-size: 11.5px;
+  font-size: 12px;
   -webkit-font-smoothing: antialiased;
 }
 
@@ -41,8 +41,8 @@ body:has(> .topbar) { padding-top: var(--bar-h); }
 }
 .title { font-size: 17px; letter-spacing: -0.02em; }
 .title .t-short { display: none; }
-.toggle { font-size: 11px; }
-.insta { justify-self: end; font-size: 11px; }
+.toggle { font-size: 12px; }
+.insta { justify-self: end; font-size: 12px; }
 .toggle a.active { text-decoration: underline; text-underline-offset: 2px; }
 
 main { padding: 0 var(--gutter) 160px; }
@@ -174,12 +174,12 @@ h2 {
 .add-new:hover { color: #000; }
 
 /* ---------- Museum ---------- */
-.controls { display: flex; justify-content: flex-end; gap: 28px; margin: 14px var(--gutter) 0; padding-right: 21px; font-size: 11px; }
+.controls { display: flex; justify-content: flex-end; gap: 28px; margin: 14px var(--gutter) 0; padding-right: 21px; font-size: 12px; }
 .controls .active { text-decoration: underline; text-underline-offset: 2px; }
 .museum h2 { margin-top: 6px; }
 .museum .list-section + .list-section { margin-top: 160px; }
 .row.link, .item.link { cursor: pointer; }
-.more { margin-top: 18px; border: 1px solid var(--line); background: #fff; color: #000; -webkit-text-fill-color: #000; -webkit-appearance: none; appearance: none; border-radius: 0; padding: 7px 14px; font: inherit; font-size: 11px; cursor: pointer; }
+.more { margin-top: 18px; border: 1px solid var(--line); background: #fff; color: #000; -webkit-text-fill-color: #000; -webkit-appearance: none; appearance: none; border-radius: 0; padding: 7px 14px; font: inherit; font-size: 12px; cursor: pointer; }
 .more:hover { border-color: #000; }
 .more + .more { margin-left: 8px; }
 .load-error { margin-top: 40px; }
@@ -195,9 +195,9 @@ h2 {
 .board-img:has(img.second) { flex-direction: column; justify-content: flex-start; gap: 60px; }
 .board:has(img.second) .board-info { position: sticky; top: calc(var(--bar-h) + 10px); align-self: start; height: calc(100vh - var(--bar-h) - 20px); }   /* as tall as the window, so In Use and More by sit at its bottom */
 /* Close sits on the right edge, vertically centred, on every page and screen size, exactly like the Refine tab */
-.board-close { position: fixed; top: 50%; right: 7px; transform: translateY(-50%); z-index: 22; writing-mode: vertical-rl; font-size: 11.5px; color: #555; padding: 14px 3px; }
+.board-close { position: fixed; top: 50%; right: 7px; transform: translateY(-50%); z-index: 22; writing-mode: vertical-rl; font-size: 12px; color: #555; padding: 14px 3px; }
 .board-close:hover { color: #000; }
-.board-nav { position: absolute; bottom: 14px; z-index: 5; font-size: 11.5px; color: #555; }
+.board-nav { position: absolute; bottom: 14px; z-index: 5; font-size: 12px; color: #555; }
 .board-nav:hover, .board-brand-link:hover { color: #000; }
 .board-nav.prev { left: var(--gutter); }
 .board-nav.next { right: var(--gutter); }
@@ -212,9 +212,9 @@ h2 {
 .board-more-head { color: inherit; }
 .board-more-head:hover { text-decoration: underline; text-underline-offset: 3px; }
 .board-info { position: relative; }
-.board-fav { position: absolute; top: 20px; right: 0; display: inline-flex; gap: 6px; align-items: center; font: inherit; font-size: 11.5px; color: #000; background: none; border: 0; padding: 0; cursor: pointer; }
+.board-fav { position: absolute; top: 20px; right: 0; display: inline-flex; gap: 6px; align-items: center; font: inherit; font-size: 12px; color: #000; background: none; border: 0; padding: 0; cursor: pointer; }
 @media (max-width: 1100px) { .board-fav { position: static; margin: -14px 0 18px; } }   /* phones and tablets: under the title instead of the top-right corner */
-.board-fav .star { font-size: 13px; line-height: 1; }
+.board-fav .star { font-size: 12px; line-height: 1; }
 .board-fav:hover { opacity: 0.6; }
 .board-fav[hidden], .board-use-form[hidden] { display: none; }
 .board-dock { margin-top: auto; padding-top: 60px; }
@@ -267,7 +267,7 @@ h2 {
   .controls { padding-right: 14px; }
   .board { grid-template-columns: 1fr; }
   /* Close sits exactly where the Refine tab sits on the museum page */
-  .board-close { font-size: 10.5px; }
+  .board-close { font-size: 12px; }
   .board-img { padding: 16px 0 0; }
   .board-img img { max-height: 62vh; }
   .board-info { padding-top: 28px; }
@@ -279,7 +279,7 @@ h2 {
   /* list: no sideways scroll, text wraps onto two lines */
   .list-section + .list-section { margin-top: 90px; }
   .list { min-width: 0; margin-top: 20px; }
-  .row { display: flex; height: auto; min-height: 32px; padding: 8px 0; align-items: flex-start; line-height: 1.3; font-size: 10.5px; }
+  .row { display: flex; height: auto; min-height: 32px; padding: 8px 0; align-items: flex-start; line-height: 1.3; font-size: 12px; }
   .row.head { padding: 0 0 10px; align-items: flex-end; }
   .row span { flex: 1 1 0; white-space: normal; overflow: visible; overflow-wrap: anywhere; padding-right: 10px; }
   .row span:first-child { flex-grow: 1.5; }
@@ -295,7 +295,7 @@ body.has-refine.rf-open { --rf-shift: calc(var(--rf-w) + 28px); --rf-open-w: cal
 
 .refine-tab {
   position: fixed; right: 7px; top: 50%; transform: translateY(-50%); z-index: 22;
-  writing-mode: vertical-rl; font: inherit; font-size: 11.5px; color: #555;
+  writing-mode: vertical-rl; font: inherit; font-size: 12px; color: #555;
   background: none; border: 0; padding: 14px 3px; cursor: pointer; -webkit-tap-highlight-color: transparent;
   transition: right 0.42s var(--rf-ease), color 0.2s ease;
 }
@@ -312,7 +312,7 @@ body.has-refine.rf-open { --rf-shift: calc(var(--rf-w) + 28px); --rf-open-w: cal
 .rf-open .refine-panel { transform: none; visibility: visible; transition: transform 0.42s var(--rf-ease); }
 
 .rf-head { display: flex; justify-content: flex-end; padding: 18px 22px 0; }
-.rf-actions button { font: inherit; font-size: 11.5px; background: none; border: 0; padding: 0 0 0 16px; color: #000; text-decoration: underline; text-underline-offset: 2px; cursor: pointer; transition: opacity 0.2s ease; }
+.rf-actions button { font: inherit; font-size: 12px; background: none; border: 0; padding: 0 0 0 16px; color: #000; text-decoration: underline; text-underline-offset: 2px; cursor: pointer; transition: opacity 0.2s ease; }
 .rf-actions button:disabled { opacity: 0.3; cursor: default; }
 .rf-body { flex: 1; overflow-y: auto; padding: 4px 22px 28px; overscroll-behavior: contain; scroll-behavior: smooth; }
 .rf-body { scrollbar-width: none; }
@@ -323,7 +323,7 @@ body.has-refine.rf-open { --rf-shift: calc(var(--rf-w) + 28px); --rf-open-w: cal
   font-size: 7.5px; letter-spacing: 0.02em; text-transform: uppercase;
 }
 .rf-search, .rf-range input {
-  width: 100%; border: 1px solid var(--line); background: #fff; padding: 7px 9px; font: inherit; font-size: 11.5px;
+  width: 100%; border: 1px solid var(--line); background: #fff; padding: 7px 9px; font: inherit; font-size: 12px;
   margin-bottom: 10px; border-radius: 0; transition: border-color 0.2s ease;
 }
 .rf-range { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
@@ -333,7 +333,7 @@ body.has-refine.rf-open { --rf-shift: calc(var(--rf-w) + 28px); --rf-open-w: cal
 .rf-chips { display: flex; flex-wrap: wrap; gap: 6px; padding-bottom: 2px; }
 .rf-chip {
   display: inline-flex; gap: 6px; align-items: baseline; border: 1px solid var(--line); background: #fff; color: #000;
-  font: inherit; font-size: 11.5px; padding: 4px 9px; cursor: pointer; -webkit-tap-highlight-color: transparent;
+  font: inherit; font-size: 12px; padding: 4px 9px; cursor: pointer; -webkit-tap-highlight-color: transparent;
   transition: background-color 0.18s ease, color 0.18s ease, border-color 0.18s ease;
 }
 .rf-chips + .rf-chips { margin-top: 6px; }
@@ -344,7 +344,7 @@ body.has-refine.rf-open { --rf-shift: calc(var(--rf-w) + 28px); --rf-open-w: cal
 .rf-chip.on em { color: #bbb; }
 
 .rf-foot { padding: 14px 22px calc(14px + env(safe-area-inset-bottom, 0px)); }
-.rf-show { width: 100%; border: 0; background: #000; color: #fff; padding: 13px; font: inherit; font-size: 11.5px; cursor: pointer; transition: opacity 0.2s ease; }
+.rf-show { width: 100%; border: 0; background: #000; color: #fff; padding: 13px; font: inherit; font-size: 12px; cursor: pointer; transition: opacity 0.2s ease; }
 .rf-show:hover { opacity: 0.85; }
 
 .linklike { font: inherit; font-size: inherit; background: none; border: 0; padding: 0; text-decoration: underline; text-underline-offset: 2px; cursor: pointer; color: #000; }
@@ -359,7 +359,7 @@ body.has-refine.rf-open { --rf-shift: calc(var(--rf-w) + 28px); --rf-open-w: cal
 
 @media (max-width: 760px) {
   :root { --rf-w: min(88vw, 400px); }
-  .refine-tab { top: 50%; font-size: 10.5px; }
+  .refine-tab { top: 50%; font-size: 12px; }
   /* small screens: the page slides left as the panel slides in */
   body.has-refine.rf-open { --rf-shift: 0px; --rf-open-w: 0px; overflow: hidden; }
   .topbar, .controls, #app { transition: transform 0.42s var(--rf-ease), opacity 0.25s ease; }
@@ -373,7 +373,7 @@ body.has-refine.rf-open { --tab-edge: calc(var(--rf-w) + 12px); }
 .has-refine .controls { padding-right: 0; margin-right: calc(var(--tab-edge) - var(--rf-shift)); transition: margin-right 0.42s var(--rf-ease); }
 
 /* ---------- Footer ---------- */
-.site-footer { --u: calc(100vw / 1440); position: relative; background: #000; color: #fff; height: calc(510 * var(--u)); overflow: hidden; font-size: 11px; line-height: 1.38; }
+.site-footer { --u: calc(100vw / 1440); position: relative; background: #000; color: #fff; height: calc(510 * var(--u)); overflow: hidden; font-size: 12px; line-height: 1.38; }
 .site-footer a { color: inherit; text-decoration: none; }
 .fb-logo { position: absolute; left: calc(37 * var(--u)); top: calc(52 * var(--u)); width: calc(425 * var(--u)); height: auto; display: block; }
 .fb-credit { position: absolute; top: calc(30 * var(--u)); left: 50%; transform: translateX(-50%); margin: 0; white-space: nowrap; }
@@ -390,7 +390,7 @@ body.has-refine.rf-open { --tab-edge: calc(var(--rf-w) + 12px); }
 .fb-boards img.fb-moms { width: calc(143 * var(--u)); }
 .fb-title { position: absolute; left: 50%; top: calc(87 * var(--u)); transform: translateX(-50%); width: calc(331 * var(--u)); height: auto; margin: 0; display: block; }
 @media (max-width: 760px) {
-  .site-footer { --u: 1px; height: auto; padding: 26px var(--gutter) 16px; display: grid; grid-template-columns: 1fr auto; row-gap: 14px; column-gap: 16px; font-size: 11px; }
+  .site-footer { --u: 1px; height: auto; padding: 26px var(--gutter) 16px; display: grid; grid-template-columns: 1fr auto; row-gap: 14px; column-gap: 16px; font-size: 12px; }
     .fb-logo, .fb-credit, .fb-links, .fb-boards, .fb-title { position: static; transform: none; }
   .fb-title { display: none; }
   .fb-logo { grid-column: 1; grid-row: 1; width: 100%; max-width: 260px; align-self: center; }
@@ -438,7 +438,7 @@ body > main.auth { width: 100%; box-sizing: border-box; }
 
 /* phones, collection image view: the info bar shows all of the text, wrapping like the list rows */
 @media (max-width: 760px) {
-  .bar { display: flex; height: auto; min-height: 32px; padding: 8px 0; align-items: flex-start; font-size: 10.5px; line-height: 1.3; }
+  .bar { display: flex; height: auto; min-height: 32px; padding: 8px 0; align-items: flex-start; font-size: 12px; line-height: 1.3; }
   .bar span { flex: 1 1 0; white-space: normal; overflow: visible; text-overflow: clip; overflow-wrap: anywhere; padding-right: 10px; }
   .bar span:first-child { flex-grow: 1.5; }
   .bar span:last-child { padding-right: 10px; }
@@ -446,7 +446,7 @@ body > main.auth { width: 100%; box-sizing: border-box; }
 
 /* owner's own page: slug and links, same look as the other collection pages */
 .owner-foot { margin: 60px var(--gutter) 50px; }
-.owner-slug { font-size: 11.5px; color: #777; margin: 0 0 18px; }
+.owner-slug { font-size: 12px; color: #777; margin: 0 0 18px; }
 .owner-links { font-size: 12px; margin: 0; }
 .owner-links a, .owner-links button { color: inherit; text-decoration: underline; text-underline-offset: 2px; background: none; border: 0; padding: 0; font: inherit; cursor: pointer; }
 
@@ -467,7 +467,7 @@ body > main.auth { width: 100%; box-sizing: border-box; }
 .board > * { min-width: 0; }   /* a wide GIF must not stretch the photo column and push the details and Close over */
 /* desktop and tablet: Close sits in the gap between the photo and the details, vertically centred, always in view */
 @media (min-width: 761px) {
-  .board-close { right: auto; left: calc(var(--gutter) + (100vw - 2 * var(--gutter) - 70px) / 2.45 + 35px); transform: translate(-50%, -50%); font-size: 11.5px; color: #555; }
+  .board-close { right: auto; left: calc(var(--gutter) + (100vw - 2 * var(--gutter) - 70px) / 2.45 + 35px); transform: translate(-50%, -50%); font-size: 12px; color: #555; }
 }
 
 /* Previous / Next sit at the bottom of the page, just above the footer */
@@ -487,8 +487,8 @@ body > main.auth { width: 100%; box-sizing: border-box; }
 .im-pop { position: absolute; left: 0; right: 0; top: 100%; z-index: 40; background: #fff; border: 1px solid #000; border-top: 0; display: flex; flex-direction: column; max-height: min(460px, 60vh); }
 .im-pop[hidden] { display: none; }
 .im-list { overflow-y: auto; flex: 1; }
-.im-head { padding: 8px 12px; font-size: 13px; color: #555; border-bottom: 1px solid #eee; }
-.im-head select { font: inherit; font-size: 13px; border: 1px solid #000; background: #fff; border-radius: 0; padding: 2px 4px; max-width: 70%; }
+.im-head { padding: 8px 12px; font-size: 12px; color: #555; border-bottom: 1px solid #eee; }
+.im-head select { font: inherit; font-size: 12px; border: 1px solid #000; background: #fff; border-radius: 0; padding: 2px 4px; max-width: 70%; }
 .im-foot { display: block; margin: 0; padding: 10px 12px; font-size: 14px; color: #555; line-height: 1.5; border-top: 1px solid #000; background: #fff; }
 .im-pop[hidden] { display: none; }
 .im-note { margin: 0; padding: 14px; font-size: 14px; color: #777; }
@@ -496,7 +496,7 @@ body > main.auth { width: 100%; box-sizing: border-box; }
 .im-res + .im-res { border-top: 1px solid #eee; }
 .im-pic { width: 64px; height: 64px; display: flex; align-items: center; justify-content: center; }
 .im-pic img { max-width: 100%; max-height: 100%; object-fit: contain; }
-.im-res button { font: inherit; font-size: 13px; background: #fff; border: 1px solid #000; padding: 3px 10px; border-radius: 0; cursor: pointer; }
+.im-res button { font: inherit; font-size: 12px; background: #fff; border: 1px solid #000; padding: 3px 10px; border-radius: 0; cursor: pointer; }
 .im-res button:disabled { opacity: 0.45; cursor: default; }
 
 .im-find[hidden] { display: none; }
@@ -505,12 +505,12 @@ body > main.auth { width: 100%; box-sizing: border-box; }
 #im-more, #im-list { align-items: center; }
 
 /* item page: an empty box to tap for each missing part; the search opens under it */
-.im-slot { width: 92px; height: 92px; border: 1px dashed #000; background: #fff; border-radius: 0; font: inherit; font-size: 13px; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; }
+.im-slot { width: 92px; height: 92px; border: 1px dashed #000; background: #fff; border-radius: 0; font: inherit; font-size: 12px; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; }
 .im-slot span { font-size: 24px; line-height: 1; }
 .im-slot:hover { background: #f3f3f3; }
 #im-list { align-items: center; }
 .im-title { margin: 14px 0 6px; font-size: 15px; }
-.im-cancel { font: inherit; font-size: 13px; background: none; border: 0; color: #777; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; margin-left: 10px; }
+.im-cancel { font: inherit; font-size: 12px; background: none; border: 0; color: #777; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; margin-left: 10px; }
 .im-res button { min-width: 84px; }
 .im-head { display: flex; gap: 16px; flex-wrap: wrap; align-items: center; }
 .im-head label { display: flex; gap: 6px; align-items: center; }
@@ -519,11 +519,11 @@ body > main.auth { width: 100%; box-sizing: border-box; }
 
 /* phones: the matches sit in the page (not over it) so the footer never covers them */
 @media (max-width: 760px) { .im-pop { position: static; max-height: 60vh; } }
-.im-sep { border-top: 1px solid #000; background: #f6f6f6; padding: 8px 14px; font-size: 13px; }
+.im-sep { border-top: 1px solid #000; background: #f6f6f6; padding: 8px 14px; font-size: 12px; }
 
 /* museum search: a plain box in the controls row; matches float over the page and scroll */
 .controls .m-find { margin-right: auto; }
-.m-find input[type="search"] { font: inherit; font-size: 13px; padding: 4px 8px; border: 1px solid #000; background: #fff; border-radius: 0; width: min(280px, 60vw); }
+.m-find input[type="search"] { font: inherit; font-size: 12px; padding: 4px 8px; border: 1px solid #000; background: #fff; border-radius: 0; width: min(280px, 60vw); }
 .m-pop { position: fixed; z-index: 60; left: var(--gutter); top: 96px; width: min(640px, calc(100vw - 2 * var(--gutter))); max-height: calc(100vh - 130px); overflow-y: auto; background: #fff; border: 1px solid #000; }
 .m-pop[hidden] { display: none; }
 .m-res { display: grid; grid-template-columns: 64px 1fr; gap: 14px; align-items: center; padding: 8px 12px; font-size: 14px; line-height: 1.3; color: #000; }
@@ -531,7 +531,7 @@ body > main.auth { width: 100%; box-sizing: border-box; }
 .m-res:hover { background: #f3f3f3; }
 .m-pic { width: 64px; height: 64px; display: flex; align-items: center; justify-content: center; }
 .m-pic img { max-width: 100%; max-height: 100%; object-fit: contain; }
-.m-note { margin: 0; padding: 12px 14px; font-size: 13px; color: #777; }
+.m-note { margin: 0; padding: 12px 14px; font-size: 12px; color: #777; }
 .m-sep { border-top: 1px solid #000; background: #f6f6f6; color: #000; }
 /* museum search: bigger and clearer so it is easy to spot */
 .controls { align-items: center; margin-bottom: 14px; }
@@ -552,7 +552,7 @@ body > main.auth { width: 100%; box-sizing: border-box; }
 .m-pop { top: calc(var(--bar-h) + var(--controls-h)); }
 /* popup text is the same size as the list text */
 .m-pop, .m-res, .m-count, .m-note, .m-more, .m-pic .no-pic { font-size: 12px; line-height: 1.25; }
-.m-pic .no-pic { font-size: 10px; }
+.m-pic .no-pic { font-size: 12px; }
 .m-res b, .m-pop b { font-weight: normal; }
 .m-res .m-txt { color: #000; }
 .m-res .m-sub { color: #555; }
@@ -560,7 +560,7 @@ body > main.auth { width: 100%; box-sizing: border-box; }
 .im-find input[type="search"], .im-pop, .im-res, .im-res button, .im-foot, .im-sep, .im-more-btn, .im-title, .im-cancel, .im-pop .m-note { font-size: 12px; line-height: 1.25; }
 .im-res b { font-weight: normal; color: #000; }
 .im-res .im-sub { color: #555; }
-.im-pic .no-pic { font-size: 10px; }
+.im-pic .no-pic { font-size: 12px; }
 /* phones: Safari zooms into a text box under 16px, so the box is 16px but drawn at 12px; nothing zooms */
 @media (hover: none) and (pointer: coarse) {
   .m-find input[type="search"] { font-size: 16px; width: min(226px, 60vw); transform: scale(0.75); transform-origin: left center; margin-right: calc(min(226px, 60vw) * -0.25); }
@@ -585,27 +585,27 @@ body > main.auth { width: 100%; box-sizing: border-box; }
 .topbar.mnav { padding: 0 var(--gutter); }
 .has-refine .topbar.mnav { padding-right: 10px; transition: right 0.42s var(--rf-ease, ease), padding-right 0.42s var(--rf-ease, ease); }   /* the right edge follows the list, which leaves room for the Refine tab */
 .has-refine.rf-open .topbar.mnav { padding-right: var(--gutter); }
-.mnav-left { display: flex; align-items: center; gap: 22px; justify-self: start; font-size: 11px; }   /* never bigger than the 11px used by the rows below it */
+.mnav-left { display: flex; align-items: center; gap: 22px; justify-self: start; font-size: 12px; }   /* never bigger than the 11px used by the rows below it */
 .mnav-menu { font: inherit; color: inherit; background: none; border: 0; padding: 8px 0; margin: 0; cursor: pointer; }
 .mnav-menu:hover, .mnav-left a:hover { text-decoration: underline; text-underline-offset: 2px; }
 .mnav-title { display: block; line-height: 0; }
 .topbar.mnav { --logo-h: 30px; }
 .mnav-title img { display: block; height: var(--logo-h); width: auto; }
 
-.mnav-right { justify-self: end; font-size: 11px; }
+.mnav-right { justify-self: end; font-size: 12px; }
 .mnav-right .insta { font-size: inherit; }
 .mnav-menu, .mnav-title, .mnav-right { transition: opacity 0.25s ease; }
 body.mnav-open .mnav-menu, body.mnav-open .mnav-right { opacity: 0; pointer-events: none; }
 body.mnav-open .mnav-title img { visibility: hidden; }   /* the big copy in the menu takes over, so the title seems to grow */
 
-.page-tools { display: flex; justify-content: flex-end; gap: 28px; padding: 14px var(--gutter) 0; font-size: 11px; }
+.page-tools { display: flex; justify-content: flex-end; gap: 28px; padding: 14px var(--gutter) 0; font-size: 12px; }
 .page-tools:has(> [hidden]:only-child) { display: none; }
 .controls .toggle.view, .controls > .toggle { margin-left: 0; }
 
 .mnav-panel {
   --u: calc(100vw / 1440); --tx: 0px; --ty: 0px; --ts: 1;
-  position: fixed; top: 0; left: 0; right: 0; height: calc(254 * var(--u)); z-index: 80; background: #000; color: #fff;
-  font-size: 11px; line-height: 1.38; overflow: hidden; visibility: hidden;
+  position: fixed; top: 0; left: 0; right: 0; height: max(calc(254 * var(--u)), 236px); z-index: 80; background: #000; color: #fff;
+  font-size: 12px; line-height: 1.38; overflow: hidden; visibility: hidden;
   clip-path: inset(0 0 100% 0);
   transition: clip-path 0.46s cubic-bezier(0.55, 0, 0.7, 0.2), visibility 0s linear 0.46s;
 }
@@ -634,9 +634,9 @@ body.mnav-open .mnav-title img { visibility: hidden; }   /* the big copy in the 
 @media (max-width: 760px) {
   :root { --bar-h: 46px; }
   .topbar.mnav { --logo-h: 26px; }
-  .mnav-left, .mnav-right, .mnav-right .insta { font-size: 11px; }
+  .mnav-left, .mnav-right, .mnav-right .insta { font-size: 12px; }
   .mnav-left { gap: 14px; }
-  .mnav-panel { --u: 1px; height: 100vh; height: 100dvh; overflow-y: auto; font-size: 11px; padding: 56px var(--gutter) 28px; display: flex; flex-direction: column; align-items: center; }
+  .mnav-panel { --u: 1px; height: 100vh; height: 100dvh; overflow-y: auto; font-size: 12px; padding: 56px var(--gutter) 28px; display: flex; flex-direction: column; align-items: center; }
   .mnav-x { left: 12px; top: 8px; }
   .mnav-links { position: static; width: 100%; justify-content: space-between; gap: 16px; order: 2; margin-top: 10px; }
   .mn-col { min-width: 0; }
@@ -653,7 +653,7 @@ body.mnav-open .mnav-title img { visibility: hidden; }   /* the big copy in the 
 .topbar.mnav.peek .mnav-menu { text-decoration: underline; text-underline-offset: 3px; }
 
 /* when the big menu opens (or the bar is hovered) the page slides down as one piece, so nothing jumps or lags */
-body.mnav-push { --push: calc(254 * 100vw / 1440 - var(--bar-h)); }
+body.mnav-push { --push: calc(max(254 * 100vw / 1440, 236px) - var(--bar-h)); }
 body.mnav-peek:not(.mnav-push) { --push: 26px; }
 body > :not(.topbar):not(.mnav-panel):not(script):not(style) { transition: transform 0.5s cubic-bezier(0.45, 0, 0.2, 1); }
 body.mnav-push > :not(.topbar):not(.mnav-panel):not(script):not(style), body.mnav-peek > :not(.topbar):not(.mnav-panel):not(script):not(style) { transform: translateY(var(--push)); }
