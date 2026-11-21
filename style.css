@@ -389,7 +389,7 @@ body.has-refine.rf-open { --tab-edge: calc(var(--rf-w) + 12px); }
 .fb-boards img { position: absolute; left: calc(var(--x) * var(--u)); top: calc(var(--y) * var(--u)); width: calc(140 * var(--u)); height: auto; transform: translate(-50%, -50%) rotate(var(--r, 0deg)); display: block; }
 .fb-boards img.fb-moms { width: calc(143 * var(--u)); }
 .fb-title { position: absolute; left: 50%; top: calc(87 * var(--u)); transform: translateX(-50%); width: calc(331 * var(--u)); height: auto; margin: 0; display: block; }
-@media (max-width: 760px) {
+@media (max-width: 1100px) {
   .site-footer { --u: 1px; height: auto; padding: 44px var(--gutter) 30px; display: grid; grid-template-columns: minmax(0, 1fr) auto; row-gap: 40px; column-gap: 14px; font-size: 12px; }
     .fb-logo, .fb-credit, .fb-links, .fb-boards, .fb-title { position: static; transform: none; }
   .fb-title { display: none; }
@@ -402,6 +402,7 @@ body.has-refine.rf-open { --tab-edge: calc(var(--rf-w) + 12px); }
   .fb-boards img:nth-child(n+4):not(.fb-moms) { display: none; }
   .fb-credit { grid-column: 1 / -1; grid-row: 4; text-align: left; white-space: normal; }
 }
+@media (min-width: 761px) and (max-width: 1100px) { .site-footer { padding-top: 56px; padding-bottom: 40px; } .fb-logo { width: min(calc(100% + 26px), 440px); } .fb-boards { max-width: 620px; margin: 0 auto; width: 100%; box-sizing: border-box; } }   /* tablets use the phone footer, with the drawing and boards kept to a sensible size */
 
 /* black scrollbar */
 html { scrollbar-color: #000 #fff; scrollbar-width: thin; }
