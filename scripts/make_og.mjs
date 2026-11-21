@@ -57,11 +57,36 @@ if (!ONLY_PRODUCTS) {
 }
 for (const [key, url, wait, openMenu] of ONLY_PRODUCTS ? [] : [
   ["home", `${SITE}/?view=image`, "#app .item img", true],
+  ["home-list", `${SITE}/?view=list`, "#app .row.link", true],
   ["users", `${SITE}/users.html`, "#users .row:not(.head)"],
   ["submit", `${SITE}/submit.html`, null],
 ]) {
-  const sig = key === "home" ? homeSig : "static3";
+  const sig = key === "home" || key === "home-list" ? homeSig : "static3";
   if (stale(key, sig) && await shoot(url, `${key}.jpg`, wait, openMenu)) index[key] = { sig, at: Date.now() };
+}
+
+// the list view of the museum has its own little page (/list/) so a shared link to it shows the list picture
+if (!ONLY_PRODUCTS && index["home-list"] && fs.existsSync(path.join(OG, "home-list.jpg"))) {
+  fs.mkdirSync(path.join(ROOT, "list"), { recursive: true });
+  fs.writeFileSync(path.join(ROOT, "list", "index.html"), `<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>The Museum of Mini Skateboards</title>
+  <meta property="og:site_name" content="The Museum of Mini Skateboards">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="The Museum of Mini Skateboards">
+  <meta property="og:url" content="${SITE}/list/">
+  <meta property="og:image" content="${SITE}/og/home-list.jpg?v=${index["home-list"].at}">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta name="twitter:card" content="summary_large_image">
+  <script>location.replace("/?view=list" + location.hash);</script>
+</head>
+<body></body>
+</html>
+`);
 }
 
 // one per public collection
