@@ -162,6 +162,12 @@
 "src": "833410b9-6f3b-4c66-ad05-77e1b0c82c5f/1609894e-e78c-4c25-a72a-0975de8b073d.png",
 "w": 226
 },
+"062ce6a9-673c-4178-b6d9-a2662783aa19": {
+"file": "user-cuts/tight/062ce6a9-673c-4178-b6d9-a2662783aa19-71a41467.webp",
+"h": 529,
+"src": "64add218-2734-4884-9f3f-9068430c5692/5138b0af-bb7a-4347-82d5-b356be2d5f34.png",
+"w": 718
+},
 "067d5a29-6c20-4be2-9434-bec12f98deef": {
 "file": "user-cuts/tight/067d5a29-6c20-4be2-9434-bec12f98deef-d975ceb3.webp",
 "h": 600,
@@ -832,6 +838,12 @@
 "src": "64add218-2734-4884-9f3f-9068430c5692/463c96aa-a026-47c5-90a3-8a18ccb04789.png",
 "w": 198
 },
+"23f37ce8-8255-4fbf-a027-43b4df276589": {
+"file": "user-cuts/tight/23f37ce8-8255-4fbf-a027-43b4df276589-c73d32f4.webp",
+"h": 598,
+"src": "64add218-2734-4884-9f3f-9068430c5692/52f35be7-e18c-4f30-827e-9f4ade1fc643.png",
+"w": 717
+},
 "24049fc7-9d5f-4494-9a79-16df8fffce9a": {
 "file": "user-cuts/tight/24049fc7-9d5f-4494-9a79-16df8fffce9a-f92acb63.webp",
 "h": 600,
@@ -1113,6 +1125,12 @@
 "h": 600,
 "src": "833410b9-6f3b-4c66-ad05-77e1b0c82c5f/8e58f862-9e9c-4eb9-80fc-3b7165af40ce.png",
 "w": 210
+},
+"303c788f-ce9f-4e3f-90ac-21751aaed5c3": {
+"file": "user-cuts/tight/303c788f-ce9f-4e3f-90ac-21751aaed5c3-c9823f0e.webp",
+"h": 371,
+"src": "64add218-2734-4884-9f3f-9068430c5692/3bc97c96-fdb9-4397-a794-63c75eca752c.png",
+"w": 720
 },
 "30d2b8a0-8de8-4e43-89d3-7e343c5a8723": {
 "file": "user-cuts/tight/30d2b8a0-8de8-4e43-89d3-7e343c5a8723-64e35ff1.webp",
@@ -3190,6 +3208,12 @@
 "src": "cec99bb6-82fe-4c37-9769-697933698218/0299f7e2-a14b-49a0-8f1b-c569b32f5561.png",
 "w": 190
 },
+"876c53f5-7309-40e1-b78c-18f65d39bd81": {
+"file": "user-cuts/tight/876c53f5-7309-40e1-b78c-18f65d39bd81-963ff869.webp",
+"h": 426,
+"src": "03f6314a-a918-4446-9b71-b6972bea3ba4/7aa6b88e-b053-41e9-b42f-5eb54d3815a2.png",
+"w": 1005
+},
 "87ae05e9-a2ee-4284-ab53-4dbb4074c546": {
 "file": "user-cuts/tight/87ae05e9-a2ee-4284-ab53-4dbb4074c546-56b88c44.webp",
 "h": 600,
@@ -3941,6 +3965,12 @@
 "h": 600,
 "src": "b0b4d6e2-e5bf-4ddf-8ba8-6925240a4b20/d13e21f1-0a5a-4e4b-8016-4cf5abeefa5e.png",
 "w": 213
+},
+"a757e70c-1e9b-41de-9c42-256b7dc7faea": {
+"file": "user-cuts/tight/a757e70c-1e9b-41de-9c42-256b7dc7faea-600169fa.webp",
+"h": 368,
+"src": "64add218-2734-4884-9f3f-9068430c5692/79bc7fe1-09c2-49db-be93-a4b7e9ec2919.png",
+"w": 718
 },
 "a75fb11d-2101-420f-911e-62af1e7808e1": {
 "file": "user-cuts/tight/a75fb11d-2101-420f-911e-62af1e7808e1-7820e90d.webp",
@@ -5448,6 +5478,12 @@
 "src": "cff06551-d2d8-493f-bbd3-ad294e9154f5/90696370-3c46-4a39-b416-5a012a63a6e8.png",
 "w": 197
 },
+"e8351a69-ff22-4481-a42b-a1458ffd1457": {
+"file": "user-cuts/tight/e8351a69-ff22-4481-a42b-a1458ffd1457-92c26433.webp",
+"h": 600,
+"src": "64add218-2734-4884-9f3f-9068430c5692/a445ce42-4433-4302-9f32-711b36fca980.png",
+"w": 425
+},
 "e838afe6-838f-46e5-8bbb-417a7f142c02": {
 "file": "user-cuts/tight/e838afe6-838f-46e5-8bbb-417a7f142c02-86ce637f.webp",
 "h": 600,
@@ -6026,6 +6062,10 @@
 530,
 1200
 ],
+"user-cuts/062ce6a9-673c-4178-b6d9-a2662783aa19-c3f85443-v2.webp": [
+800,
+800
+],
 "user-cuts/067d5a29-6c20-4be2-9434-bec12f98deef-29ca65ef-v2.webp": [
 530,
 1200
@@ -6482,6 +6522,10 @@
 530,
 1200
 ],
+"user-cuts/23f37ce8-8255-4fbf-a027-43b4df276589-8a0daa7d-v2.webp": [
+800,
+800
+],
 "user-cuts/24049fc7-9d5f-4494-9a79-16df8fffce9a-ff21d7df-v2.webp": [
 530,
 1200
@@ -6673,6 +6717,10 @@
 "user-cuts/2fe918a1-abbb-442e-960a-709b2c88987d-f98de7ca-v2.webp": [
 530,
 1200
+],
+"user-cuts/303c788f-ce9f-4e3f-90ac-21751aaed5c3-ae5dc007-v2.webp": [
+800,
+800
 ],
 "user-cuts/30d2b8a0-8de8-4e43-89d3-7e343c5a8723-64e35ff1-v2.webp": [
 800,
@@ -8078,6 +8126,10 @@
 530,
 1200
 ],
+"user-cuts/876c53f5-7309-40e1-b78c-18f65d39bd81-963ff869-v2.webp": [
+800,
+800
+],
 "user-cuts/87ae05e9-a2ee-4284-ab53-4dbb4074c546-96f3fb3d-v2.webp": [
 530,
 1200
@@ -8581,6 +8633,10 @@
 "user-cuts/a71b009f-cdf1-4c90-bd9d-80c0917e0047-d0cb9821-v2.webp": [
 530,
 1200
+],
+"user-cuts/a757e70c-1e9b-41de-9c42-256b7dc7faea-28257f1c-v2.webp": [
+800,
+800
 ],
 "user-cuts/a75fb11d-2101-420f-911e-62af1e7808e1-6fcd85e8-v2.webp": [
 530,
@@ -9597,6 +9653,10 @@
 "user-cuts/e75ba65c-cb9d-4559-90ea-97158dcf2ade-570ff513-v2.webp": [
 530,
 1200
+],
+"user-cuts/e8351a69-ff22-4481-a42b-a1458ffd1457-6400851e-v2.webp": [
+800,
+800
 ],
 "user-cuts/e838afe6-838f-46e5-8bbb-417a7f142c02-851517bb-v2.webp": [
 530,
