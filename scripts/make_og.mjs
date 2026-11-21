@@ -31,11 +31,12 @@ const people = (await res.json()).filter((p) => /^[a-z0-9_]+$/.test(p.username) 
 const browser = await chromium.launch(process.env.OG_CHROME ? { executablePath: process.env.OG_CHROME } : { channel: "chrome" });
 const page = await browser.newPage({ viewport: { width: 1200, height: 630 } });
 
-async function shoot(url, file, waitFor) {
+async function shoot(url, file, waitFor, openMenu) {
   try {
     await page.goto(url, { waitUntil: "networkidle", timeout: 45000 });
     if (waitFor) await page.waitForSelector(waitFor, { timeout: 25000 });
     await page.waitForTimeout(2000);   // let the photos finish loading
+    if (openMenu) { await page.click(".mnav-menu"); await page.waitForTimeout(1800); }   // the home picture is taken with the menu open
     await page.screenshot({ path: path.join(OG, file), type: "jpeg", quality: 82 });
     return true;
   } catch (e) { console.log(`skipped ${file}: ${e.message.split("\n")[0]}`); return false; }
@@ -51,16 +52,16 @@ if (!ONLY_PRODUCTS) {
       const r = await fetch(`${URL_}/rest/v1/${t}?select=id&order=id.desc&limit=1`, { headers: { apikey: KEY } });
       newest.push(r.ok ? ((await r.json())[0]?.id ?? 0) : 0);
     }
-    homeSig = "home3-" + newest.join("-");
+    homeSig = "home4-" + newest.join("-");
   } catch (e) { /* keep the plain signature */ }
 }
-for (const [key, url, wait] of ONLY_PRODUCTS ? [] : [
-  ["home", `${SITE}/?view=image`, "#app .item img"],
+for (const [key, url, wait, openMenu] of ONLY_PRODUCTS ? [] : [
+  ["home", `${SITE}/?view=image`, "#app .item img", true],
   ["users", `${SITE}/users.html`, "#users .row:not(.head)"],
   ["submit", `${SITE}/submit.html`, null],
 ]) {
   const sig = key === "home" ? homeSig : "static3";
-  if (stale(key, sig) && await shoot(url, `${key}.jpg`, wait)) index[key] = { sig, at: Date.now() };
+  if (stale(key, sig) && await shoot(url, `${key}.jpg`, wait, openMenu)) index[key] = { sig, at: Date.now() };
 }
 
 // one per public collection
