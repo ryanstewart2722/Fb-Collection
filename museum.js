@@ -117,6 +117,7 @@ function poolFor(s) {
 async function loadSection(s, reset) {
   if (reset) { s.rows = []; if (sort !== "shuffle") s.shuf = null; }
   const take = s.rows.length ? PAGE : FIRST;
+  const my = (s.tok = (s.tok || 0) + 1);   // if another load starts while this one waits on the server, this one drops out (otherwise both add their rows)
   if (searching()) {
     if (reset || !s.pool) s.pool = poolFor(s);
     s.rows.push(...s.pool.slice(s.rows.length, s.rows.length + take));
@@ -134,6 +135,7 @@ async function loadSection(s, reset) {
         if (rows.length < 1000) break;
       }
       for (let i = ids.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [ids[i], ids[j]] = [ids[j], ids[i]]; }
+      if (s.tok !== my) return;
       s.shuf = ids;
     }
     s.total = s.shuf.length;
@@ -141,12 +143,14 @@ async function loadSection(s, reset) {
     if (next.length) {
       const { rows } = await momsFetch(`${s.type}?select=${s.select}&id=in.(${next.join(",")})`);
       const at = new Map(next.map((id, i) => [id, i]));
+      if (s.tok !== my) return;
       s.rows.push(...rows.sort((a, b) => at.get(a.id) - at.get(b.id)));
     }
     return;
   }
   const { rows, total } = await momsFetch(
     `${s.type}?select=${s.select}&order=${orderBy()}&limit=${take}&offset=${s.rows.length}${fp ? "&" + fp : ""}`, { count: true });
+  if (s.tok !== my) return;
   s.rows.push(...rows);
   s.total = total;
 }
