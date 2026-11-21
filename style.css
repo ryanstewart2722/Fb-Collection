@@ -715,3 +715,5 @@ body.museum .grid .item img:not(.in) { opacity: 0; }
 body.museum .grid .item img.in { animation: imgIn 0.6s ease; }
 @keyframes imgIn { from { opacity: 0; } }
 @media (prefers-reduced-motion: reduce) { .grid .item img.in { animation: none; } }
+/* Menu and My Collection stay exactly where they are while the bar peeks, so they are never a moving target */
+.topbar.mnav .mnav-left, .topbar.mnav .mnav-right { align-self: start; height: var(--bar-h); display: flex; align-items: center; }
