@@ -582,9 +582,11 @@ body > main.auth { width: 100%; box-sizing: border-box; }
 
 
 /* ---------- Top bar and the big menu (Menu / title / My Collection) ---------- */
-.topbar.mnav { padding: 0 calc(20 * 1px + 0.9vw); }
+.topbar.mnav { padding: 0 var(--gutter); }
+.has-refine .topbar.mnav { padding-right: calc(var(--gutter) + 18px); transition: right 0.42s var(--rf-ease, ease), padding-right 0.42s var(--rf-ease, ease); }   /* the right edge follows the list, which leaves room for the Refine tab */
+.has-refine.rf-open .topbar.mnav { padding-right: var(--gutter); }
 .mnav-left { display: flex; align-items: center; gap: 22px; justify-self: start; font-size: 12px; }
-.mnav-menu { font: inherit; color: inherit; background: none; border: 0; padding: 8px 0; cursor: pointer; }
+.mnav-menu { font: inherit; color: inherit; background: none; border: 0; padding: 8px 0; margin: 0; cursor: pointer; }
 .mnav-menu:hover, .mnav-left a:hover { text-decoration: underline; text-underline-offset: 2px; }
 .mnav-title { display: block; line-height: 0; }
 .mnav-title img { display: block; height: 38px; width: auto; }
@@ -609,9 +611,9 @@ body.mnav-open .mnav-title img { visibility: hidden; }   /* the big copy in the 
 .mnav-panel.measure { visibility: hidden; clip-path: none; transition: none; }
 .mnav-panel a { color: inherit; text-decoration: none; }
 .mnav-panel a:hover { text-decoration: underline; text-underline-offset: 2px; }
-.mnav-x { position: absolute; left: calc(20 * var(--u)); top: calc(10 * var(--u)); font: inherit; font-size: 22px; line-height: 1; color: inherit; background: none; border: 0; padding: 6px 8px; cursor: pointer; opacity: 0; transition: opacity 0.2s ease; }
+.mnav-x { position: absolute; left: calc(var(--gutter) - 8px); top: calc(10 * var(--u)); font: inherit; font-size: 22px; line-height: 1; color: inherit; background: none; border: 0; padding: 6px 8px; cursor: pointer; opacity: 0; transition: opacity 0.2s ease; }
 .mnav-panel.open .mnav-x { opacity: 1; transition: opacity 0.4s ease 0.35s; }
-.mnav-links { position: absolute; left: calc(23 * var(--u)); top: calc(44 * var(--u)); display: flex; gap: calc(26 * var(--u)); }
+.mnav-links { position: absolute; left: var(--gutter); top: calc(44 * var(--u)); display: flex; gap: calc(26 * var(--u)); }
 .mn-col { display: flex; flex-direction: column; min-width: calc(124 * var(--u)); }
 .mn-grp { display: flex; flex-direction: column; margin-bottom: 1.4em; }
 .mn-grp > * { opacity: 0; transform: translateY(8px); transition: opacity 0.18s ease, transform 0.18s ease; }
