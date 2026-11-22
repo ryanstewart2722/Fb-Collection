@@ -106,6 +106,7 @@ function renderListNow() {
       ${tab === "brands" ? "" : `<select id="brand-filter" aria-label="Filter by brand"><option value="">All brands</option>${brands.map((b) => `<option value="${b.id}" ${String(b.id) === String(list.brand) ? "selected" : ""}>${esc(b.name)}</option>`).join("")}</select>`}
       <select id="sort-by" aria-label="Sort"><option value="release" ${list.sort === "release" ? "selected" : ""}>${tab === "brands" ? "A to Z" : "By release date"}</option><option value="added" ${list.sort === "added" ? "selected" : ""}>Recently added</option></select>
       ${tab === "brands" ? "" : `<button class="ad-btn${selMode ? " ad-btn-dark" : ""}" data-act="sel-toggle">${selMode ? "Done selecting" : "Select"}</button>`}
+      ${tab === "misc" ? `<button class="ad-btn" data-act="fit-misc" title="Make every misc photo the same size as the FBcon tee (longest side fills 90% of the frame). Photos already that size are left alone.">Same size for all</button>` : ""}
       <button class="ad-btn ad-btn-dark" data-act="new">+ Add ${t.one}</button>
     </div>
     <p class="me-count">${list.total} ${list.total === 1 ? t.one : tab}${`<span class="me-views"><button class="ad-link${view === "list" ? " on" : ""}" data-act="view-list">List</button> / <button class="ad-link${view === "images" ? " on" : ""}" data-act="view-images">Images</button></span>`}</p>
@@ -630,6 +631,44 @@ async function downloadPhoto(url, suffix) {   // the photo as it is on the site 
     setTimeout(() => URL.revokeObjectURL(a.href), 5000);
   } catch { window.open(url, "_blank", "noopener"); }   // if the browser won't fetch it, open it so it can be saved from there
 }
+// Every misc photo gets the same size: longest side fills 90% of the frame. Ones already there are skipped; old files are kept.
+async function fitAllMisc() {
+  if (tab !== "misc") return;
+  const { data: rows, error } = await sb.from("misc").select("id,slug,image_path").not("image_path", "is", null).order("id");
+  if (error) return setStatus(friendly(error), true);
+  const todo = [];
+  setStatus(`Checking ${rows.length} photos…`);
+  for (const r of rows) {
+    if (/\.gif($|\?)/i.test(r.image_path)) continue;
+    try {
+      const blob = await (await fetch(r.image_path, { cache: "no-store" })).blob();
+      const bmp = await createImageBitmap(blob);
+      const c = document.createElement("canvas"); c.width = bmp.width; c.height = bmp.height;
+      const x = c.getContext("2d", { willReadFrequently: true }); x.drawImage(bmp, 0, 0);
+      const d = x.getImageData(0, 0, c.width, c.height).data;
+      if (!hasTransparentEdges(d, c.width, c.height)) continue;   // a photo with a backdrop: leave it, it needs a person to look at it
+      const b = visibleBox(d, c.width, c.height);
+      const fill = Math.max(b.w / c.width, b.h / c.height);
+      if (fill < 0.86 || fill > 0.94) todo.push({ r, blob });
+    } catch (e) { /* skip anything that will not load */ }
+  }
+  if (!todo.length) return setStatus("All misc photos are already the same size.");
+  if (!confirm(`${todo.length} misc ${todo.length === 1 ? "photo is" : "photos are"} not the standard size. Resize ${todo.length === 1 ? "it" : "them"} now? The old files are kept.`)) return setStatus("Nothing changed.");
+  let done = 0;
+  for (const { r, blob } of todo) {
+    setStatus(`Resizing ${++done} of ${todo.length}…`);
+    try {
+      const p = await preparePhoto(new File([blob], "photo.png", { type: blob.type || "image/png" }), 0.9);
+      const path = `misc/${r.slug}-${Date.now().toString(36)}.${p.ext}`;
+      const up = await sb.storage.from(BUCKET).upload(path, p.blob, { contentType: p.blob.type, cacheControl: "31536000" });
+      if (up.error) throw up.error;
+      const url = sb.storage.from(BUCKET).getPublicUrl(path).data.publicUrl;
+      const { error: e2 } = await sb.from("misc").update({ image_path: url }).eq("id", r.id);
+      if (e2) throw e2;
+    } catch (e) { return setStatus(`Stopped at ${r.slug}: ${friendly(e)}`, true); }
+  }
+  setStatus(`Done: ${todo.length} resized. Refresh the museum to see them.`);
+}
 async function fillPhoto() {
   const src = photo?.preview || editing?.image_path;
   if (!src) return;
@@ -806,6 +845,7 @@ app.addEventListener("click", async (e) => {
   if (act === "rm-photo2") { photo2 = null; drop2 = true; renderForm2(); }
   if (act === "rotate") rotatePhoto();
   if (act === "fill") fillPhoto();
+  if (act === "fit-misc") fitAllMisc();
   if (act === "swap-photos") swapPhotos();
   if (act === "dl-photo") downloadPhoto(editing.image_path, "");
   if (act === "dl-photo2") downloadPhoto(editing.image_path_2, "-photo2");
