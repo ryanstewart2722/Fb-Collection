@@ -142,7 +142,7 @@ async function photoUrl(item) {
 function sections() {
   const by = {};
   state.items.forEach((i) => { if (i.status !== "removed" || (state.staff && state.edit)) (by[i.section] ||= []).push(i); });   // hidden entries show only while an admin is editing
-  return ORDER.filter((s) => by[s] || state.owner).map((s) => ({ id: s, title: SCHEMA[s].title, items: by[s] || [] }));
+  return ORDER.filter((s) => by[s] || state.owner || FEATURED).map((s) => ({ id: s, title: SCHEMA[s].title, items: by[s] || [] }));
 }
 
 /* ---------- header block ---------- */
@@ -238,10 +238,11 @@ function renderEdit() {
       </div></div>`).join("")}</div></section>`).join("");
 }
 function renderGrid() {
-  return sections().filter((s) => s.items.some((i) => i.url)).map((s) => `<section class="grid-section">
+  return sections().filter((s) => FEATURED || s.items.some((i) => i.url)).map((s) => `<section class="grid-section">
     <h2>${esc(s.title)}</h2>
     <div class="grid${TALL.has(s.id) ? "" : " square"}" data-s="${s.id}">
       ${s.items.filter((i) => i.url).map((i) => `<div class="item" data-id="${esc(i.id)}"><img src="${esc(i.url)}" alt="${esc(i.name)}" loading="lazy"></div>`).join("")}
+      ${FEATURED && !s.items.some((i) => i.url) ? `<p class="p-empty">Nothing here yet.</p>` : ""}
       <div class="bar" style="--cols:${colsFor(SCHEMA[s.id].fields.length)}"></div>
     </div></section>`).join("");
 }
