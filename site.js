@@ -115,7 +115,7 @@ window.momsKeepScroll = function (box, fn, anchor) {
   panel.innerHTML =
     '<button type="button" class="mnav-x" aria-label="Close menu">×</button>' +
     '<nav class="mnav-links" aria-label="Site">' +
-      '<div class="mn-col"><div class="mn-grp">' + L("/", "Museum") + L("/?order=added", "Recently Added") + S("Featured Setups") + '</div>' +
+      '<div class="mn-col"><div class="mn-grp">' + L("/", "Museum") + L("/?order=added", "Recently Added") + L("/featured.html", "Featured") + '</div>' +
         '<div class="mn-grp">' + L("/", "View All") + L("/decks/", "Decks") + L("/trucks/", "Trucks") + L("/obstacles/", "Obstacles") + L("/wheels/", "Wheels") + L("/misc/", "Misc.") + L("/brands.html", "Brands") + '</div></div>' +
       '<div class="mn-col"><div class="mn-grp">' + L("/signin.html", "My Collection", " data-me") + L("/users.html", "Users") + L("/signin.html", "Favorites", ' data-me data-hash="#favorites"') + '</div>' +
         '<div class="mn-grp">' + L("/signin.html", "Likes", ' data-me data-hash="#likes"') + S("Following") + L("/account.html", "My Account") + L("/", "Logout", ' data-logout class="off" aria-disabled="true" tabindex="-1"') + L("/submit.html", "Submit") + L("mailto:contact@museumofminiskateboards.org", "Contact") + L("/privacy.html", "Privacy Policy") + '</div></div>' +
@@ -186,7 +186,7 @@ window.momsKeepScroll = function (box, fn, anchor) {
     '<img class="fb-logo" src="/footer-character.webp?v=577c2d58" alt="" width="900" height="944">' +
     '<p class="fb-credit">Designed, curated and developed by <a href="https://ryanforprez.org" target="_blank" rel="noopener">Ryan Stewart</a> view his collection <a href="/u/r">here</a></p>' +
     '<nav class="fb-links" aria-label="Site">' +
-      '<div><a href="/">Museum</a><a href="/?order=added">Recently Added</a><span class="fb-soon">Featured Setups</span></div>' +
+      '<div><a href="/">Museum</a><a href="/?order=added">Recently Added</a><a href="/featured.html">Featured</a></div>' +
       '<div><a href="/">View All</a><a href="/decks/">Decks</a><a href="/trucks/">Trucks</a><a href="/obstacles/">Obstacles</a><a href="/wheels/">Wheels</a><a href="/misc/">Misc.</a><a href="/brands.html">Brands</a></div>' +
       '<div><a href="/signin.html" data-me>My Collection</a><a href="/users.html">Users</a><a href="/signin.html" data-me data-hash="#favorites">Favorites</a></div>' +
       '<div><a href="/signin.html" data-me data-hash="#likes">Likes</a><span class="fb-soon">Following</span><a href="/account.html">My Account</a><a href="/" data-logout class="off" aria-disabled="true" tabindex="-1">Logout</a><a href="/submit.html">Submit</a><a href="mailto:contact@museumofminiskateboards.org">Contact</a><a href="/privacy.html">Privacy Policy</a></div>' +

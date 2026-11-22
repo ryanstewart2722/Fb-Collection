@@ -21,9 +21,16 @@ const SCHEMA = {
   misc:      { title: "Misc.",     fields: [["name", "Object name", "Earl E. Bird Holder"], ["maker", "Brand", "w0rm"], ["material", "Material", "Corduroy"], ["year", "Year", "2026"]] },
 };
 const ORDER = ["setups", "decks", "obstacles", "wheels", "trucks", "misc"];
+// The Featured Setups page (featured.html): everyone's collections together, in the same list and image views as a collection page,
+// with a Username column last in every list (wheels drop Duro to make room).
+const FEATURED = document.body.classList.contains("featured-page");
+if (FEATURED) {
+  SCHEMA.wheels.fields = SCHEMA.wheels.fields.filter((f) => f[0] !== "duro");
+  Object.values(SCHEMA).forEach((sec) => sec.fields.push(["user", "Username", ""]));
+}
 const TALL = new Set(["decks", "setups"]);
 // Older items were saved as brand/size/color; still show them.
-const val = (i, k) => k === "name" ? i.name : (i.details?.[k] ?? (k === "maker" ? i.details?.brand : "")) || "";
+const val = (i, k) => k === "user" ? (i.user || "") : k === "name" ? i.name : (i.details?.[k] ?? (k === "maker" ? i.details?.brand : "")) || "";
 const colsFor = (n) => n <= 4 ? "473fr 355fr 237fr 335fr" : "473fr " + Array(n - 1).fill(Math.round(927 / (n - 1)) + "fr").join(" ");
 // A line goes between brands: the manufacturer when there is one, otherwise the start of the name ("Sunpower Wheels, Satori" -> "Sunpower Wheels").
 const nameBrand = (n) => { const t = String(n || "").trim().toLowerCase().split(/\s+/); return (/^dr\.?$/.test(t[0]) ? t.slice(0, 2).join(" ") : t[0]) || ""; };
@@ -44,7 +51,7 @@ const SAMPLE = {
 
 const viewOf = () => /list$/.test(location.hash) ? "list" : "image";
 const likesMode = () => location.hash.startsWith("#likes");   // #likes and #likes-list: the collection items a person has liked
-const favMode = () => location.hash.startsWith("#favorites") || likesMode();   // #favorites and #favorites-list: the person's favorite museum products (likes use the same screen)
+const favMode = () => !FEATURED && (location.hash.startsWith("#favorites") || likesMode());   // #favorites and #favorites-list: the person's favorite museum products (likes use the same screen)
 const modeName = () => (likesMode() ? "likes" : "favorites");
 let view = viewOf();   // collection pages open on the image view
 let state = null;   // { profile, items, owner }
@@ -135,11 +142,12 @@ async function photoUrl(item) {
 function sections() {
   const by = {};
   state.items.forEach((i) => { if (i.status !== "removed" || (state.staff && state.edit)) (by[i.section] ||= []).push(i); });   // hidden entries show only while an admin is editing
-  return ORDER.filter((s) => by[s] || state.owner).map((s) => ({ id: s, title: SCHEMA[s].title, items: by[s] || [] }));
+  return (FEATURED ? ["setups", "decks", "trucks", "wheels", "obstacles", "misc"] : ORDER).filter((s) => by[s] || state.owner || FEATURED).map((s) => ({ id: s, title: SCHEMA[s].title, items: by[s] || [] }));
 }
 
 /* ---------- header block ---------- */
 function headHtml() {
+  if (FEATURED) return "";
   const { profile, owner } = state;
   return `<section class="p-head">
     <p class="p-user">museumofminiskateboards.org/u/${esc(profile.username)}${profile.is_private ? ` · <b>Private</b>` : ""}${state.fav ? ` · <a class="p-fav-link" href="#${view === "list" ? "list" : "image"}">← Back to collection</a>` : ` · <a class="p-fav-link" href="#favorites">Favorites${state.favItems ? ` (${state.favItems.length})` : ""}</a> · <a class="p-fav-link" href="#likes">Likes${state.likeItems ? ` (${state.likeItems.length})` : ""}</a>`}</p>
@@ -169,7 +177,7 @@ function renderList() {
     <h2>${esc(s.title)}</h2>
     <div class="list-wrap"><div class="list${s.items.length ? "" : " is-empty"}" data-s="${s.id}" style="--cols:${colsFor(SCHEMA[s.id].fields.length)}">
       <div class="row head">${spans(SCHEMA[s.id].fields.map((f) => f[1]))}</div>
-      ${s.items.map((i, n) => `<div class="row${n > 0 && brandOf(s.id, i) !== brandOf(s.id, s.items[n - 1]) ? " divide" : ""}" data-id="${esc(i.id)}">${spans(rowCells(s.id, i))}</div>`).join("")}
+      ${s.items.map((i, n) => `<div class="row${!FEATURED && n > 0 && brandOf(s.id, i) !== brandOf(s.id, s.items[n - 1]) ? " divide" : ""}" data-id="${esc(i.id)}">${spans(rowCells(s.id, i))}</div>`).join("")}
       ${state.owner ? `<a class="add-new" href="#" data-act="add" data-section="${s.id}">+ Add new</a>` : ""}
     </div></div></section>`).join("");
 }
@@ -230,10 +238,11 @@ function renderEdit() {
       </div></div>`).join("")}</div></section>`).join("");
 }
 function renderGrid() {
-  return sections().filter((s) => s.items.some((i) => i.url)).map((s) => `<section class="grid-section">
+  return sections().filter((s) => FEATURED || s.items.some((i) => i.url)).map((s) => `<section class="grid-section">
     <h2>${esc(s.title)}</h2>
     <div class="grid${TALL.has(s.id) ? "" : " square"}" data-s="${s.id}">
       ${s.items.filter((i) => i.url).map((i) => `<div class="item" data-id="${esc(i.id)}"><img src="${esc(i.url)}" alt="${esc(i.name)}" loading="lazy"></div>`).join("")}
+      ${FEATURED && !s.items.some((i) => i.url) ? `<p class="p-empty">Nothing here yet.</p>` : ""}
       <div class="bar" style="--cols:${colsFor(SCHEMA[s.id].fields.length)}"></div>
     </div></section>`).join("");
 }
@@ -371,7 +380,7 @@ document.addEventListener("click", (e) => {
   const el = e.target.closest("#items .item[data-id], #items .row[data-id]");
   if (!el || el.dataset.id.startsWith("s")) return;   // "s0", "s1"…: the built-in sample items have no page
   if (e.target.closest("a, button, input, label")) return;
-  if (canHover || el.classList.contains("on")) location.href = "/item.html?id=" + encodeURIComponent(el.dataset.id);
+  if (canHover || el.classList.contains("on")) location.href = (FEATURED && window.FEATURED_SOURCE ? window.FEATURED_SOURCE.site : "") + "/item.html?id=" + encodeURIComponent(el.dataset.id);
 }, true);
 
 /* ---------- page ---------- */
@@ -387,12 +396,12 @@ function syncEditHeader() {
 function keep(box, fn, anchor) { return window.momsKeepScroll ? window.momsKeepScroll(box, fn, anchor) : fn(); }
 function paint(anchor) { keep(app, () => paintNow(), anchor); }   // redraw without the page jumping
 function paintNow() {
-  document.title = `${state.profile.display_name || state.profile.username} · MoMS`;
+  document.title = FEATURED ? "Featured · MoMS" : `${state.profile.display_name || state.profile.username} · MoMS`;
   applyMode();
   $("#views").hidden = !state.items.length && !state.owner;
   { const gap = $("#views-gap"); if (gap) gap.hidden = !!state.items.length || state.owner; }   // the new top bar no longer has this spacer
   applyMode();
-  app.innerHTML = (state.fav ? favTop() : "") + `<div id="items"></div>` + headHtml();   // the link and owner links sit at the bottom of the page
+  app.innerHTML = (FEATURED ? `<h2 class="fav-title">Featured</h2>` : state.fav ? favTop() : "") + `<div id="items"></div>` + headHtml();   // the link and owner links sit at the bottom of the page
   paintItems();
   syncEditHeader();
 }
@@ -741,7 +750,40 @@ async function rpc(fn, args) {
   return r.ok ? r.json() : null;
 }
 
+// Featured Setups: every approved item from every public collection, read fresh each time the page opens, so new additions and edits appear by themselves.
+// Setups and decks are shuffled on every visit; the other sections show the newest first.
+async function loadFeatured() {
+  const FS = window.FEATURED_SOURCE || { url: MOMS.url, key: MOMS.key, site: "" };
+  const fsb = FS.url === MOMS.url ? sb : supabase.createClient(FS.url, FS.key, { auth: { persistSession: false, detectSessionInUrl: false } });   // read-only, public data
+  const pages = async (make) => { const out = []; for (let from = 0; ; from += 1000) { const { data, error } = await make().range(from, from + 999); if (error) throw error; out.push(...(data || [])); if (!data || data.length < 1000) break; } return out; };   // the database hands back at most 1000 rows at a time
+  const [rows, likeRows] = await Promise.all([
+    pages(() => fsb.from("collection_items").select("*, profiles!inner(username,display_name)").eq("status", "approved").order("created_at", { ascending: false }).order("id")),
+    pages(() => fsb.from("item_likes").select("item_id").order("item_id")).catch(() => []),
+  ]);
+  for (let n = rows.length - 1; n >= 0; n--) if (rows[n].details?.featured_hidden) rows.splice(n, 1);   // hidden from this page by the museum (Featured tab in the admin)
+  const pick = (i) => {   // the photo exactly as the owner saved it: no automatic re-cut swapped in, and an uncut photo stays uncut
+    const p = i.image_path;
+    return !p ? {} : /^https?:/.test(p) ? { url: p } : { path: p };
+  };
+  const picks = rows.map(pick), paths = [...new Set(picks.map((p) => p.path).filter(Boolean))], signed = {};
+  for (let k = 0; k < paths.length; k += 200) {
+    const { data } = await fsb.storage.from("uploads").createSignedUrls(paths.slice(k, k + 200), 3600);
+    (data || []).forEach((u) => { if (u.signedUrl) signed[u.path] = u.signedUrl; });
+  }
+  const likes = new Map(); likeRows.forEach((l) => likes.set(l.item_id, (likes.get(l.item_id) || 0) + 1));
+  rows.forEach((i, n) => { i.url = picks[n].url || signed[picks[n].path] || ""; i.url2 = ""; i.user = i.profiles?.username || ""; i.link = FS.site + "/item.html?id=" + encodeURIComponent(i.id); i.likes = likes.get(i.id) || 0; });
+  // Most-liked first. Setups and decks that tie (most do, likes are new) come in a fresh random order every visit; the other sections tie by newest first.
+  for (let a = rows.length - 1; a > 0; a--) { const b = Math.floor(Math.random() * (a + 1)); [rows[a], rows[b]] = [rows[b], rows[a]]; }
+  const newest = new Map(rows.map((r, n) => [r.id, n]));
+  const dated = [...rows].sort((p, q) => String(q.created_at).localeCompare(String(p.created_at)));
+  dated.forEach((r, n) => newest.set(r.id, n));
+  rows.sort((p, q) => q.likes - p.likes || (["setups", "decks"].includes(p.section) && ["setups", "decks"].includes(q.section) ? 0 : newest.get(p.id) - newest.get(q.id)));
+  state = { profile: { id: "featured", username: "featured", display_name: "Featured", bio: "", is_private: false }, items: rows, owner: false, staff: false, isAdmin: false, self: false, viewer: null };
+  paint();
+}
+
 async function load() {
+  if (FEATURED) return loadFeatured();
   const raw = (new URLSearchParams(location.search).get("u") || "").toLowerCase().replace(/[^a-z0-9_]/g, "");
   if (!raw) return notFound("");
   if (raw === "example" || raw === "r2") {   // r2: preview link (too short for a real username)
