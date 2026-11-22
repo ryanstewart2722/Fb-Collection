@@ -126,6 +126,7 @@ window.momsKeepScroll = function (box, fn, anchor) {
   document.body.appendChild(panel);
 
   var big = panel.querySelector(".mnav-big"), smallImg = tl.querySelector("img"), isOpen = false, timer;
+  big.style.cursor = "pointer"; big.addEventListener("click", function () { location.href = "/"; });   // the big title in the menu goes home
   function aim() {   // where the big title has to start from so it looks like the small one growing
     big.style.transition = "none"; panel.style.setProperty("--tx", "0px"); panel.style.setProperty("--ty", "0px"); panel.style.setProperty("--ts", "1");
     panel.classList.add("measure");
