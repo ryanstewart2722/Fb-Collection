@@ -216,6 +216,7 @@ function renderForm() {
       ${`<div class="me-photo">
         <div class="me-photo-box">${img ? `<img src="${esc(img)}" alt="">` : `<span>No photo yet</span>`}</div>
         <button class="ad-btn" data-act="photo">${img ? "Replace photo" : "Add photo"}</button>
+        ${img && tab !== "decks" && tab !== "brands" ? `<button class="ad-btn" data-act="fill" title="Trim the photo and scale it up to fill the frame (90%). Save afterwards to put it on the site.">Make bigger</button>` : ""}
         ${img ? `<button class="ad-btn" data-act="rotate" title="Turn the photo upside down">Rotate 180°</button>` : ""}
         ${r.id && r.image_path ? `<button class="ad-btn" data-act="dl-photo" title="Download the photo that is on the site now, to edit it and put it back with Replace photo">Download photo</button>` : ""}
         ${tab === "brands" ? "" : `        <div class="me-photo2">
@@ -481,7 +482,7 @@ function friendly(err) {
 // Transparent PNGs are kept as they are; a solid backdrop (white sheet, grey card) is removed.
 const PHOTO_SIZE = { decks: [529, 1200], trucks: [800, 800], wheels: [800, 800], obstacles: [800, 800], misc: [800, 800] };
 
-async function preparePhoto(file) {
+async function preparePhoto(file, fillOverride) {
   const head = new TextDecoder("latin1").decode(await file.slice(0, 6).arrayBuffer());
   if (file.type === "image/gif" || /\.gif$/i.test(file.name) || head.startsWith("GIF8")) return { blob: file.type === "image/gif" ? file : new Blob([file], { type: "image/gif" }), ext: "gif", preview: URL.createObjectURL(file) };   // GIFs are kept as they are so they keep playing
   const bitmap = await createImageBitmap(file);
@@ -503,7 +504,8 @@ async function preparePhoto(file) {
   const [W, H] = PHOTO_SIZE[tab] || PHOTO_SIZE.decks;
   // Trucks and wheels keep breathing room (the longest side fills 68% of the square) so they sit at the size
   // in the design instead of being zoomed to the edges; decks fill their tall frame.
-  const fill = tab === "decks" ? 1 : 0.68;
+  // Misc (shirts, hoodies, bags) is wide and flat, so it fills 90% of the frame like the FBcon tee; trucks, wheels and the rest keep 68%.
+  const fill = fillOverride || (tab === "decks" ? 1 : tab === "misc" ? 0.9 : 0.68);
   const scale = Math.min(W / box.w, H / box.h) * fill;
   const dw = Math.round(box.w * scale), dh = Math.round(box.h * scale);
   const out = document.createElement("canvas");
@@ -627,6 +629,20 @@ async function downloadPhoto(url, suffix) {   // the photo as it is on the site 
     const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = nm; document.body.appendChild(a); a.click(); a.remove();
     setTimeout(() => URL.revokeObjectURL(a.href), 5000);
   } catch { window.open(url, "_blank", "noopener"); }   // if the browser won't fetch it, open it so it can be saved from there
+}
+async function fillPhoto() {
+  const src = photo?.preview || editing?.image_path;
+  if (!src) return;
+  setStatus("Scaling up…");
+  try {
+    const blob = await (await fetch(src, { cache: "no-store" })).blob();
+    const p = await preparePhoto(new File([blob], "photo.png", { type: blob.type || "image/png" }), 0.9);
+    if (photo?.preview) URL.revokeObjectURL(photo.preview);
+    photo = p;
+    app.querySelector(".me-photo-box").innerHTML = `<img src="${photo.preview}" alt="">`;
+    formDirty = true;
+    setStatus("Scaled up. Save to put it on the site.");
+  } catch (err) { setStatus("Couldn't scale that photo: " + err.message, true); }
 }
 async function rotatePhoto() {
   const src = photo?.preview || editing?.image_path;
@@ -789,6 +805,7 @@ app.addEventListener("click", async (e) => {
   if (act === "photo2") { target = 2; fileInput.value = ""; fileInput.click(); }
   if (act === "rm-photo2") { photo2 = null; drop2 = true; renderForm2(); }
   if (act === "rotate") rotatePhoto();
+  if (act === "fill") fillPhoto();
   if (act === "swap-photos") swapPhotos();
   if (act === "dl-photo") downloadPhoto(editing.image_path, "");
   if (act === "dl-photo2") downloadPhoto(editing.image_path_2, "-photo2");
