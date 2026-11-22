@@ -106,7 +106,7 @@ function renderListNow() {
       ${tab === "brands" ? "" : `<select id="brand-filter" aria-label="Filter by brand"><option value="">All brands</option>${brands.map((b) => `<option value="${b.id}" ${String(b.id) === String(list.brand) ? "selected" : ""}>${esc(b.name)}</option>`).join("")}</select>`}
       <select id="sort-by" aria-label="Sort"><option value="release" ${list.sort === "release" ? "selected" : ""}>${tab === "brands" ? "A to Z" : "By release date"}</option><option value="added" ${list.sort === "added" ? "selected" : ""}>Recently added</option></select>
       ${tab === "brands" ? "" : `<button class="ad-btn${selMode ? " ad-btn-dark" : ""}" data-act="sel-toggle">${selMode ? "Done selecting" : "Select"}</button>`}
-      ${tab === "misc" ? `<button class="ad-btn" data-act="fit-misc" title="Make every misc photo the same size as the FBcon tee (longest side fills 90% of the frame). Photos already that size are left alone.">Same size for all</button>` : ""}
+      ${tab === "misc" ? `<button class="ad-btn" data-act="fit-misc" title="Make every misc photo the same size as the FBcon tee (same area as the FBcon tee). Photos already that size are left alone.">Same size for all</button>` : ""}
       <button class="ad-btn ad-btn-dark" data-act="new">+ Add ${t.one}</button>
     </div>
     <p class="me-count">${list.total} ${list.total === 1 ? t.one : tab}${`<span class="me-views"><button class="ad-link${view === "list" ? " on" : ""}" data-act="view-list">List</button> / <button class="ad-link${view === "images" ? " on" : ""}" data-act="view-images">Images</button></span>`}</p>
@@ -483,6 +483,8 @@ function friendly(err) {
 // Transparent PNGs are kept as they are; a solid backdrop (white sheet, grey card) is removed.
 const PHOTO_SIZE = { decks: [529, 1200], trucks: [800, 800], wheels: [800, 800], obstacles: [800, 800], misc: [800, 800] };
 
+// Misc things are sized so they take up the same AREA as the FBcon tee (about 71% of the frame): a tall hoodie fills a bit more of the height than a wide tee, a tiny keychain is capped at 97%.
+function miscFill(w, h) { const r = Math.min(w, h) / Math.max(w, h); return Math.min(0.97, Math.sqrt(0.71 / r)); }
 async function preparePhoto(file, fillOverride) {
   const head = new TextDecoder("latin1").decode(await file.slice(0, 6).arrayBuffer());
   if (file.type === "image/gif" || /\.gif$/i.test(file.name) || head.startsWith("GIF8")) return { blob: file.type === "image/gif" ? file : new Blob([file], { type: "image/gif" }), ext: "gif", preview: URL.createObjectURL(file) };   // GIFs are kept as they are so they keep playing
@@ -506,7 +508,7 @@ async function preparePhoto(file, fillOverride) {
   // Trucks and wheels keep breathing room (the longest side fills 68% of the square) so they sit at the size
   // in the design instead of being zoomed to the edges; decks fill their tall frame.
   // Misc (shirts, hoodies, bags) is wide and flat, so it fills 90% of the frame like the FBcon tee; trucks, wheels and the rest keep 68%.
-  const fill = fillOverride || (tab === "decks" ? 1 : tab === "misc" ? 0.9 : 0.68);
+  const fill = fillOverride || (tab === "decks" ? 1 : tab === "misc" ? miscFill(box.w, box.h) : 0.68);
   const scale = Math.min(W / box.w, H / box.h) * fill;
   const dw = Math.round(box.w * scale), dh = Math.round(box.h * scale);
   const out = document.createElement("canvas");
@@ -649,7 +651,7 @@ async function fitAllMisc() {
       if (!hasTransparentEdges(d, c.width, c.height)) continue;   // a photo with a backdrop: leave it, it needs a person to look at it
       const b = visibleBox(d, c.width, c.height);
       const fill = Math.max(b.w / c.width, b.h / c.height);
-      if (fill < 0.86 || fill > 0.94) todo.push({ r, blob });
+      if (Math.abs(fill - miscFill(b.w, b.h)) > 0.02) todo.push({ r, blob });
     } catch (e) { /* skip anything that will not load */ }
   }
   if (!todo.length) return setStatus("All misc photos are already the same size.");
@@ -658,7 +660,7 @@ async function fitAllMisc() {
   for (const { r, blob } of todo) {
     setStatus(`Resizing ${++done} of ${todo.length}…`);
     try {
-      const p = await preparePhoto(new File([blob], "photo.png", { type: blob.type || "image/png" }), 0.9);
+      const p = await preparePhoto(new File([blob], "photo.png", { type: blob.type || "image/png" }));
       const path = `misc/${r.slug}-${Date.now().toString(36)}.${p.ext}`;
       const up = await sb.storage.from(BUCKET).upload(path, p.blob, { contentType: p.blob.type, cacheControl: "31536000" });
       if (up.error) throw up.error;
@@ -675,7 +677,7 @@ async function fillPhoto() {
   setStatus("Scaling up…");
   try {
     const blob = await (await fetch(src, { cache: "no-store" })).blob();
-    const p = await preparePhoto(new File([blob], "photo.png", { type: blob.type || "image/png" }), 0.9);
+    const p = await preparePhoto(new File([blob], "photo.png", { type: blob.type || "image/png" }));
     if (photo?.preview) URL.revokeObjectURL(photo.preview);
     photo = p;
     app.querySelector(".me-photo-box").innerHTML = `<img src="${photo.preview}" alt="">`;
