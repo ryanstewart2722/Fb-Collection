@@ -24,13 +24,8 @@
     .auth.priv { max-width: 640px; margin: 0; padding: 49px var(--gutter) 120px; }
     .auth.priv h1 { font-size: 34px; margin: 0 0 14px; }
     @media (max-width: 760px) { .auth.priv { padding-top: 62px; } .auth.priv h1 { font-size: 28px; } }
-    .auth.priv { max-width: none; position: relative; }
-    .auth.priv > .auth-note { max-width: 640px; }
-    .pv-row { display: grid; grid-template-columns: minmax(160px, 25%) minmax(0, 640px); gap: 0 24px; border-top: 1px solid #000; padding: 14px 0 6px; margin-top: 22px; }
-    .pv-row h2 { font-size: 12px; font-weight: 400; letter-spacing: 0; margin: 2px 0 0; }
-    .pv-body .auth-note { margin: 0 0 12px; }
     .pv-mark { display: block; width: 143px; height: auto; margin: 70px 0 0 auto; }
-    @media (max-width: 760px) { .pv-row { grid-template-columns: 1fr; gap: 6px; } .pv-mark { width: 110px; margin-top: 50px; } }
+    @media (max-width: 760px) { .pv-mark { width: 110px; margin-top: 50px; } }
   </style>
 </head>
 <body>
@@ -43,12 +38,21 @@
     <h1>Privacy</h1>
     <p class="auth-note">Last updated November 2026. The Museum of Mini Skateboards (museumofminiskateboards.org) is a small hobby project run by Ryan Stewart.</p>
 
-    <section class="pv-row"><h2>What we collect</h2><div class="pv-body"><p class="auth-note">If you make an account: your email address, the username you pick, and an optional display name and bio. If you sign in with Google, we receive only your email address and name from Google. We never see your Google password.</p>
-    <p class="auth-note">If you add boards to your collection or submit one to the museum: the details you type and the photos you upload.</p></div></section>
-    <section class="pv-row"><h2>What other people can see</h2><div class="pv-body"><p class="auth-note">Your username, display name, bio, and the boards and photos in your collection are public at museumofminiskateboards.org/u/yourname once approved. You can make your collection private from your page. Your email address is never shown to other people.</p></div></section>
-    <section class="pv-row"><h2>How it is used and stored</h2><div class="pv-body"><p class="auth-note">We use your email only to sign you in and to reply if you write to us. We do not sell your information and we do not run ads or trackers. Account data and photos are stored with Supabase. Sign-in emails are sent through Resend. Collections are reviewed by the site owner before photos appear publicly.</p></div></section>
-    <section class="pv-row"><h2>What you can upload</h2><div class="pv-body"><p class="auth-note">Only upload photos of mini skateboards and related collectibles. No drugs or drug paraphernalia (including cannabis), and nothing illegal, hateful, or explicit. We review everything and may remove any photo or item, or close an account, that breaks these rules.</p></div></section>
-    <section class="pv-row"><h2>Deleting your data</h2><div class="pv-body"><p class="auth-note">Email <a class="auth-link" href="mailto:contact@museumofminiskateboards.org">contact@museumofminiskateboards.org</a> and we will delete your account, collection and photos.</p></div></section>
+    <h2 class="acct-h">What we collect</h2>
+    <p class="auth-note">If you make an account: your email address, the username you pick, and an optional display name and bio. If you sign in with Google, we receive only your email address and name from Google. We never see your Google password.</p>
+    <p class="auth-note">If you add boards to your collection or submit one to the museum: the details you type and the photos you upload.</p>
+
+    <h2 class="acct-h">What other people can see</h2>
+    <p class="auth-note">Your username, display name, bio, and the boards and photos in your collection are public at museumofminiskateboards.org/u/yourname once approved. You can make your collection private from your page. Your email address is never shown to other people.</p>
+
+    <h2 class="acct-h">How it is used and stored</h2>
+    <p class="auth-note">We use your email only to sign you in and to reply if you write to us. We do not sell your information and we do not run ads or trackers. Account data and photos are stored with Supabase. Sign-in emails are sent through Resend. Collections are reviewed by the site owner before photos appear publicly.</p>
+
+    <h2 class="acct-h">What you can upload</h2>
+    <p class="auth-note">Only upload photos of mini skateboards and related collectibles. No drugs or drug paraphernalia (including cannabis), and nothing illegal, hateful, or explicit. We review everything and may remove any photo or item, or close an account, that breaks these rules.</p>
+
+    <h2 class="acct-h">Deleting your data</h2>
+    <p class="auth-note">Email <a class="auth-link" href="mailto:contact@museumofminiskateboards.org">contact@museumofminiskateboards.org</a> and we will delete your account, collection and photos.</p>
     <img class="pv-mark" src="/momsboard.svg" alt="MoMS" width="143" height="64">
   </main>
   <script src="moms-config.js?v=e1dbbd27"></script>
