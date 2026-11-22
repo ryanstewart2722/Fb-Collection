@@ -16,6 +16,7 @@ import hashlib, io, json, os, pathlib, re, sys, urllib.parse, urllib.request
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 OUT = ROOT / "user-cuts"
 INDEX = OUT / "index.json"
+MAX_GONE = 10                                             # most cuts ever removed in one run because their item vanished
 LIMIT = int(os.environ.get("RECUT_LIMIT", "40"))          # photos per run
 VERSION = 2                                               # bump to re-cut everything again (2: boards are straightened)
 SMALL = ("wheels", "trucks", "misc")                              # small parts, often a tiny thing in a big photo
@@ -34,8 +35,13 @@ def http(url, data=None, headers=None):
 
 
 def visible_items():
-    q = "select=id,section,source_path,image_path&image_path=not.is.null&status=eq.approved&limit=5000"
-    rows = json.loads(http(f"{URL}/rest/v1/collection_items?{q}"))
+    rows = []
+    while True:                                                      # the database hands out at most 1000 rows at a time, so read it page by page
+        q = f"select=id,section,source_path,image_path&image_path=not.is.null&status=eq.approved&order=id.asc&limit=1000&offset={len(rows)}"
+        page = json.loads(http(f"{URL}/rest/v1/collection_items?{q}"))
+        rows += page
+        if len(page) < 1000:
+            break
     for r in rows:                                                   # a photo saved without a separate original is cut from the photo itself
         r["source_path"] = r["source_path"] or r["image_path"]
     return rows
@@ -57,7 +63,12 @@ def plan():
     items = {i["id"]: i for i in visible_items()}
     index = load_index()
     todo = [i for i in items.values() if index.get(i["id"], {}).get("src") != i["source_path"] or index[i["id"]].get("v") != ver(i["section"])]
-    stale = [k for k, v in index.items() if k not in items or v.get("src") != items[k]["source_path"]]
+    gone = [k for k in index if k not in items]                      # their item is no longer in the list we read
+    stale = [k for k, v in index.items() if k in items and v.get("src") != items[k]["source_path"]]
+    if len(gone) > MAX_GONE:                                         # SAFETY: a short or failed read of the list must never wipe people's cuts. Real removals are a handful at a time.
+        print(f"::warning::{len(gone)} cuts lost their item - that looks like a bad read, so none were removed")
+    else:
+        stale += gone
     return items, index, todo, stale
 
 
@@ -191,7 +202,10 @@ def load_tight():
 
 def tight_todo(items, t):
     todo = [i for i in items.values() if i.get("image_path") and t["quick"].get(i["id"], {}).get("src") != i["image_path"]]
-    stale = [k for k, v in t["quick"].items() if k not in items or v.get("src") != items[k].get("image_path")]
+    gone = [k for k in t["quick"] if k not in items]
+    stale = [k for k, v in t["quick"].items() if k in items and v.get("src") != items[k].get("image_path")]
+    if len(gone) <= MAX_GONE:                                        # same safety as the re-cuts: never wipe on a bad read
+        stale += gone
     return todo, stale
 
 

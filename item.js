@@ -97,8 +97,8 @@ async function load() {
   const { data: sess } = await sb.auth.getSession();
   const me = sess?.session?.user?.id || null;
   const isOwner = !!me && me === i.user_id;
-  let isStaff = false;
-  if (me) { const { data: prof } = await sb.from("profiles").select("role").eq("id", me).maybeSingle(); isStaff = prof?.role === "admin" || prof?.role === "moderator"; }
+  let isStaff = false, isAdmin = false;
+  if (me) { const { data: prof } = await sb.from("profiles").select("role").eq("id", me).maybeSingle(); isStaff = prof?.role === "admin" || prof?.role === "moderator"; isAdmin = prof?.role === "admin"; }
   const canLink = isOwner || isStaff;
   if (!document.referrer.startsWith(location.origin) || document.referrer.includes("item.html")) backHref = owner ? `/u/${encodeURIComponent(owner.username)}` : "./";
   if (topBack) topBack.href = backHref;
@@ -130,6 +130,7 @@ async function load() {
       <div class="board-dock">
         <div class="board-use" id="im-section"><p class="board-use-head">In Museum</p>
           <div class="board-use-list" id="im-list"></div>
+          ${isAdmin ? `<button type="button" class="im-edit" id="im-edit">edit</button>` : ""}
           ${canLink ? `<form class="im-find" id="im-form" autocomplete="off" hidden><p class="im-title"><span id="im-title"></span> <button type="button" class="im-cancel" id="im-cancel">Cancel</button></p><input type="search" id="im-q" placeholder="Type a name, or just a few words" aria-label="Search the museum"><div class="im-pop" id="im-pop" hidden><div class="im-list" id="im-res"></div><p class="im-foot">Can\u2019t find it? <a id="im-browse" href="./" target="_blank" rel="noopener">Browse the museum</a> or <a id="im-add" href="submit.html" target="_blank" rel="noopener">add it to the museum</a></p></div></form>` : ""}</div>
         <div class="board-brand">
           <span class="board-more-head">More in ${owner ? `<a class="board-brand-link" href="/u/${encodeURIComponent(owner.username)}">${esc(owner.display_name || owner.username)}'s</a> ` : ""}Collection</span>
@@ -158,10 +159,11 @@ async function load() {
   })();
 
   let current = museum;   // what is linked right now
+  let editOn = false;   // admin only: tiny “edit” shows the unlink × on each linked part
   let paintMuseum = () => {
     const box = root.querySelector("#im-list");
     const kinds = canLink ? loggedParts(i, current) : [];
-    const one = (m) => `<a class="ready${TALL.has(m.t) ? "" : " sq"}" href="${esc(museumLink(m.t, m.r))}" title="${esc(m.name)}">${m.r.image_path ? `<img src="${esc(m.r.image_path)}" alt="${esc(m.name)}" loading="lazy">` : `<span class="no-pic">${esc(m.name)}</span>`}</a>`;
+    const one = (m) => `<a class="ready${TALL.has(m.t) ? "" : " sq"}" href="${esc(museumLink(m.t, m.r))}" title="${esc(m.name)}" data-t="${m.t}" data-id="${m.r.id}">${editOn ? `<button type="button" class="im-x" aria-label="Unlink">\u00d7</button>` : ""}${m.r.image_path ? `<img src="${esc(m.r.image_path)}" alt="${esc(m.name)}" loading="lazy">` : `<span class="no-pic">${esc(m.name)}</span>`}</a>`;
     // the owner sees one place for each part, in order: the picture when it is linked, otherwise an empty box to tap
     const html = kinds.length
       ? kinds.map((t) => { const m = current.find((x) => x.t === t); return m ? one(m) : `<button type="button" class="im-slot" data-p="${t}"><span>+</span>${esc(MUSEUM_KIND[t])}</button>`; }).join("") + current.filter((m) => !kinds.includes(m.t)).map(one).join("")
@@ -175,6 +177,19 @@ async function load() {
   const paint0 = paintMuseum;
   paintMuseum = () => { paint0(); fullCheck(); };
   paintMuseum();
+  if (isAdmin) {
+    const eb = root.querySelector("#im-edit");
+    eb.addEventListener("click", () => { editOn = !editOn; eb.textContent = editOn ? "done" : "edit"; paintMuseum(); });
+    root.querySelector("#im-list").addEventListener("click", async (e) => {
+      const x = e.target.closest(".im-x"); if (!x) return;
+      e.preventDefault(); e.stopPropagation();
+      const a = x.closest("a"), name = a.getAttribute("title") || "this";
+      if (!confirm("Unlink \u201c" + name + "\u201d from this item?")) return;
+      const { error } = await sb.from("collection_item_links").delete().eq("item_id", i.id).eq("museum_type", a.dataset.t).eq("museum_id", Number(a.dataset.id));
+      if (error) return alert("Couldn't unlink: " + error.message);
+      current = await loadMuseum(await linksP2(i.id)); paintMuseum();
+    });
+  }
   if (canLink) setupLinking(i, () => current, async () => { current = await loadMuseum(await linksP2(i.id)); paintMuseum(); });
 }
 const linksP2 = (itemId) => sb.from("collection_item_links").select("museum_type,museum_id,link_status").eq("item_id", itemId).then((r) => r.data || []);

@@ -31,31 +31,69 @@ const people = (await res.json()).filter((p) => /^[a-z0-9_]+$/.test(p.username) 
 const browser = await chromium.launch(process.env.OG_CHROME ? { executablePath: process.env.OG_CHROME } : { channel: "chrome" });
 const page = await browser.newPage({ viewport: { width: 1200, height: 630 } });
 
-async function shoot(url, file, waitFor) {
+async function shoot(url, file, waitFor, openMenu) {
   try {
     await page.goto(url, { waitUntil: "networkidle", timeout: 45000 });
     if (waitFor) await page.waitForSelector(waitFor, { timeout: 25000 });
     await page.waitForTimeout(2000);   // let the photos finish loading
+    if (openMenu) { await page.click(".mnav-menu"); await page.waitForTimeout(1800); }   // the home picture is taken with the menu open
     await page.screenshot({ path: path.join(OG, file), type: "jpeg", quality: 82 });
     return true;
   } catch (e) { console.log(`skipped ${file}: ${e.message.split("\n")[0]}`); return false; }
 }
 const stale = (key, sig) => !index[key] || index[key].sig !== sig || Date.now() - index[key].at > WEEK;
 
-// the pages that are the same for everyone
-for (const [key, url, wait] of ONLY_PRODUCTS ? [] : [
-  ["home", `${SITE}/?view=image`, "#app .item img"],
+// the pages that are the same for everyone (the home picture is re-taken whenever a product is added)
+let homeSig = "static3";
+if (!ONLY_PRODUCTS) {
+  try {
+    const newest = [];
+    for (const t of ["decks", "wheels", "trucks", "obstacles", "misc"]) {
+      const r = await fetch(`${URL_}/rest/v1/${t}?select=id&order=id.desc&limit=1`, { headers: { apikey: KEY } });
+      newest.push(r.ok ? ((await r.json())[0]?.id ?? 0) : 0);
+    }
+    homeSig = "home4-" + newest.join("-");
+  } catch (e) { /* keep the plain signature */ }
+}
+for (const [key, url, wait, openMenu] of ONLY_PRODUCTS ? [] : [
+  ["home", `${SITE}/?view=image`, "#app .item img", true],
+  ["home-list", `${SITE}/?view=list`, "#app .row.link", true],
   ["users", `${SITE}/users.html`, "#users .row:not(.head)"],
   ["submit", `${SITE}/submit.html`, null],
 ]) {
-  if (stale(key, "static") && await shoot(url, `${key}.jpg`, wait)) index[key] = { sig: "static", at: Date.now() };
+  const sig = key === "home" || key === "home-list" ? homeSig : "static3";
+  if (stale(key, sig) && await shoot(url, `${key}.jpg`, wait, openMenu)) index[key] = { sig, at: Date.now() };
+}
+
+// the list view of the museum has its own little page (/list/) so a shared link to it shows the list picture
+if (!ONLY_PRODUCTS && index["home-list"] && fs.existsSync(path.join(OG, "home-list.jpg"))) {
+  fs.mkdirSync(path.join(ROOT, "list"), { recursive: true });
+  fs.writeFileSync(path.join(ROOT, "list", "index.html"), `<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>The Museum of Mini Skateboards</title>
+  <meta property="og:site_name" content="The Museum of Mini Skateboards">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="The Museum of Mini Skateboards">
+  <meta property="og:url" content="${SITE}/list/">
+  <meta property="og:image" content="${SITE}/og/home-list.jpg?v=${index["home-list"].at}">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta name="twitter:card" content="summary_large_image">
+  <script>location.replace("/?view=list" + location.hash);</script>
+</head>
+<body></body>
+</html>
+`);
 }
 
 // one per public collection
 const now = new Set();
 for (const p of people) {
   now.add(p.username);
-  const sig = p.items + "-image", key = "u:" + p.username;
+  const sig = p.items + "-image-v3", key = "u:" + p.username;
   if (stale(key, sig) && await shoot(`${SITE}/profile.html?u=${p.username}#image`, `${p.username}.jpg`, "#items .item img")) {
     index[key] = { sig, at: Date.now() };
   }
@@ -103,7 +141,7 @@ for (const t of TYPES) {
     if (rows.length < 1000) break;
   }
 }
-const hash = (x) => [...(`${x.name}|${x.image_path}|${x.image_path_2 || ""}|${x.release_date || ""}|${x.brands?.name || ""}|v2`)].reduce((h, c) => (h * 31 + c.charCodeAt(0)) >>> 0, 7).toString(36);
+const hash = (x) => [...(`${x.name}|${x.image_path}|${x.image_path_2 || ""}|${x.release_date || ""}|${x.brands?.name || ""}|v3`)].reduce((h, c) => (h * 31 + c.charCodeAt(0)) >>> 0, 7).toString(36);
 const pkey = (x) => `p:${x.t}:${x.id}`;
 const todo = products.filter((x) => !index[pkey(x)] || index[pkey(x)].sig !== hash(x)).sort((a, b) => b.id - a.id).slice(0, LIMIT);
 fs.mkdirSync(path.join(OG, "p"), { recursive: true });
@@ -161,6 +199,11 @@ for (const k of Object.keys(index)) {
     fs.rmSync(path.join(OG, "p", `${t}-${id}.jpg`), { force: true });
     delete index[k];   // (the little page is left; it still redirects)
   }
+}
+// sweep: product pictures that nothing points at any more
+for (const f of fs.readdirSync(path.join(OG, "p"))) {
+  const m = f.match(/^(decks|wheels|trucks|obstacles|misc)-(\d+)\.jpg$/);
+  if (!m || !live.has(`p:${m[1]}:${m[2]}`)) fs.rmSync(path.join(OG, "p", f), { force: true });
 }
 await browser.close();
 

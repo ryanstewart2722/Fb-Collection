@@ -389,7 +389,7 @@ body.has-refine.rf-open { --tab-edge: calc(var(--rf-w) + 12px); }
 .fb-boards img { position: absolute; left: calc(var(--x) * var(--u)); top: calc(var(--y) * var(--u)); width: calc(140 * var(--u)); height: auto; transform: translate(-50%, -50%) rotate(var(--r, 0deg)); display: block; }
 .fb-boards img.fb-moms { width: calc(143 * var(--u)); }
 .fb-title { position: absolute; left: 50%; top: calc(87 * var(--u)); transform: translateX(-50%); width: calc(331 * var(--u)); height: auto; margin: 0; display: block; }
-@media (max-width: 760px) {
+@media (max-width: 1100px) {
   .site-footer { --u: 1px; height: auto; padding: 44px var(--gutter) 30px; display: grid; grid-template-columns: minmax(0, 1fr) auto; row-gap: 40px; column-gap: 14px; font-size: 12px; }
     .fb-logo, .fb-credit, .fb-links, .fb-boards, .fb-title { position: static; transform: none; }
   .fb-title { display: none; }
@@ -402,6 +402,7 @@ body.has-refine.rf-open { --tab-edge: calc(var(--rf-w) + 12px); }
   .fb-boards img:nth-child(n+4):not(.fb-moms) { display: none; }
   .fb-credit { grid-column: 1 / -1; grid-row: 4; text-align: left; white-space: normal; }
 }
+@media (min-width: 761px) and (max-width: 1100px) { .site-footer { padding-top: 56px; padding-bottom: 40px; } .fb-logo { width: min(calc(100% + 26px), 440px); } .fb-boards { max-width: 620px; margin: 0 auto; width: 100%; box-sizing: border-box; } }   /* tablets use the phone footer, with the drawing and boards kept to a sensible size */
 
 /* black scrollbar */
 html { scrollbar-color: #000 #fff; scrollbar-width: thin; }
@@ -424,6 +425,11 @@ html { scrollbar-color: #000 #fff; scrollbar-width: thin; }
     max-height: calc((100vh - var(--bar-h)) * 0.88);
     top: calc(var(--bar-h) + (100svh - var(--bar-h)) / 2); max-height: calc((100svh - var(--bar-h)) * 0.88);
   }
+  /* phones: the search row sits under the header too, so the free space starts below BOTH; centred in it (from the small viewport, so it stays put as Safari's toolbar moves), nudged down a little */
+  .preview, .list-view .preview {
+    top: calc(var(--bar-h) + var(--controls-h) + (100svh - var(--bar-h) - var(--controls-h)) / 2 + 10px);
+    max-height: calc((100svh - var(--bar-h) - var(--controls-h)) * 0.88); max-width: 88vw;
+  }   /* same for the image view's hover/tap photo, so it sits in the same spot in both views */
   .museum.list-view main#app { padding-top: 14px; }
 }
 .submit-row { margin-top: 18px; border-top: 1px solid var(--line); }
@@ -657,7 +663,9 @@ body.mnav-open .mnav-title img { visibility: hidden; }   /* the big copy in the 
 body.mnav-push { --push: calc(max(254 * 100vw / 1440, 236px) - var(--bar-h)); }
 body.mnav-peek:not(.mnav-push) { --push: 26px; }
 body > :not(.topbar):not(.mnav-panel):not(script):not(style) { transition: transform 0.5s cubic-bezier(0.45, 0, 0.2, 1); }
-body.mnav-push > :not(.topbar):not(.mnav-panel):not(script):not(style), body.mnav-peek > :not(.topbar):not(.mnav-panel):not(script):not(style) { transform: translateY(var(--push)); }
+body.mnav-push > :not(.topbar):not(.mnav-panel):not(.preview):not(script):not(style), body.mnav-peek > :not(.topbar):not(.mnav-panel):not(.preview):not(script):not(style) { transform: translateY(var(--push)); }
+/* the big hover photo is not pushed (that bumped it off-centre); it centres itself in the part of the page below the menu */
+@media (min-width: 761px) { body.mnav-push .preview, body.mnav-peek .preview { top: calc(50% + var(--push) / 2); } .preview { transition: left 0.42s var(--rf-ease, ease), top 0.5s cubic-bezier(0.45, 0, 0.2, 1); } }
 @media (max-width: 760px) { body.mnav-push { --push: 0px; } }
 
 /* hover peek: the bar gets a little taller and the logo grows, hinting that the menu opens */
@@ -724,3 +732,11 @@ body.museum .grid .item img.in { animation: imgIn 0.6s ease; }
   .controls .m-find input[type="search"] { width: 100%; min-width: 0; }
   .controls { gap: 12px; }
 }
+
+/* pages without the Refine tab (user collections): Image / List lines up with the top bar, no gap kept for the tab */
+body:not(.has-refine) .controls { padding-right: 0; }
+/* admin-only, very quiet: tiny "edit" under In Museum, then a small × on each linked part */
+.im-edit { display: block; margin: 6px 0 0; padding: 0; border: 0; background: none; font: inherit; font-size: 12px; color: #bbb; cursor: pointer; }
+.im-edit:hover { color: #000; }
+.board-use-list a { position: relative; }
+.im-x { position: absolute; top: 0; right: 0; width: 18px; height: 18px; padding: 0; border: 0; background: #000; color: #fff; font: inherit; font-size: 13px; line-height: 18px; cursor: pointer; z-index: 2; }

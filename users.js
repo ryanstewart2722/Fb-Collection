@@ -16,9 +16,10 @@
   const touch = !matchMedia("(hover: hover) and (pointer: fine)").matches;   // phones: tap a person to see their photo, tap it (or the same row) again to open their page
   const H = { apikey: MOMS.key, Authorization: "Bearer " + MOMS.key };
   const get = async (path) => { try { const r = await fetch(`${MOMS.url}/rest/v1/${path}`, { headers: H }); return r.ok ? r.json() : []; } catch { return []; } };
+  const getAll = async (path) => { const all = []; for (;;) { const page = await get(`${path}&limit=1000&offset=${all.length}`); all.push(...page); if (page.length < 1000) return all; } };   // the database gives at most 1000 rows per request, so read page by page
   const [profiles, items, cuts] = await Promise.all([
     get("profiles?select=id,username&limit=2000"),
-    get("collection_items?select=id,user_id,section,image_path,source_path,details,position&status=eq.approved&image_path=not.is.null&order=position&limit=5000"),
+    getAll("collection_items?select=id,user_id,section,image_path,source_path,details,position&status=eq.approved&image_path=not.is.null&order=position.asc,id.asc"),
     fetch("/user-cuts/index.json", { cache: "no-cache" }).then((r) => (r.ok ? r.json() : {})).catch(() => ({})),
   ]);
   const name = new Map(profiles.map((p) => [p.id, p.username]));

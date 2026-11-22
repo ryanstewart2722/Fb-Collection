@@ -139,7 +139,7 @@
 .u-table .row.on { background: #000; color: #fff; position: relative; z-index: 3; }
 .u-table .row.on span:first-child { padding-left: 14px; }
 .u-table .row.on .u-tag { color: #bbb; }
-.preview.u-touch.show { pointer-events: auto; top: calc(var(--bar-h, 44px) + (100vh - var(--bar-h, 44px)) / 2); transform: translate(-50%, -50%); max-height: calc((100vh - var(--bar-h, 44px)) * 0.88); top: calc(var(--bar-h, 44px) + (100svh - var(--bar-h, 44px)) / 2); max-height: calc((100svh - var(--bar-h, 44px)) * 0.88); }   /* same fixed size and centring as the other lists */
+.preview.u-touch.show { pointer-events: auto; }   /* its size and place come from the shared phone rule in style.css, so every list looks the same */
 
 .u-count { font-size: 12px; font-weight: 400; letter-spacing: 0; color: #777; margin-left: 10px; vertical-align: middle; }
 
@@ -168,3 +168,9 @@ body.fav-mode #items [data-id] { cursor: pointer; }
 
 /* collection items open their own page when clicked */
 #items .item[data-id], #items .row[data-id] { cursor: pointer; }
+
+/* Collection pages on phones, image view: wheels, trucks, obstacles and misc. looked small (squares with a lot of empty margin, shrunk further to 78%). Three still fit across, but each fills its full cell and is drawn a little larger. */
+@media (max-width: 760px) {
+  .profile-page .grid.square { --item-h: calc((100vw - 2 * var(--gutter) - 16px) / 3); --cell: var(--item-h); }
+  .profile-page .grid.square .item:not(.wide) img { transform: scale(1.12); }
+}

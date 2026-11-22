@@ -90,7 +90,7 @@ const orderBy = () => {
   return (sort === "brand" ? "brands(name).asc," : "") + `release_date.${dir}.nullslast,id.${dir}`;
 };
 // A line goes between two rows only when the brand changes (in both Newest and Brand order).
-const groupKey = (r) => (F.order === "added" || sort === "shuffle" ? "" : r.brands?.slug);   // no brand dividers when ordered by upload or shuffled   // no brand dividers when ordered by upload
+const groupKey = (r) => r.brands?.slug;   // a line goes between boards of different brands, in every order (Newest, Brand, Shuffle, upload order)   // no brand dividers when ordered by upload or shuffled   // no brand dividers when ordered by upload
 const boardUrl = (s, r) => `board.html?type=${s.type}&slug=${encodeURIComponent(r.slug)}`;
 
 // Refine filters applied to search matches (the same rules filterParams sends to the database)
@@ -117,6 +117,7 @@ function poolFor(s) {
 async function loadSection(s, reset) {
   if (reset) { s.rows = []; if (sort !== "shuffle") s.shuf = null; }
   const take = s.rows.length ? PAGE : FIRST;
+  const my = (s.tok = (s.tok || 0) + 1);   // if another load starts while this one waits on the server, this one drops out (otherwise both add their rows)
   if (searching()) {
     if (reset || !s.pool) s.pool = poolFor(s);
     s.rows.push(...s.pool.slice(s.rows.length, s.rows.length + take));
@@ -134,6 +135,7 @@ async function loadSection(s, reset) {
         if (rows.length < 1000) break;
       }
       for (let i = ids.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [ids[i], ids[j]] = [ids[j], ids[i]]; }
+      if (s.tok !== my) return;
       s.shuf = ids;
     }
     s.total = s.shuf.length;
@@ -141,12 +143,14 @@ async function loadSection(s, reset) {
     if (next.length) {
       const { rows } = await momsFetch(`${s.type}?select=${s.select}&id=in.(${next.join(",")})`);
       const at = new Map(next.map((id, i) => [id, i]));
+      if (s.tok !== my) return;
       s.rows.push(...rows.sort((a, b) => at.get(a.id) - at.get(b.id)));
     }
     return;
   }
   const { rows, total } = await momsFetch(
     `${s.type}?select=${s.select}&order=${orderBy()}&limit=${take}&offset=${s.rows.length}${fp ? "&" + fp : ""}`, { count: true });
+  if (s.tok !== my) return;
   s.rows.push(...rows);
   s.total = total;
 }
@@ -377,7 +381,7 @@ function renderList() {
       <h2>${esc(s.title)}</h2>
       <div class="list-wrap"><div class="list" data-s="${si}">
         <div class="row head">${spans(s.cols.map((c) => c[0]))}</div>
-        ${s.rows.map((r, i) => `<div class="row link${i > 0 && groupKey(r) !== groupKey(s.rows[i - 1]) ? " divide" : ""}" data-i="${i}">${spans(s.cols.map((c) => c[1](r)))}</div>`).join("")}
+        ${s.rows.map((r, i) => `<div class="row link${i > 0 && (sort === "shuffle" || groupKey(r) !== groupKey(s.rows[i - 1])) ? " divide" : ""}" data-i="${i}">${spans(s.cols.map((c) => c[1](r)))}</div>`).join("")}
         <a class="add-new submit-row" href="submit.html?type=${esc(s.type)}">+ Submit</a>
       </div></div>
       ${moreButton(s, si)}

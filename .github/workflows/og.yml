@@ -1,11 +1,11 @@
 # Link-preview pictures (what shows when someone shares a link): a screenshot of each page and of every public
 # collection, plus a small page at u/<username>/ that carries the preview tags. Every museum product gets one too
-# (p/<kind>/<name>/), the rest each morning. See scripts/make_og.mjs.
+# (p/<kind>/<name>/), the rest within about 20 minutes. See scripts/make_og.mjs.
 name: Link preview pictures
 
 on:
   schedule:
-    - cron: "17 6 * * *" # every morning
+    - cron: "*/20 * * * *" # every 20 minutes: new products and collections get their picture soon after they appear
   workflow_dispatch: # run it by hand from the Actions tab
 
 permissions:
@@ -39,7 +39,7 @@ jobs:
         run: |
           git config user.name "moms-og"
           git config user.email "moms-og@users.noreply.github.com"
-          git add og u p
+          git add og u p list
           if git diff --cached --quiet; then echo "nothing changed"; exit 0; fi
           git commit -qm "Link preview pictures"
           for i in 1 2 3; do git pull --rebase -q -X theirs origin main && git push -q origin HEAD:main && break; git rebase --abort 2>/dev/null; sleep 5; done

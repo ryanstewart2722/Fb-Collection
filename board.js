@@ -78,8 +78,12 @@ async function load() {
   // Previous / Next walk through this brand in the museum's order (newest first), wrapping at the ends.
   let prev = null, next = null;
   if (r.brand_id) {
-    const { rows: all } = await momsFetch(
-      `${type}?select=slug&brand_id=eq.${r.brand_id}&order=release_date.desc.nullslast,id.desc&limit=5000`);
+    const all = [];   // the database gives at most 1000 rows per request (one brand has more than that), so read page by page
+    for (;;) {
+      const { rows: page } = await momsFetch(`${type}?select=slug&brand_id=eq.${r.brand_id}&order=release_date.desc.nullslast,id.desc&limit=1000&offset=${all.length}`);
+      all.push(...page);
+      if (page.length < 1000) break;
+    }
     const i = all.findIndex((x) => x.slug === r.slug);
     if (i >= 0 && all.length > 1) {
       prev = all[(i - 1 + all.length) % all.length].slug;
