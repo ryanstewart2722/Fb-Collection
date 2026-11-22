@@ -120,7 +120,7 @@ async function load() {
   const sq = !TALL.has(i.section);
 
   root.innerHTML = `
-    <div class="board-img">${photo ? `<img${/\.gif($|\?)/i.test(photo) ? ' class="gif"' : ""} src="${esc(photo)}" alt="${esc(title)}">` : ""}${photo2 ? `<img class="second${/\.gif($|\?)/i.test(photo2) ? " gif" : ""}" src="${esc(photo2)}" alt="${esc(title)} (2)">` : ""}</div>
+    <div class="board-img">${photo ? `<img${/\.gif($|\?)/i.test(photo) ? ' class="gif"' : ""}${Number(i.details && i.details.photo_scale) > 0 ? ` style="scale:${Math.min(Number(i.details.photo_scale), 2)}"` : ""} src="${esc(photo)}" alt="${esc(title)}">` : ""}${photo2 ? `<img class="second${/\.gif($|\?)/i.test(photo2) ? " gif" : ""}" src="${esc(photo2)}" alt="${esc(title)} (2)">` : ""}</div>
     <a class="board-close" href="${esc(backHref)}">Close</a>
     ${prev ? `<a class="board-nav prev" href="${esc(link(prev))}">Previous</a><a class="board-nav next" href="${esc(link(next))}">Next</a>` : ""}
     <div class="board-info">
