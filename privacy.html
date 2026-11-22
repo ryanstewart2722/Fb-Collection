@@ -58,5 +58,19 @@
   </main>
   <script src="moms-config.js?v=e1dbbd27"></script>
   <script src="site.js?v=e57553b1"></script>
+  <script>
+    /* line the icon up with the footer link block (left edge + width), however the footer is laid out */
+    (function () {
+      function fit() {
+        var m = document.querySelector(".pv-mark"), n = document.querySelector("footer .fb-links");
+        if (!m || !n) return;
+        var r = n.getBoundingClientRect(), a = m.parentNode.getBoundingClientRect();
+        if (!r.width) return;
+        m.style.width = r.width + "px"; m.style.marginLeft = (r.left - a.left - parseFloat(getComputedStyle(m.parentNode).paddingLeft)) + "px";
+      }
+      var t = setInterval(fit, 250); setTimeout(function () { clearInterval(t); }, 4000);
+      window.addEventListener("load", fit); window.addEventListener("resize", fit);
+    })();
+  </script>
 </body>
 </html>
