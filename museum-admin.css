@@ -166,3 +166,4 @@
 .me-feat-pic { width: 56px; height: 56px; background: #f3f3f3; display: flex; align-items: center; justify-content: center; }
 .me-feat-pic img { max-width: 100%; max-height: 100%; object-fit: contain; }
 .me-feat-pic img:not([src]) { visibility: hidden; }
+.me-keep { display: flex; gap: 8px; align-items: center; flex-basis: 100%; font-size: 12px; }

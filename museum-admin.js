@@ -973,7 +973,8 @@ async function openFeatPhoto(row) {
       <p class="me-modal-head"><b>${esc(row.name || "(no name)")}</b> <span class="me-meta">${esc(row.section)} · ${esc(row.profiles?.username || "")}</span> <button class="ad-btn" data-close>Close</button></p>
       <div class="me-cuts">${col("quick", rc ? "Quick cut" : "Photo", quick, rc ? "Made on upload, in the browser" : "The only version saved")}${rc ? col("refined", "Refined cut", "/" + rc.file + "?c=1", rc.bad ? "Failed the quality check, so it isn't shown unless you pick it" : "Stronger model" + (rc.q ? " · shape score " + rc.q : "")) : ""}</div>
       <div class="me-modal-actions"><button class="ad-btn" data-dl>Download original photo</button>
-        <label class="ad-btn ad-btn-dark">Replace photo<input type="file" accept="image/*" hidden data-replace></label></div>
+        <label class="ad-btn ad-btn-dark">Replace photo<input type="file" accept="image/*" hidden data-replace></label>
+        <label class="me-keep"><input type="checkbox" data-keep checked> Keep the image exactly as uploaded (no cut-out, trimming, resizing or filled-in holes)</label></div>
       <p class="me-modal-msg" aria-live="polite">${esc(note || "")}</p></div>`;
   };
   const say = (t) => { const m = box.querySelector(".me-modal-msg"); if (m) m.textContent = t; };
@@ -999,9 +1000,18 @@ async function openFeatPhoto(row) {
   box.addEventListener("change", async (e) => {
     const file = e.target.matches("[data-replace]") && e.target.files[0]; if (!file) return;
     try {
-      say("Uploading… (cutting out the background takes a few seconds)");
-      if (!window.momsPreparePhoto) await new Promise((ok, no) => { const s = document.createElement("script"); s.src = "/photo.js"; s.onload = ok; s.onerror = () => no(new Error("couldn't load the photo tool")); document.head.appendChild(s); });
-      const p = await window.momsPreparePhoto(file, row.section);
+      say("Uploading…");
+      const keep = box.querySelector("[data-keep]")?.checked;
+      let p;
+      if (keep) {   // your file goes in untouched: nothing is cut, trimmed, resized or filled in
+        const ext = { "image/png": "png", "image/webp": "webp", "image/jpeg": "jpg", "image/gif": "gif" }[file.type];
+        if (!ext) throw new Error("Keep-as-uploaded works with PNG, WebP, JPG or GIF files.");
+        if (file.size > 10 * 1024 * 1024) throw new Error("That file is over 10 MB. Make it smaller and try again.");
+        p = { blob: file, ext, type: file.type };
+      } else {
+        if (!window.momsPreparePhoto) await new Promise((ok, no) => { const s = document.createElement("script"); s.src = "/photo.js"; s.onload = ok; s.onerror = () => no(new Error("couldn't load the photo tool")); document.head.appendChild(s); });
+        p = await window.momsPreparePhoto(file, row.section);
+      }
       const { data: { session } } = await sb.auth.getSession();
       const path = `${session.user.id}/${crypto.randomUUID()}.${p.ext}`;   // an admin's uploads go in the admin's own folder
       const up = await sb.storage.from("uploads").upload(path, p.blob, { contentType: p.type, cacheControl: "3600" });
@@ -1010,7 +1020,7 @@ async function openFeatPhoto(row) {
       const { data, error } = await sb.from("collection_items").update({ image_path: path, source_path: null }).eq("id", row.id).select("id");
       if (error || !data?.length) { sb.storage.from("uploads").remove([path]).catch(() => {}); throw error || new Error("not saved"); }
       row.image_path = path; row.source_path = null;
-      await draw("Photo replaced. It's final: no automatic re-cut will change it.");
+      await draw(keep ? "Photo replaced, exactly as you uploaded it. No automatic re-cut will change it." : "Photo replaced. It's final: no automatic re-cut will change it.");
     } catch (err) { say("Couldn't replace the photo: " + (err.message || err)); }
   });
   await draw();
