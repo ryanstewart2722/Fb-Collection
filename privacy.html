@@ -21,9 +21,10 @@
   <link rel="stylesheet" href="profile.css?v=89394ef8">
   <style>
     /* top-left, lined up with "Menu", big title at the same spot as Decks / Setups */
-    .auth.priv { max-width: 640px; margin: 0; padding: 49px var(--gutter) 120px; }
+    .auth.priv { max-width: none; margin: 0; padding: 49px var(--gutter) 120px; }
     .auth.priv h1 { font-size: 34px; margin: 0 0 14px; }
     @media (max-width: 760px) { .auth.priv { padding-top: 62px; } .auth.priv h1 { font-size: 28px; } }
+    .auth.priv > :not(.pv-mark) { max-width: 640px; }
     .pv-mark { display: block; width: 143px; height: auto; margin: 70px 0 0 auto; }
     @media (max-width: 760px) { .pv-mark { width: 110px; margin-top: 50px; } }
   </style>
