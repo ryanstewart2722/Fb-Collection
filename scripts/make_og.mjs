@@ -33,6 +33,7 @@ const page = await browser.newPage({ viewport: { width: 1200, height: 630 } });
 
 async function shoot(url, file, waitFor, openMenu) {
   try {
+    await page.goto("about:blank");   // always a fresh load (two pictures of the same page differ only by #list / #image)
     await page.goto(url, { waitUntil: "networkidle", timeout: 45000 });
     if (waitFor) await page.waitForSelector(waitFor, { timeout: 25000 });
     await page.waitForTimeout(2000);   // let the photos finish loading
