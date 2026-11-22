@@ -26,6 +26,7 @@ const ORDER = ["setups", "decks", "obstacles", "wheels", "trucks", "misc"];
 const FEATURED = document.body.classList.contains("featured-page");
 // Featured shows these categories, in this order. Wheels and trucks are left off for now: add "trucks", "wheels" back here (after "decks") to show them.
 const FEATURED_SECTIONS = ["setups", "decks", "obstacles", "misc"];
+const FEATURED_TITLES = { setups: "Featured Setups", decks: "Featured Decks", obstacles: "Featured Obstacles" };   // misc. keeps its own name
 if (FEATURED) {
   SCHEMA.wheels.fields = SCHEMA.wheels.fields.filter((f) => f[0] !== "duro");
   Object.values(SCHEMA).forEach((sec) => sec.fields.push(["user", "Username", ""]));
@@ -144,7 +145,7 @@ async function photoUrl(item) {
 function sections() {
   const by = {};
   state.items.forEach((i) => { if (i.status !== "removed" || (state.staff && state.edit)) (by[i.section] ||= []).push(i); });   // hidden entries show only while an admin is editing
-  return (FEATURED ? FEATURED_SECTIONS : ORDER).filter((s) => by[s] || state.owner || FEATURED).map((s) => ({ id: s, title: SCHEMA[s].title, items: by[s] || [] }));
+  return (FEATURED ? FEATURED_SECTIONS : ORDER).filter((s) => by[s] || state.owner || FEATURED).map((s) => ({ id: s, title: (FEATURED && FEATURED_TITLES[s]) || SCHEMA[s].title, items: by[s] || [] }));
 }
 
 /* ---------- header block ---------- */
