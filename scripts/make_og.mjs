@@ -58,11 +58,44 @@ if (!ONLY_PRODUCTS) {
 for (const [key, url, wait, openMenu] of ONLY_PRODUCTS ? [] : [
   ["home", `${SITE}/?view=image`, "#app .item img", true],
   ["home-list", `${SITE}/?view=list`, "#app .row.link", true],
+  ["featured", `${SITE}/featured.html#image`, "#app .item img", true],
+  ["featured-list", `${SITE}/featured.html#list`, "#app .row:not(.head)", true],
   ["users", `${SITE}/users.html`, "#users .row:not(.head)"],
   ["submit", `${SITE}/submit.html`, null],
 ]) {
   const sig = key === "home" || key === "home-list" ? homeSig : "static3";
   if (stale(key, sig) && await shoot(url, `${key}.jpg`, wait, openMenu)) index[key] = { sig, at: Date.now() };
+}
+
+// the Featured page: its own page carries the image-view picture, and a little page (/featured-list/) carries the list-view one
+if (!ONLY_PRODUCTS && index["featured"] && fs.existsSync(path.join(OG, "featured.jpg"))) {
+  const f = path.join(ROOT, "featured.html");
+  if (fs.existsSync(f)) {
+    const cur = fs.readFileSync(f, "utf8"), next = cur.replace(/og\/featured\.jpg(\?v=\d+)?/g, `og/featured.jpg?v=${index["featured"].at}`);
+    if (next !== cur) fs.writeFileSync(f, next);
+  }
+}
+if (!ONLY_PRODUCTS && index["featured-list"] && fs.existsSync(path.join(OG, "featured-list.jpg"))) {
+  fs.mkdirSync(path.join(ROOT, "featured-list"), { recursive: true });
+  fs.writeFileSync(path.join(ROOT, "featured-list", "index.html"), `<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Featured · The Museum of Mini Skateboards</title>
+  <meta property="og:site_name" content="The Museum of Mini Skateboards">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Featured · The Museum of Mini Skateboards">
+  <meta property="og:url" content="${SITE}/featured-list/">
+  <meta property="og:image" content="${SITE}/og/featured-list.jpg?v=${index["featured-list"].at}">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta name="twitter:card" content="summary_large_image">
+  <script>location.replace("/featured.html#list");</script>
+</head>
+<body></body>
+</html>
+`);
 }
 
 // the list view of the museum has its own little page (/list/) so a shared link to it shows the list picture
