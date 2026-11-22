@@ -185,7 +185,7 @@ function renderList() {
 }
 // Featured: each section starts with 25; "View more" adds 50 at a time, "Show all" opens the rest.
 const vis = (sec, arr) => (FEATURED ? arr.slice(0, state.shown?.[sec] ?? 25) : arr);
-const moreRow = (sec, total) => { if (!FEATURED) return ""; const n = state.shown?.[sec] ?? 25; if (total <= n) return ""; return `<p class="feat-more"><button type="button" data-more="${sec}">View more (${total - n} left)</button> <button type="button" data-all="${sec}">Show all</button></p>`; };
+const moreRow = (sec, total) => { if (!FEATURED) return ""; const n = state.shown?.[sec] ?? 25; if (total <= n) return ""; return `<button type="button" class="more" data-more="${sec}">Show more ${esc(SCHEMA[sec].title.toLowerCase())} (${total - n})</button><button type="button" class="more all" data-all="${sec}">Show all</button>`; };   // same buttons as the museum page
 document.addEventListener("click", (e) => {
   const b = e.target.closest("[data-more],[data-all]");
   if (!b || !FEATURED || !state) return;
