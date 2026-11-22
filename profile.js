@@ -414,7 +414,7 @@ function paintNow() {
   $("#views").hidden = !state.items.length && !state.owner;
   { const gap = $("#views-gap"); if (gap) gap.hidden = !!state.items.length || state.owner; }   // the new top bar no longer has this spacer
   applyMode();
-  app.innerHTML = (FEATURED ? `<h2 class="fav-title">Featured</h2>` : state.fav ? favTop() : "") + `<div id="items"></div>` + headHtml();   // the link and owner links sit at the bottom of the page
+  app.innerHTML = (FEATURED ? "" : state.fav ? favTop() : "") + `<div id="items"></div>` + headHtml();   // the link and owner links sit at the bottom of the page
   paintItems();
   syncEditHeader();
 }
