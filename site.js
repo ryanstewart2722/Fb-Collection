@@ -175,6 +175,27 @@ window.momsKeepScroll = function (box, fn, anchor) {
   addEventListener("wheel", scrollIntent, { passive: true });
   addEventListener("touchmove", scrollIntent, { passive: true });
   addEventListener("scroll", function () { if (isOpen && Math.abs(pageYOffset - y0) > 6) scrollIntent(); }, { passive: true });
+  // scrolling up hard at the very top of the page (trackpad / wheel flick, or the pull-down bounce on a phone) opens the menu, same animation as clicking Menu
+  var pullAt = Date.now(), pullSum = 0, pullT = 0, lastShut = 0, startY = 0, t0 = Date.now();
+  function pullOpen() {
+    if (isOpen || Date.now() - t0 < 1200 || Date.now() - lastShut < 1500) return;
+    setOpen(true); openedAt = Date.now() + 1100;   // let the bounce / wheel momentum finish before a scroll is allowed to close it again
+  }
+  var _set2 = setOpen; setOpen = function (v) { if (!v && isOpen) lastShut = Date.now(); _set2(v); };
+  addEventListener("wheel", function (e) {
+    if (isOpen) return;
+    if (e.deltaY < 0 && pageYOffset <= 0) {
+      if (Date.now() - pullT > 300) pullSum = 0;
+      pullT = Date.now(); pullSum += -e.deltaY;
+      if (pullSum > 240) { pullSum = 0; pullOpen(); }
+    } else if (e.deltaY >= 0) pullSum = 0;
+  }, { passive: true });
+  addEventListener("touchstart", function (e) { startY = e.touches[0].clientY; }, { passive: true });
+  addEventListener("touchmove", function (e) {
+    if (isOpen || pageYOffset > 0) return;
+    if (e.touches[0].clientY - startY > 110) pullOpen();   // dragged down 110px while already at the top
+  }, { passive: true });
+  addEventListener("scroll", function () { if (!isOpen && pageYOffset < -28) pullOpen(); }, { passive: true });   // Safari's rubber-band past the top after a fast flick
 })();
 
 // Shared bits on every page: the footer, and the sign-in link that says "Sign in" until you are signed in.
