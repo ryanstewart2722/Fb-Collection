@@ -380,7 +380,7 @@ document.addEventListener("click", (e) => {
   const el = e.target.closest("#items .item[data-id], #items .row[data-id]");
   if (!el || el.dataset.id.startsWith("s")) return;   // "s0", "s1"…: the built-in sample items have no page
   if (e.target.closest("a, button, input, label")) return;
-  if (canHover || el.classList.contains("on")) location.href = "/item.html?id=" + encodeURIComponent(el.dataset.id);
+  if (canHover || el.classList.contains("on")) location.href = (FEATURED && window.FEATURED_SOURCE ? window.FEATURED_SOURCE.site : "") + "/item.html?id=" + encodeURIComponent(el.dataset.id);
 }, true);
 
 /* ---------- page ---------- */
@@ -753,34 +753,32 @@ async function rpc(fn, args) {
 // Featured Setups: every approved item from every public collection, read fresh each time the page opens, so new additions and edits appear by themselves.
 // Setups and decks are shuffled on every visit; the other sections show the newest first.
 async function loadFeatured() {
-  const rows = [];
-  for (let from = 0; ; from += 1000) {   // the database hands back at most 1000 rows at a time
-    const { data, error } = await sb.from("collection_items").select("*, profiles!inner(username,display_name)").eq("status", "approved").order("created_at", { ascending: false }).order("id").range(from, from + 999);
-    if (error) throw error;
-    rows.push(...(data || []));
-    if (!data || data.length < 1000) break;
-  }
+  const FS = window.FEATURED_SOURCE || { url: MOMS.url, key: MOMS.key, site: "" };
+  const fsb = FS.url === MOMS.url ? sb : supabase.createClient(FS.url, FS.key, { auth: { persistSession: false, detectSessionInUrl: false } });   // read-only, public data
+  const pages = async (make) => { const out = []; for (let from = 0; ; from += 1000) { const { data, error } = await make().range(from, from + 999); if (error) throw error; out.push(...(data || [])); if (!data || data.length < 1000) break; } return out; };   // the database hands back at most 1000 rows at a time
+  const [rows, likeRows] = await Promise.all([
+    pages(() => fsb.from("collection_items").select("*, profiles!inner(username,display_name)").eq("status", "approved").order("created_at", { ascending: false }).order("id")),
+    pages(() => fsb.from("item_likes").select("item_id").order("item_id")).catch(() => []),
+  ]);
   for (let n = rows.length - 1; n >= 0; n--) if (rows[n].details?.featured_hidden) rows.splice(n, 1);   // hidden from this page by the museum (Featured tab in the admin)
-  await loadRecuts();
-  const pick = (i) => {   // same choice as a collection page (the better re-cut when it passed its check), without testing every photo one by one
-    const rc = RECUTS[i.id], c = i.details?.cut;
-    if (rc && rc.file && i.source_path && rc.src === i.source_path && c !== "quick" && (!rc.bad || c === "refined")) return { url: "/" + rc.file + "?c=1" };
+  const pick = (i) => {   // the photo exactly as the owner saved it: no automatic re-cut swapped in, and an uncut photo stays uncut
     const p = i.image_path;
     return !p ? {} : /^https?:/.test(p) ? { url: p } : { path: p };
   };
   const picks = rows.map(pick), paths = [...new Set(picks.map((p) => p.path).filter(Boolean))], signed = {};
   for (let k = 0; k < paths.length; k += 200) {
-    const { data } = await sb.storage.from("uploads").createSignedUrls(paths.slice(k, k + 200), 3600);
+    const { data } = await fsb.storage.from("uploads").createSignedUrls(paths.slice(k, k + 200), 3600);
     (data || []).forEach((u) => { if (u.signedUrl) signed[u.path] = u.signedUrl; });
   }
-  rows.forEach((i, n) => { i.url = picks[n].url || signed[picks[n].path] || ""; i.url2 = ""; i.user = i.profiles?.username || ""; i.link = "/item.html?id=" + encodeURIComponent(i.id); });
-  for (const sec of ["setups", "decks"]) {   // shuffle (Fisher-Yates)
-    const idx = rows.map((r, n) => (r.section === sec ? n : -1)).filter((n) => n >= 0), pickRows = idx.map((n) => rows[n]);
-    for (let a = pickRows.length - 1; a > 0; a--) { const b = Math.floor(Math.random() * (a + 1)); [pickRows[a], pickRows[b]] = [pickRows[b], pickRows[a]]; }
-    idx.forEach((n, k) => (rows[n] = pickRows[k]));
-  }
-  const { data: { session } } = await sb.auth.getSession();
-  state = { profile: { id: "featured", username: "featured", display_name: "Featured", bio: "", is_private: false }, items: rows, owner: false, staff: false, isAdmin: false, self: false, viewer: session?.user.id };
+  const likes = new Map(); likeRows.forEach((l) => likes.set(l.item_id, (likes.get(l.item_id) || 0) + 1));
+  rows.forEach((i, n) => { i.url = picks[n].url || signed[picks[n].path] || ""; i.url2 = ""; i.user = i.profiles?.username || ""; i.link = FS.site + "/item.html?id=" + encodeURIComponent(i.id); i.likes = likes.get(i.id) || 0; });
+  // Most-liked first. Setups and decks that tie (most do, likes are new) come in a fresh random order every visit; the other sections tie by newest first.
+  for (let a = rows.length - 1; a > 0; a--) { const b = Math.floor(Math.random() * (a + 1)); [rows[a], rows[b]] = [rows[b], rows[a]]; }
+  const newest = new Map(rows.map((r, n) => [r.id, n]));
+  const dated = [...rows].sort((p, q) => String(q.created_at).localeCompare(String(p.created_at)));
+  dated.forEach((r, n) => newest.set(r.id, n));
+  rows.sort((p, q) => q.likes - p.likes || (["setups", "decks"].includes(p.section) && ["setups", "decks"].includes(q.section) ? 0 : newest.get(p.id) - newest.get(q.id)));
+  state = { profile: { id: "featured", username: "featured", display_name: "Featured", bio: "", is_private: false }, items: rows, owner: false, staff: false, isAdmin: false, self: false, viewer: null };
   paint();
 }
 

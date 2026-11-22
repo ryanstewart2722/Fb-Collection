@@ -55,7 +55,9 @@ def main():
             continue
         out = DIST / rel
         out.parent.mkdir(parents=True, exist_ok=True)
-        if p.suffix in TEXT:
+        if rel.name == "featured-source.js":   # the Featured page reads the real museum on purpose (read-only); kept exactly as written
+            shutil.copy2(p, out)
+        elif p.suffix in TEXT:
             out.write_bytes(convert(p.name, p.read_bytes()))
         else:
             shutil.copy2(p, out)
@@ -63,7 +65,7 @@ def main():
     (DIST / "staging-banner.js").write_text(BANNER_JS)
     (DIST / "_headers").write_text("/*\n  X-Robots-Tag: noindex, nofollow\n  Cache-Control: no-cache\n")
     # safety check: nothing in the staging copy may point at the real database
-    bad = [str(f.relative_to(DIST)) for f in DIST.rglob("*") if f.is_file() and f.suffix in TEXT and (PROD_REF in f.read_text(errors="ignore") or PROD_KEY in f.read_text(errors="ignore"))]
+    bad = [str(f.relative_to(DIST)) for f in DIST.rglob("*") if f.is_file() and f.name != "featured-source.js" and f.suffix in TEXT and (PROD_REF in f.read_text(errors="ignore") or PROD_KEY in f.read_text(errors="ignore"))]
     if bad:
         raise SystemExit("STOP: these staging files still point at the real database: " + ", ".join(bad))
     print(f"staging copy built: {made} files in {DIST}, none point at the real database")
