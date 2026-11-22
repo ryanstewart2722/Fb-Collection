@@ -142,7 +142,7 @@ async function photoUrl(item) {
 function sections() {
   const by = {};
   state.items.forEach((i) => { if (i.status !== "removed" || (state.staff && state.edit)) (by[i.section] ||= []).push(i); });   // hidden entries show only while an admin is editing
-  return ORDER.filter((s) => by[s] || state.owner || FEATURED).map((s) => ({ id: s, title: SCHEMA[s].title, items: by[s] || [] }));
+  return (FEATURED ? ["setups", "decks", "trucks", "wheels", "obstacles", "misc"] : ORDER).filter((s) => by[s] || state.owner || FEATURED).map((s) => ({ id: s, title: SCHEMA[s].title, items: by[s] || [] }));
 }
 
 /* ---------- header block ---------- */
