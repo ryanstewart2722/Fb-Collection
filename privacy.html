@@ -26,7 +26,7 @@
     @media (max-width: 760px) { .auth.priv { padding-top: 62px; } .auth.priv h1 { font-size: 28px; } }
     .auth.priv > :not(.pv-mark) { max-width: 640px; }
     .pv-mark { display: block; width: 143px; height: auto; margin: 70px 0 0 auto; }
-    @media (max-width: 760px) { .pv-mark { width: 110px; margin-top: 50px; } }
+    @media (max-width: 760px) { .pv-mark { width: 50% !important; margin: 50px auto 0 !important; } }
   </style>
 </head>
 <body>
@@ -63,7 +63,7 @@
     (function () {
       function fit() {
         var m = document.querySelector(".pv-mark"), n = document.querySelector("footer .fb-links");
-        if (!m || !n) return;
+        if (!m || !n || window.innerWidth <= 760) return;
         var r = n.getBoundingClientRect(), a = m.parentNode.getBoundingClientRect();
         if (!r.width) return;
         m.style.width = r.width + "px"; m.style.marginLeft = (r.left - a.left - parseFloat(getComputedStyle(m.parentNode).paddingLeft)) + "px";
