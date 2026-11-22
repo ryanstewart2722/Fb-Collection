@@ -395,12 +395,12 @@ function syncEditHeader() {
 function keep(box, fn, anchor) { return window.momsKeepScroll ? window.momsKeepScroll(box, fn, anchor) : fn(); }
 function paint(anchor) { keep(app, () => paintNow(), anchor); }   // redraw without the page jumping
 function paintNow() {
-  document.title = FEATURED ? "Featured Setups · MoMS" : `${state.profile.display_name || state.profile.username} · MoMS`;
+  document.title = FEATURED ? "Featured · MoMS" : `${state.profile.display_name || state.profile.username} · MoMS`;
   applyMode();
   $("#views").hidden = !state.items.length && !state.owner;
   { const gap = $("#views-gap"); if (gap) gap.hidden = !!state.items.length || state.owner; }   // the new top bar no longer has this spacer
   applyMode();
-  app.innerHTML = (FEATURED ? `<h2 class="fav-title">Featured Setups</h2>` : state.fav ? favTop() : "") + `<div id="items"></div>` + headHtml();   // the link and owner links sit at the bottom of the page
+  app.innerHTML = (FEATURED ? `<h2 class="fav-title">Featured</h2>` : state.fav ? favTop() : "") + `<div id="items"></div>` + headHtml();   // the link and owner links sit at the bottom of the page
   paintItems();
   syncEditHeader();
 }
@@ -779,7 +779,7 @@ async function loadFeatured() {
     idx.forEach((n, k) => (rows[n] = pickRows[k]));
   }
   const { data: { session } } = await sb.auth.getSession();
-  state = { profile: { id: "featured", username: "featured", display_name: "Featured Setups", bio: "", is_private: false }, items: rows, owner: false, staff: false, isAdmin: false, self: false, viewer: session?.user.id };
+  state = { profile: { id: "featured", username: "featured", display_name: "Featured", bio: "", is_private: false }, items: rows, owner: false, staff: false, isAdmin: false, self: false, viewer: session?.user.id };
   paint();
 }
 
