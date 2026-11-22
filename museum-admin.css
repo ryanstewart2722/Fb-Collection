@@ -142,3 +142,11 @@
 .me-card.picked .me-card-img { background: #e6e6e6; }
 .me-selbar { position: sticky; bottom: 0; z-index: 30; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding: 10px 0; background: #fff; border-top: 1px solid var(--line); font-size: 13px; }
 .me-selbar select { border: 1px solid var(--line); padding: 8px 10px; font-size: 16px; background: #fff; }
+
+.me-feat-bar { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin: 12px 0; }
+.me-feat-bar input[type=search] { flex: 1 1 220px; }
+.me-feat-row { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 10px 0; border-top: 1px solid #ddd; }
+.me-feat-row.is-hidden { opacity: .5; }
+.me-feat-row .me-meta { color: #777; }
+.me-feat-act { display: flex; gap: 8px; justify-content: flex-end; }
+@media (max-width: 760px) { .me-feat-row { grid-template-columns: 1fr; } .me-feat-act { justify-content: flex-start; } }

@@ -815,6 +815,7 @@ document.querySelectorAll(".ad-tabs button").forEach((b) => b.addEventListener("
   if (tab === "review") return renderReview().catch(fail("Couldn't load the review list"));
   if (tab === "links") return renderLinks().catch(fail("Couldn't load the product links"));
   if (tab === "molds") return renderMolds().catch(fail("Couldn't load the molds"));
+  if (tab === "featured") return renderFeatured().catch(fail("Couldn't load the featured items"));
   await loadList().catch(fail("Couldn't load"));
   renderListNow(); listY = 0; window.scrollTo({ top: 0, behavior: "instant" });   // a different tab starts at the top
 }));
@@ -887,6 +888,49 @@ document.addEventListener("click", async (e) => {
   linkItems[card.dataset.i] = null; card.remove();
   setLinksBadge(linkItems.filter(Boolean).length);
   setStatus(ok ? "Link approved. It now shows under the product." : "Link rejected.");
+});
+
+
+/* ---------- Featured: hide items from the Featured Setups page ---------- */
+// The Featured Setups page shows every approved item from every public collection. Hiding an item here only takes it off that page
+// (a flag on the item); it stays in its owner's collection and on its own page. The usual edit tools stay where they were: "Edit" opens the owner's
+// collection page, where you can change or hide their entries and photos.
+let featRows = [];
+async function renderFeatured() {
+  app.innerHTML = `<p class="me-count">Loading…</p>`;
+  featRows = await allRows(() => sb.from("collection_items").select("id,section,name,details,profiles(username)").eq("status", "approved").order("id"));
+  app.innerHTML = `<p class="me-count" id="feat-count"></p>
+    <div class="me-feat-bar"><input id="feat-q" type="search" placeholder="Search name or username" autocomplete="off">
+      <select id="feat-sec"><option value="">All sections</option><option value="setups">Setups</option><option value="decks">Decks</option><option value="obstacles">Obstacles</option><option value="wheels">Wheels</option><option value="trucks">Trucks</option><option value="misc">Misc.</option></select>
+      <label><input id="feat-hid" type="checkbox"> Hidden only</label></div>
+    <div id="feat-list" class="me-feat"></div>`;
+  drawFeatured();
+}
+function drawFeatured() {
+  const q = ($("#feat-q")?.value || "").trim().toLowerCase(), sec = $("#feat-sec")?.value || "", only = $("#feat-hid")?.checked;
+  const list = $("#feat-list"); if (!list) return;
+  const hid = featRows.filter((r) => r.details?.featured_hidden).length;
+  $("#feat-count").textContent = `${featRows.length} items on the Featured Setups page, ${hid} hidden.`;
+  const rows = featRows.filter((r) => (!sec || r.section === sec) && (!only || r.details?.featured_hidden) && (!q || (r.name || "").toLowerCase().includes(q) || (r.profiles?.username || "").toLowerCase().includes(q))).slice(0, 300);
+  list.innerHTML = rows.map((r) => { const h = !!r.details?.featured_hidden, u = r.profiles?.username || "";
+    return `<div class="me-feat-row${h ? " is-hidden" : ""}" data-id="${esc(r.id)}"><span><b>${esc(r.name || "(no name)")}</b></span><span class="me-meta">${esc(r.section)} · ${esc(u)}</span>
+      <span class="me-feat-act"><a class="ad-btn" href="/u/${esc(u)}" target="_blank" rel="noopener">Edit ↗</a> <button class="ad-btn${h ? "" : " me-danger"}" data-act="feat-toggle">${h ? "Show" : "Hide"}</button></span></div>`; }).join("") || `<p class="me-empty">Nothing matches.</p>`;
+}
+document.addEventListener("input", (e) => { if (tab === "featured" && ["feat-q"].includes(e.target.id)) drawFeatured(); });
+document.addEventListener("change", (e) => { if (tab === "featured" && ["feat-sec", "feat-hid"].includes(e.target.id)) drawFeatured(); });
+document.addEventListener("click", async (e) => {
+  const b = e.target.closest("[data-act='feat-toggle']");
+  if (!b || tab !== "featured") return;
+  const row = featRows.find((r) => r.id === b.closest(".me-feat-row").dataset.id); if (!row) return;
+  b.disabled = true;
+  const details = { ...(row.details || {}) };
+  if (details.featured_hidden) delete details.featured_hidden; else details.featured_hidden = true;
+  const { error } = await sb.from("collection_items").update({ details }).eq("id", row.id);
+  b.disabled = false;
+  if (error) return setStatus("Couldn't save that: " + error.message, true);
+  row.details = details;
+  setStatus(details.featured_hidden ? "Hidden from Featured Setups." : "Showing on Featured Setups again.");
+  drawFeatured();
 });
 
 /* ---------- Molds: every mold name in use, to rename or merge ---------- */
@@ -1244,6 +1288,7 @@ async function enter(session) {
   if (tab === "review") return renderReview().catch(fail("Couldn't load the review list"));
   if (tab === "links") return renderLinks().catch(fail("Couldn't load the product links"));
   if (tab === "molds") return renderMolds().catch(fail("Couldn't load the molds"));
+  if (tab === "featured") return renderFeatured().catch(fail("Couldn't load the featured items"));
   await loadList();
   renderList();
 }
