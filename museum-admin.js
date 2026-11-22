@@ -910,11 +910,31 @@ function drawFeatured() {
   const q = ($("#feat-q")?.value || "").trim().toLowerCase(), sec = $("#feat-sec")?.value || "", only = $("#feat-hid")?.checked;
   const list = $("#feat-list"); if (!list) return;
   const hid = featRows.filter((r) => r.details?.featured_hidden).length;
-  $("#feat-count").textContent = `${featRows.length} items on the Featured Setups page, ${hid} hidden.`;
+  $("#feat-count").textContent = `${featRows.length} items in collections, ${hid} hidden from the Featured page. (The Featured page shows setups, decks, obstacles and misc.; wheels and trucks are off for now.)`;
   const rows = featRows.filter((r) => (!sec || r.section === sec) && (!only || r.details?.featured_hidden) && (!q || (r.name || "").toLowerCase().includes(q) || (r.profiles?.username || "").toLowerCase().includes(q))).slice(0, 300);
   list.innerHTML = rows.map((r) => { const h = !!r.details?.featured_hidden, u = r.profiles?.username || "";
-    return `<div class="me-feat-row${h ? " is-hidden" : ""}" data-id="${esc(r.id)}"><span><b>${esc(r.name || "(no name)")}</b></span><span class="me-meta">${esc(r.section)} · ${esc(u)}</span>
+    return `<div class="me-feat-row${h ? " is-hidden" : ""}" data-id="${esc(r.id)}"><span class="me-feat-pic"><img alt="" data-pic="${esc(r.id)}"></span><span><b>${esc(r.name || "(no name)")}</b></span><span class="me-meta">${esc(r.section)} · ${esc(u)}</span>
       <span class="me-feat-act"><button class="ad-btn" data-act="feat-photo">Photo</button> <a class="ad-btn" href="/u/${esc(u)}" target="_blank" rel="noopener">Edit ↗</a> <button class="ad-btn${h ? "" : " me-danger"}" data-act="feat-toggle">${h ? "Show" : "Hide"}</button></span></div>`; }).join("") || `<p class="me-empty">Nothing matches.</p>`;
+  fillFeatPics(rows);
+}
+// a small picture on each row: the one the pages show right now (the re-cut when it is the active one, otherwise the photo as saved)
+const featPic = {};
+async function fillFeatPics(rows) {
+  const cuts = await loadFeatCuts();
+  const need = [];
+  rows.forEach((r) => {
+    if (featPic[r.id]) return;
+    const rc = featRefined(r, cuts);
+    if (rc && featNow(r, rc) === "refined") featPic[r.id] = "/" + rc.file + "?c=1";
+    else if (/^https?:/.test(r.image_path || "")) featPic[r.id] = r.image_path;
+    else if (r.image_path) need.push(r);
+  });
+  for (let k = 0; k < need.length; k += 200) {
+    const part = need.slice(k, k + 200);
+    const { data } = await sb.storage.from("uploads").createSignedUrls(part.map((r) => r.image_path), 3600);
+    (data || []).forEach((u) => { const r = part.find((x) => x.image_path === u.path); if (r && u.signedUrl) featPic[r.id] = u.signedUrl; });
+  }
+  document.querySelectorAll("#feat-list img[data-pic]").forEach((im) => { const u = featPic[im.dataset.pic]; if (u && im.getAttribute("src") !== u) im.src = u; });
 }
 document.addEventListener("input", (e) => { if (tab === "featured" && ["feat-q"].includes(e.target.id)) drawFeatured(); });
 document.addEventListener("change", (e) => { if (tab === "featured" && ["feat-sec", "feat-hid"].includes(e.target.id)) drawFeatured(); });
