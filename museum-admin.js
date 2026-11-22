@@ -898,7 +898,7 @@ document.addEventListener("click", async (e) => {
 let featRows = [];
 async function renderFeatured() {
   app.innerHTML = `<p class="me-count">Loading…</p>`;
-  featRows = await allRows(() => sb.from("collection_items").select("id,section,name,details,profiles(username)").eq("status", "approved").order("id"));
+  featRows = await allRows(() => sb.from("collection_items").select("id,section,name,details,image_path,source_path,profiles(username)").eq("status", "approved").order("id"));
   app.innerHTML = `<p class="me-count" id="feat-count"></p>
     <div class="me-feat-bar"><input id="feat-q" type="search" placeholder="Search name or username" autocomplete="off">
       <select id="feat-sec"><option value="">All sections</option><option value="setups">Setups</option><option value="decks">Decks</option><option value="obstacles">Obstacles</option><option value="wheels">Wheels</option><option value="trucks">Trucks</option><option value="misc">Misc.</option></select>
@@ -914,7 +914,7 @@ function drawFeatured() {
   const rows = featRows.filter((r) => (!sec || r.section === sec) && (!only || r.details?.featured_hidden) && (!q || (r.name || "").toLowerCase().includes(q) || (r.profiles?.username || "").toLowerCase().includes(q))).slice(0, 300);
   list.innerHTML = rows.map((r) => { const h = !!r.details?.featured_hidden, u = r.profiles?.username || "";
     return `<div class="me-feat-row${h ? " is-hidden" : ""}" data-id="${esc(r.id)}"><span><b>${esc(r.name || "(no name)")}</b></span><span class="me-meta">${esc(r.section)} · ${esc(u)}</span>
-      <span class="me-feat-act"><a class="ad-btn" href="/u/${esc(u)}" target="_blank" rel="noopener">Edit ↗</a> <button class="ad-btn${h ? "" : " me-danger"}" data-act="feat-toggle">${h ? "Show" : "Hide"}</button></span></div>`; }).join("") || `<p class="me-empty">Nothing matches.</p>`;
+      <span class="me-feat-act"><button class="ad-btn" data-act="feat-photo">Photo</button> <a class="ad-btn" href="/u/${esc(u)}" target="_blank" rel="noopener">Edit ↗</a> <button class="ad-btn${h ? "" : " me-danger"}" data-act="feat-toggle">${h ? "Show" : "Hide"}</button></span></div>`; }).join("") || `<p class="me-empty">Nothing matches.</p>`;
 }
 document.addEventListener("input", (e) => { if (tab === "featured" && ["feat-q"].includes(e.target.id)) drawFeatured(); });
 document.addEventListener("change", (e) => { if (tab === "featured" && ["feat-sec", "feat-hid"].includes(e.target.id)) drawFeatured(); });
@@ -931,6 +931,75 @@ document.addEventListener("click", async (e) => {
   row.details = details;
   setStatus(details.featured_hidden ? "Hidden from Featured Setups." : "Showing on Featured Setups again.");
   drawFeatured();
+});
+
+
+/* ---- Photo tools for one item: see both cuts and pick one, download the original, replace the photo ---- */
+let featCuts = null;
+async function loadFeatCuts() { if (featCuts) return featCuts; try { const r = await fetch("/user-cuts/index.json", { cache: "no-cache" }); featCuts = r.ok ? await r.json() : {}; } catch { featCuts = {}; } return featCuts; }
+const signedUpload = async (p, opts) => (!p ? "" : /^https?:/.test(p) ? p : (await sb.storage.from("uploads").createSignedUrl(p, 3600, opts)).data?.signedUrl || "");
+const featRefined = (row, cuts) => { const rc = cuts[row.id]; return rc && rc.file && row.source_path && rc.src === row.source_path ? rc : null; };
+// which one the pages show: the stronger re-cut unless it failed its check or the first cut was chosen
+const featNow = (row, rc) => rc && row.details?.cut !== "quick" && (!rc.bad || row.details?.cut === "refined") ? "refined" : "quick";
+async function openFeatPhoto(row) {
+  const cuts = await loadFeatCuts();
+  document.getElementById("me-photo-modal")?.remove();
+  const box = document.createElement("div"); box.id = "me-photo-modal"; box.className = "me-modal";
+  const draw = async (note) => {
+    const rc = featRefined(row, cuts), now = featNow(row, rc), quick = await signedUpload(row.image_path);
+    const col = (key, title, url, sub) => `<div class="me-cut"><div class="me-cut-img">${url ? `<img src="${esc(url)}" alt="${esc(title)}">` : "<span>No image</span>"}</div><b>${title}</b><span class="me-meta">${esc(sub)}</span>
+      ${rc ? `<button class="ad-btn${now === key ? "" : " ad-btn-dark"}" data-cut="${key}"${now === key ? " disabled" : ""}>${now === key ? "Showing" : "Use this one"}</button>` : ""}</div>`;
+    box.innerHTML = `<div class="me-modal-panel" role="dialog" aria-label="Photo tools">
+      <p class="me-modal-head"><b>${esc(row.name || "(no name)")}</b> <span class="me-meta">${esc(row.section)} · ${esc(row.profiles?.username || "")}</span> <button class="ad-btn" data-close>Close</button></p>
+      <div class="me-cuts">${col("quick", rc ? "Quick cut" : "Photo", quick, rc ? "Made on upload, in the browser" : "The only version saved")}${rc ? col("refined", "Refined cut", "/" + rc.file + "?c=1", rc.bad ? "Failed the quality check, so it isn't shown unless you pick it" : "Stronger model" + (rc.q ? " · shape score " + rc.q : "")) : ""}</div>
+      <div class="me-modal-actions"><button class="ad-btn" data-dl>Download original photo</button>
+        <label class="ad-btn ad-btn-dark">Replace photo<input type="file" accept="image/*" hidden data-replace></label></div>
+      <p class="me-modal-msg" aria-live="polite">${esc(note || "")}</p></div>`;
+  };
+  const say = (t) => { const m = box.querySelector(".me-modal-msg"); if (m) m.textContent = t; };
+  const close = () => { box.remove(); document.removeEventListener("keydown", onKey); drawFeatured(); };
+  const onKey = (e) => { if (e.key === "Escape") close(); };
+  document.addEventListener("keydown", onKey);
+  box.addEventListener("click", async (e) => {
+    if (e.target === box || e.target.closest("[data-close]")) return close();
+    const pick = e.target.closest("[data-cut]")?.dataset.cut;
+    if (pick) {
+      const details = { ...(row.details || {}), cut: pick };
+      const { error } = await sb.from("collection_items").update({ details }).eq("id", row.id);
+      if (error) return say("Couldn't save that: " + error.message);
+      row.details = details; await draw((pick === "quick" ? "Quick" : "Refined") + " cut is showing now."); return;
+    }
+    if (e.target.closest("[data-dl]")) {
+      const p = row.source_path || row.image_path; if (!p) return say("There's no photo saved for this item.");
+      const ext = (p.split(".").pop() || "jpg").toLowerCase(), nm = ((row.profiles?.username || "") + "-" + (row.name || "photo")).replace(/[^A-Za-z0-9._-]+/g, "-").slice(0, 80) + "." + ext;
+      const url = await signedUpload(p, { download: nm }); if (!url) return say("Couldn't get the original.");
+      const a = document.createElement("a"); a.href = url; a.target = "_blank"; a.rel = "noopener"; a.download = ""; document.body.appendChild(a); a.click(); a.remove();
+    }
+  });
+  box.addEventListener("change", async (e) => {
+    const file = e.target.matches("[data-replace]") && e.target.files[0]; if (!file) return;
+    try {
+      say("Uploading… (cutting out the background takes a few seconds)");
+      if (!window.momsPreparePhoto) await new Promise((ok, no) => { const s = document.createElement("script"); s.src = "/photo.js"; s.onload = ok; s.onerror = () => no(new Error("couldn't load the photo tool")); document.head.appendChild(s); });
+      const p = await window.momsPreparePhoto(file, row.section);
+      const { data: { session } } = await sb.auth.getSession();
+      const path = `${session.user.id}/${crypto.randomUUID()}.${p.ext}`;   // an admin's uploads go in the admin's own folder
+      const up = await sb.storage.from("uploads").upload(path, p.blob, { contentType: p.type, cacheControl: "3600" });
+      if (up.error) throw up.error;
+      // source_path is cleared on purpose: a photo you replace is final, so no automatic re-cut can replace it later. The old files are kept.
+      const { data, error } = await sb.from("collection_items").update({ image_path: path, source_path: null }).eq("id", row.id).select("id");
+      if (error || !data?.length) { sb.storage.from("uploads").remove([path]).catch(() => {}); throw error || new Error("not saved"); }
+      row.image_path = path; row.source_path = null;
+      await draw("Photo replaced. It's final: no automatic re-cut will change it.");
+    } catch (err) { say("Couldn't replace the photo: " + (err.message || err)); }
+  });
+  await draw();
+  document.body.appendChild(box);
+}
+document.addEventListener("click", (e) => {
+  const b = e.target.closest("[data-act='feat-photo']");
+  if (!b || tab !== "featured") return;
+  const row = featRows.find((r) => r.id === b.closest(".me-feat-row").dataset.id); if (row) openFeatPhoto(row).catch(fail("Couldn't open the photo tools"));
 });
 
 /* ---------- Molds: every mold name in use, to rename or merge ---------- */
