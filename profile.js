@@ -177,10 +177,21 @@ function renderList() {
     <h2>${esc(s.title)}</h2>
     <div class="list-wrap"><div class="list${s.items.length ? "" : " is-empty"}" data-s="${s.id}" style="--cols:${colsFor(SCHEMA[s.id].fields.length)}">
       <div class="row head">${spans(SCHEMA[s.id].fields.map((f) => f[1]))}</div>
-      ${s.items.map((i, n) => `<div class="row${!FEATURED && n > 0 && brandOf(s.id, i) !== brandOf(s.id, s.items[n - 1]) ? " divide" : ""}" data-id="${esc(i.id)}">${spans(rowCells(s.id, i))}</div>`).join("")}
+      ${vis(s.id, s.items).map((i, n) => `<div class="row${!FEATURED && n > 0 && brandOf(s.id, i) !== brandOf(s.id, s.items[n - 1]) ? " divide" : ""}" data-id="${esc(i.id)}">${spans(rowCells(s.id, i))}</div>`).join("")}
       ${state.owner ? `<a class="add-new" href="#" data-act="add" data-section="${s.id}">+ Add new</a>` : ""}
-    </div></div></section>`).join("");
+    </div>${moreRow(s.id, s.items.length)}</div></section>`).join("");
 }
+// Featured: each section starts with 25; "View more" adds 50 at a time, "Show all" opens the rest.
+const vis = (sec, arr) => (FEATURED ? arr.slice(0, state.shown?.[sec] ?? 25) : arr);
+const moreRow = (sec, total) => { if (!FEATURED) return ""; const n = state.shown?.[sec] ?? 25; if (total <= n) return ""; return `<p class="feat-more"><button type="button" data-more="${sec}">View more (${total - n} left)</button> <button type="button" data-all="${sec}">Show all</button></p>`; };
+document.addEventListener("click", (e) => {
+  const b = e.target.closest("[data-more],[data-all]");
+  if (!b || !FEATURED || !state) return;
+  const sec = b.dataset.more || b.dataset.all;
+  state.shown = state.shown || {};
+  state.shown[sec] = b.dataset.all ? Infinity : (state.shown[sec] ?? 25) + 50;
+  paint(b.dataset.more && state.shown[sec] < state.items.length ? `[data-more="${sec}"]` : undefined);   // keeps the page where it was
+});
 const cutNow = (i) => i.cutInfo && (i.cutInfo.pick === "quick" || (i.cutInfo.bad && i.cutInfo.pick !== "refined")) ? "quick" : "refined";
 const cutSwitch = (i) => state.staff && i && i.cutInfo ? `<a href="#" class="orig-dl" data-act="cutview" data-id="${esc(i.id)}" title="${i.cutInfo.bad ? "The refined cut failed the quality check" : "Both cuts are kept"}${i.cutInfo.q ? " (shape score " + i.cutInfo.q + ")" : ""}">${cutNow(i) === "quick" ? "Quick cut" : "Refined cut"} · compare</a>` : "";
 const mainLink = (i) => state.owner && i && i.id && !String(i.id).startsWith("s") && i.image_path ? `<a href="#" class="orig-dl" data-act="main" data-id="${esc(i.id)}" title="${i.details?.main ? "This is the photo shown when someone hovers your name on the Users page. Click to go back to your first setup." : "Show this when someone hovers your name on the Users page"}">${i.details?.main ? "Main ✓" : "Make main"}</a>` : "";
@@ -241,10 +252,10 @@ function renderGrid() {
   return sections().filter((s) => FEATURED || s.items.some((i) => i.url)).map((s) => `<section class="grid-section">
     <h2>${esc(s.title)}</h2>
     <div class="grid${TALL.has(s.id) ? "" : " square"}" data-s="${s.id}">
-      ${s.items.filter((i) => i.url).map((i) => `<div class="item" data-id="${esc(i.id)}"><img src="${esc(i.url)}" alt="${esc(i.name)}" loading="lazy"></div>`).join("")}
+      ${vis(s.id, s.items.filter((i) => i.url)).map((i) => `<div class="item" data-id="${esc(i.id)}"><img src="${esc(i.url)}" alt="${esc(i.name)}" loading="lazy"></div>`).join("")}
       ${FEATURED && !s.items.some((i) => i.url) ? `<p class="p-empty">Nothing here yet.</p>` : ""}
       <div class="bar" style="--cols:${colsFor(SCHEMA[s.id].fields.length)}"></div>
-    </div></section>`).join("");
+    </div>${moreRow(s.id, s.items.filter((i) => i.url).length)}</section>`).join("");
 }
 function paintItems() {
   const box = $("#items");
@@ -761,17 +772,19 @@ async function loadFeatured() {
     pages(() => fsb.from("item_likes").select("item_id").order("item_id")).catch(() => []),
   ]);
   for (let n = rows.length - 1; n >= 0; n--) if (rows[n].details?.featured_hidden) rows.splice(n, 1);   // hidden from this page by the museum (Featured tab in the admin)
-  const pick = (i) => {   // the photo exactly as the owner saved it: no automatic re-cut swapped in, and an uncut photo stays uncut
-    const p = i.image_path;
-    return !p ? {} : /^https?:/.test(p) ? { url: p } : { path: p };
-  };
-  const picks = rows.map(pick), paths = [...new Set(picks.map((p) => p.path).filter(Boolean))], signed = {};
+  try { const r = await fetch(FS.site + "/user-cuts/index.json", { cache: "no-cache" }); if (r.ok) RECUTS = await r.json(); } catch { /* none */ }
+  const FB = new Map();   // if a re-cut file is not published yet, the photo as saved is shown instead
+  // Whatever is active on the owner's own page: the same choice a collection page makes (the better re-cut when it passed its check, unless the owner or an admin chose the first cut)
+  const refined = (i) => { const rc = RECUTS[i.id], c = i.details?.cut; return rc && rc.file && i.source_path && rc.src === i.source_path && c !== "quick" && (!rc.bad || c === "refined") ? rc : null; };
+  const stored = rows.map((i) => i.image_path && !/^https?:/.test(i.image_path) ? i.image_path : null), paths = [...new Set(stored.filter(Boolean))], signed = {};
   for (let k = 0; k < paths.length; k += 200) {
     const { data } = await fsb.storage.from("uploads").createSignedUrls(paths.slice(k, k + 200), 3600);
     (data || []).forEach((u) => { if (u.signedUrl) signed[u.path] = u.signedUrl; });
   }
+  const asSaved = (i, n) => (/^https?:/.test(i.image_path || "") ? i.image_path : signed[stored[n]] || "");
+  window.addEventListener("error", (e) => { const t = e.target, f = t && t.tagName === "IMG" && FB.get(t.src); if (f) { FB.delete(t.src); t.src = f; } }, true);
   const likes = new Map(); likeRows.forEach((l) => likes.set(l.item_id, (likes.get(l.item_id) || 0) + 1));
-  rows.forEach((i, n) => { i.url = picks[n].url || signed[picks[n].path] || ""; i.url2 = ""; i.user = i.profiles?.username || ""; i.link = FS.site + "/item.html?id=" + encodeURIComponent(i.id); i.likes = likes.get(i.id) || 0; });
+  rows.forEach((i, n) => { const rc = refined(i), own = asSaved(i, n); i.url = rc ? FS.site + "/" + rc.file + "?c=1" : own; if (rc && own) FB.set(new URL(i.url, location.href).href, own); i.url2 = ""; i.user = i.profiles?.username || ""; i.link = FS.site + "/item.html?id=" + encodeURIComponent(i.id); i.likes = likes.get(i.id) || 0; });
   // Most-liked first. Setups and decks that tie (most do, likes are new) come in a fresh random order every visit; the other sections tie by newest first.
   for (let a = rows.length - 1; a > 0; a--) { const b = Math.floor(Math.random() * (a + 1)); [rows[a], rows[b]] = [rows[b], rows[a]]; }
   const newest = new Map(rows.map((r, n) => [r.id, n]));

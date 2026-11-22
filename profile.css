@@ -174,3 +174,7 @@ body.fav-mode #items [data-id] { cursor: pointer; }
   .profile-page .grid.square { --item-h: calc((100vw - 2 * var(--gutter) - 16px) / 3); --cell: var(--item-h); }
   .profile-page .grid.square .item:not(.wide) img { transform: scale(1.12); }
 }
+
+/* Featured page: "View more" / "Show all" under each section */
+.feat-more { margin: 22px 0 0; font-size: 12px; }
+.feat-more button { background: none; border: 0; padding: 0; margin-right: 18px; font: inherit; color: #000; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
