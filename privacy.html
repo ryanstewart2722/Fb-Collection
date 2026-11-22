@@ -19,6 +19,12 @@
   <link rel="apple-touch-icon" href="apple-touch-icon.png?v=18d4ac">
   <link rel="stylesheet" href="style.css?v=488a23b0">
   <link rel="stylesheet" href="profile.css?v=89394ef8">
+  <style>
+    /* top-left, lined up with "Menu", big title at the same spot as Decks / Setups */
+    .auth.priv { max-width: 640px; margin: 0; padding: 49px var(--gutter) 120px; }
+    .auth.priv h1 { font-size: 34px; margin: 0 0 14px; }
+    @media (max-width: 760px) { .auth.priv { padding-top: 62px; } .auth.priv h1 { font-size: 28px; } }
+  </style>
 </head>
 <body>
   <header class="topbar">
@@ -26,7 +32,7 @@
     <a class="title" href="/" aria-label="The Museum of Mini Skateboards"><span class="t-full">The Museum of Mini Skateboards</span><span class="t-short">MoMS</span></a>
     <span></span>
   </header>
-  <main class="auth" style="max-width:640px">
+  <main class="auth priv">
     <h1>Privacy</h1>
     <p class="auth-note">Last updated November 2026. The Museum of Mini Skateboards (museumofminiskateboards.org) is a small hobby project run by Ryan Stewart.</p>
 
